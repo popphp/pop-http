@@ -1,6 +1,6 @@
 {
     "name": "popphp/pop-http",
-    "description": "Pop Http Component for Pop PHP Framework 2",
+    "description": "Pop Http Component for Pop PHP Framework",
     "keywords": [
         "http",
         "http client",
@@ -10,8 +10,7 @@
         "streams",
         "php",
         "pop",
-        "pop php",
-        "pop php 2"
+        "pop php"
     ],
     "homepage": "http://www.popphp.org/",
     "license": "New BSD",
