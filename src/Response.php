@@ -487,7 +487,7 @@ class Response
             throw new Exception('That header code ' . $code . ' is not allowed.');
         }
 
-        $this->code = $code;
+        $this->code    = $code;
         $this->message = self::$responseCodes[$code];
 
         return $this;
@@ -578,13 +578,22 @@ class Response
     /**
      * Send response
      *
+     * @param  int   $code
+     * @param  array $headers
      * @throws Exception
      * @return void
      */
-    public function send()
+    public function send($code = null, array $headers = null)
     {
         if (headers_sent()) {
             throw new Exception('The headers have already been sent.');
+        }
+
+        if (null !== $code) {
+            $this->setCode($code);
+        }
+        if (null !== $headers) {
+            $this->setHeaders($headers);
         }
 
         $body = $this->body;
