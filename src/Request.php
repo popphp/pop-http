@@ -719,9 +719,8 @@ class Request
      */
     protected function parseData()
     {
-
         if (strtoupper($this->getMethod()) == 'GET') {
-            $this->rawData = rawurldecode($_SERVER['QUERY_STRING']);
+            $this->rawData = (isset($_SERVER['QUERY_STRING'])) ? rawurldecode($_SERVER['QUERY_STRING']) : null;
         } else {
             $input = fopen('php://input', 'r');
             while ($data = fread($input, 1024)) {
