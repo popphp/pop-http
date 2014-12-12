@@ -633,7 +633,7 @@ class Request
 
         // Some slash clean up
         $this->docRoot = (isset($_SERVER['DOCUMENT_ROOT'])) ? str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']) : null;
-        $dir = str_replace('\\', '/', dirname($this->docRoot . $_SERVER['PHP_SELF']));
+        $dir = str_replace('\\', '/', getcwd());
 
         if ($dir != $this->docRoot) {
             $realBasePath = str_replace($this->docRoot, '', $dir);
