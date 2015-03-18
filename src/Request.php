@@ -89,6 +89,12 @@ class Request
     protected $post = [];
 
     /**
+     * $_FILES vars
+     * @var array
+     */
+    protected $files = [];
+
+    /**
      * PUT method vars
      * @var array
      */
@@ -157,6 +163,7 @@ class Request
 
         $this->get    = (isset($_GET))    ? $_GET    : [];
         $this->post   = (isset($_POST))   ? $_POST   : [];
+        $this->files  = (isset($_FILES))  ? $_FILES  : [];
         $this->cookie = (isset($_COOKIE)) ? $_COOKIE : [];
         $this->server = (isset($_SERVER)) ? $_SERVER : [];
         $this->env    = (isset($_ENV))    ? $_ENV    : [];
@@ -193,6 +200,16 @@ class Request
     public function isFile()
     {
         return $this->isFile;
+    }
+
+    /**
+     * Return whether or not the request has FILES
+     *
+     * @return boolean
+     */
+    public function hasFiles()
+    {
+        return (count($this->files) > 0);
     }
 
     /**
@@ -476,6 +493,21 @@ class Request
     }
 
     /**
+     * Get a value from $_FILES, or the whole array
+     *
+     * @param  string $key
+     * @return string|array
+     */
+    public function getFiles($key = null)
+    {
+        if (null === $key) {
+            return $this->files;
+        } else {
+            return (isset($this->files[$key])) ? $this->files[$key] : null;
+        }
+    }
+
+    /**
      * Get a value from PUT query data, or the whole array
      *
      * @param  string $key
@@ -709,6 +741,20 @@ class Request
     {
         $this->post[$key] = $value;
         $_POST[$key] = $value;
+        return $this;
+    }
+
+    /**
+     * Set a value for $_FILES
+     *
+     * @param  string $key
+     * @param  string $value
+     * @return Request
+     */
+    public function setFile($key, $value)
+    {
+        $this->files[$key] = $value;
+        $_FILES[$key] = $value;
         return $this;
     }
 

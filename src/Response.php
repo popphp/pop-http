@@ -203,7 +203,7 @@ class Response
             throw new Exception('The response was not properly formatted.');
         }
 
-        return new Response([
+        return new self([
             'code'    => $code,
             'headers' => $headers,
             'body'    => $body,
@@ -376,7 +376,7 @@ class Response
     public function isSuccess()
     {
         $type = floor($this->code / 100);
-        return (($type == 3) || ($type == 2) || ($type == 1));
+        return (($type == 1) || ($type == 2) || ($type == 3));
     }
 
     /**
@@ -398,7 +398,29 @@ class Response
     public function isError()
     {
         $type = floor($this->code / 100);
-        return (($type == 5) || ($type == 4));
+        return (($type == 4) || ($type == 5));
+    }
+
+    /**
+     * Determine if the response is a client error
+     *
+     * @return boolean
+     */
+    public function isClientError()
+    {
+        $type = floor($this->code / 100);
+        return ($type == 4);
+    }
+
+    /**
+     * Determine if the response is a server error
+     *
+     * @return boolean
+     */
+    public function isServerError()
+    {
+        $type = floor($this->code / 100);
+        return ($type == 5);
     }
 
     /**
@@ -456,19 +478,19 @@ class Response
      * Get the response headers as a string
      *
      * @param  boolean $status
-     * @param  string  $br
+     * @param  string  $eol
      * @return string
      */
-    public function getHeadersAsString($status = true, $br = "\n")
+    public function getHeadersAsString($status = true, $eol = "\n")
     {
         $headers = '';
 
         if ($status) {
-            $headers = "HTTP/{$this->version} {$this->code} {$this->message}{$br}";
+            $headers = "HTTP/{$this->version} {$this->code} {$this->message}{$eol}";
         }
 
         foreach ($this->headers as $name => $value) {
-            $headers .= "{$name}: {$value}{$br}";
+            $headers .= "{$name}: {$value}{$eol}";
         }
 
         return $headers;
