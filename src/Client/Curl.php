@@ -126,7 +126,7 @@ class Curl extends AbstractClient
      * @param  boolean $post
      * @return Curl
      */
-    public function setPost($post = false)
+    public function setPost($post = true)
     {
         $this->setOption(CURLOPT_POST, (bool)$post);
         return $this;

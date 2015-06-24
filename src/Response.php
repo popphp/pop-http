@@ -126,18 +126,15 @@ class Response
      */
     public function __construct(array $config = [])
     {
-        $this->code = (isset($config['code'])) ? $config['code'] : 200;
+        $this->setCode((isset($config['code'])) ? $config['code'] : 200);
+        $this->setBody((isset($config['body']))    ? $config['body']    : null);
+        $this->setMessage((isset($config['message'])) ? $config['message'] : self::$responseCodes[$this->code]);
+        $this->setVersion((isset($config['version'])) ? $config['version'] : '1.1');
 
-        if (!array_key_exists($this->code, self::$responseCodes)) {
-            throw new Exception('The header code '. $this->code . ' is not allowed.');
-        }
-
-        $this->body    = (isset($config['body']))    ? $config['body']    : null;
-        $this->message = (isset($config['message'])) ? $config['message'] : self::$responseCodes[$this->code];
-        $this->version = (isset($config['version'])) ? $config['version'] : '1.1';
-
-        $this->headers = (isset($config['headers']) && is_array($config['headers'])) ?
+        $headers = (isset($config['headers']) && is_array($config['headers'])) ?
             $config['headers'] : ['Content-Type' => 'text/html'];
+
+        $this->setHeaders($headers);
     }
 
     /**
@@ -424,6 +421,16 @@ class Response
     }
 
     /**
+     * Get the response version
+     *
+     * @return float
+     */
+    public function getVersion()
+    {
+        return $this->version;
+    }
+
+    /**
      * Get the response code
      *
      * @return int
@@ -497,13 +504,27 @@ class Response
     }
 
     /**
+     * Set the response version
+     *
+     * @param  float $version
+     * @return Response
+     */
+    public function setVersion($version = 1.1)
+    {
+        if (($version == 1.0) || ($version == 1.1)) {
+            $this->version = $version;
+        }
+        return $this;
+    }
+
+    /**
      * Set the response code
      *
      * @param  int $code
      * @throws Exception
      * @return Response
      */
-    public function setCode($code)
+    public function setCode($code = 200)
     {
         if (!array_key_exists($code, self::$responseCodes)) {
             throw new Exception('That header code ' . $code . ' is not allowed.');
@@ -521,7 +542,7 @@ class Response
      * @param  string $message
      * @return Response
      */
-    public function setMessage($message)
+    public function setMessage($message = null)
     {
         $this->message = $message;
         return $this;
