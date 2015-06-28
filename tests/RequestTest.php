@@ -59,6 +59,36 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($request->getFilename());
     }
 
+    public function testParseJsonData()
+    {
+        $_SERVER['HTTP_HOST']      = 'localhost';
+        $_SERVER['SERVER_NAME']    = 'localhost';
+        $_SERVER['SERVER_PORT']    = 8000;
+        $_SERVER['DOCUMENT_ROOT']  = getcwd();
+        $_SERVER['REQUEST_URI']    = '/page';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['CONTENT_TYPE']   = 'application/json';
+        $_SERVER['QUERY_STRING']   = '{"foo" : "bar"}';
+
+        $request = new Request(null, '/home');
+        $this->assertEquals('bar', $request->getParsedData()['foo']);
+    }
+
+    public function testParseXmlData()
+    {
+        $_SERVER['HTTP_HOST']      = 'localhost';
+        $_SERVER['SERVER_NAME']    = 'localhost';
+        $_SERVER['SERVER_PORT']    = 8000;
+        $_SERVER['DOCUMENT_ROOT']  = getcwd();
+        $_SERVER['REQUEST_URI']    = '/page';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['CONTENT_TYPE']   = 'application/xml';
+        $_SERVER['QUERY_STRING']   = '<root><node><![CDATA[Hello World]]></node></root>';
+
+        $request = new Request(null, '/home');
+        $this->assertEquals('Hello World', $request->getParsedData()['node']);
+    }
+
     public function testGetHost()
     {
         $_SERVER['HTTP_HOST']      = '';
@@ -154,6 +184,27 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('123', $request->getEnv('var'));
         $this->assertEquals('bar', $request->getEnv('foo'));
         $this->assertEquals(2, count($request->getEnv()));
+    }
+
+    public function testGetPut()
+    {
+        $request = new Request();
+        $this->assertNull($request->getPut('foo'));
+        $this->assertEquals(0, count($request->getPut()));
+    }
+
+    public function testGetPatch()
+    {
+        $request = new Request();
+        $this->assertNull($request->getPatch('foo'));
+        $this->assertEquals(0, count($request->getPatch()));
+    }
+
+    public function testGetDelete()
+    {
+        $request = new Request();
+        $this->assertNull($request->getDelete('foo'));
+        $this->assertEquals(0, count($request->getDelete()));
     }
 
     public function testGetHeaders()
