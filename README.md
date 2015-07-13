@@ -112,7 +112,7 @@ Pop\Http\Response::redirect('http://www.newlocation.com/');
 $response = Pop\Http\Response::parse('http://www.mydomain.com/');
 
 if ($response->isSuccess()) { } // Returns true
-if ($response->isError())   { } // Returns true
+if ($response->isError())   { } // Returns false
 
 // 200
 echo $response->getCode();
