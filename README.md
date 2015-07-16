@@ -82,8 +82,8 @@ $fullUri = $request->getFullRequestUri();
 
 ```php
 $options = [
-    'code'   => 200,
-    'headers => [
+    'code'    => 200,
+    'headers' => [
         'Content-Type' => 'text/plain'
     ]
 ];
