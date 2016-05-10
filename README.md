@@ -2,7 +2,7 @@ pop-http
 ========
 
 [![Build Status](https://travis-ci.org/popphp/pop-http.svg?branch=master)](https://travis-ci.org/popphp/pop-http)
-[![Coverage Status](http://www.popphp.org/cc/coverage.php?comp=pop-http)](http://www.popphp.org/cc/pop-http/)
+[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-http)](http://cc.popphp.org/pop-http/)
 
 OVERVIEW
 --------
@@ -47,7 +47,7 @@ if ($request->getPath(1) == 'world') { } // Returns true
 ### The request object, POST example
 
 Let's use a POST request with the URL '/users/edit'
- 
+
 ```php
 $request = new Pop\Http\Request();
 
@@ -98,7 +98,7 @@ The above script will output something like this when requested:
 
     HTTP/1.1 200 OK
     Content-Type: text/html
-    
+
     This is a plain text file.
 
 ### Simple response redirect
@@ -139,7 +139,7 @@ $client->setReturnHeader(true)
 $client->setFields([
     'id'    => 1001,
     'name'  => 'Test Person',
-    'email' => 'test@test.com' 
+    'email' => 'test@test.com'
 ]);
 
 $client->send();
@@ -160,7 +160,7 @@ $client->setPost(true);
 $client->setFields([
     'id'    => 1001,
     'name'  => 'Test Person',
-    'email' => 'test@test.com' 
+    'email' => 'test@test.com'
 ]);
 
 $client->send();
