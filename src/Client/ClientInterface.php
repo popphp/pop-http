@@ -160,9 +160,18 @@ interface ClientInterface
     public function decodeBody();
 
     /**
+     * Throw an exception upon a cURL error.
+     *
+     * @param  string $error
+     * @throws Exception
+     * @return void
+     */
+    public function throwError($error);
+
+    /**
      * Create and open the client resource
      *
-     * @return void
+     * @return ClientInterface
      */
     public function open();
 

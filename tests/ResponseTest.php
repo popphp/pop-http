@@ -17,13 +17,13 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
 
     public function testConstructorBadHeaderCodeException()
     {
-        $this->setExpectedException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Exception');
         $response = new Response(['code' => 700]);
     }
 
     public function testGetMessageCodeBadCodeException()
     {
-        $this->setExpectedException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Exception');
         $message = Response::getMessageFromCode(700);
     }
 
@@ -86,7 +86,7 @@ BODY;
 
     public function testRedirectHeadersSentException()
     {
-        $this->setExpectedException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Exception');
         Response::redirect('http://www.popphp.org/version');
     }
 
@@ -106,7 +106,7 @@ BODY;
      */
     public function testRedirectBadCodeException()
     {
-        $this->setExpectedException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Exception');
         Response::redirect('http://www.popphp.org/version', 700);
     }
 

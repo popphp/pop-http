@@ -150,6 +150,10 @@ class Response
         if (!isset($config['code'])) {
             $config['code'] = 200;
         }
+
+        $this->setVersion($config['version'])
+             ->setCode($config['code']);
+
         if (!isset($config['message'])) {
             $config['message'] = self::$responseCodes[$config['code']];
         }
@@ -160,9 +164,7 @@ class Response
             $config['body'] = null;
         }
 
-        $this->setVersion($config['version'])
-             ->setCode($config['code'])
-             ->setMessage($config['message'])
+        $this->setMessage($config['message'])
              ->setHeaders($config['headers'])
              ->setBody($config['body']);
     }
@@ -172,18 +174,18 @@ class Response
      * either from a URL or a full response string
      *
      * @param  string $response
-     * @param  array  $context
+     * @param  array  $options
      * @param  string $mode
      * @throws Exception
      * @return Response
      */
-    public static function parse($response, array $context = null, $mode = 'r')
+    public static function parse($response, $mode = 'r', array $options = [])
     {
         $headers = [];
 
         // If a URL, use a stream to get the header and URL contents
         if ((strtolower(substr($response, 0, 7)) == 'http://') || (strtolower(substr($response, 0, 8)) == 'https://')) {
-            $client  = new Client\Stream($response, $context, $mode);
+            $client  = new Client\Stream($response, $mode, $options);
             $client->send();
 
             $code    = $client->getCode();

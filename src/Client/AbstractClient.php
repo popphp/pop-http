@@ -288,9 +288,21 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Throw an exception upon a cURL error.
+     *
+     * @param  string $error
+     * @throws Exception
+     * @return void
+     */
+    public function throwError($error)
+    {
+        throw new Exception($error);
+    }
+
+    /**
      * Create and open the client resource
      *
-     * @return void
+     * @return AbstractClient
      */
     abstract public function open();
 

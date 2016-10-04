@@ -28,22 +28,18 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         ];
 
         $request = new Request(null, '/home');
-        $request->setQuery('hello', 'world');
         $this->assertEquals('/page', $request->getRequestUri());
         $this->assertEquals('/home/page', $request->getFullRequestUri());
-        $this->assertEquals(getcwd() . '/home', $request->getFullPath());
         $this->assertEquals('/home', $request->getBasePath());
-        $this->assertEquals(getcwd(), $request->getDocRoot());
         $this->assertEquals('123', $request->getQuery('var'));
         $this->assertEquals('bar', $request->getQuery('foo'));
-        $this->assertEquals('world', $request->getQuery('hello'));
         $this->assertEquals('var=123&foo=bar', $request->getRawData());
         $this->assertEquals(2, count($request->getParsedData()));
-        $this->assertEquals(3, count($request->getQuery()));
+        $this->assertEquals(2, count($request->getQuery()));
         $this->assertEquals(1, count($request->getPath()));
         $this->assertEquals('page', $request->getPath(0));
         $this->assertEquals('http', $request->getScheme());
-        $this->assertEquals('localhost:8000', $request->getHost());
+        $this->assertEquals('localhost', $request->getHost());
         $this->assertTrue($request->isGet());
         $this->assertFalse($request->isHead());
         $this->assertFalse($request->isPost());
@@ -54,9 +50,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($request->isConnect());
         $this->assertFalse($request->isPatch());
         $this->assertFalse($request->isSecure());
-        $this->assertFalse($request->isFile());
         $this->assertFalse($request->hasFiles());
-        $this->assertNull($request->getFilename());
     }
 
     public function testParseJsonData()
@@ -104,7 +98,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         ];
 
         $request = new Request(null, '/home');
-        $this->assertEquals('localhost:8000', $request->getHost());
+        $this->assertEquals('localhost:8000', $request->getFullHost());
     }
 
     public function testGetIpFromRemoteAddress()
@@ -135,11 +129,9 @@ class RequestTest extends \PHPUnit_Framework_TestCase
             'foo' => 'bar'
         ];
         $request = new Request();
-        $request->setPost('hello', 'world');
-        $this->assertEquals('world', $request->getPost('hello'));
         $this->assertEquals('123', $request->getPost('var'));
         $this->assertEquals('bar', $request->getPost('foo'));
-        $this->assertEquals(3, count($request->getPost()));
+        $this->assertEquals(2, count($request->getPost()));
     }
 
     public function testGetFiles()
@@ -149,10 +141,9 @@ class RequestTest extends \PHPUnit_Framework_TestCase
             'foo' => 'bar'
         ];
         $request = new Request();
-        $request->setFile('hello', 'world');
         $this->assertEquals('123', $request->getFiles('var'));
         $this->assertEquals('bar', $request->getFiles('foo'));
-        $this->assertEquals(3, count($request->getFiles()));
+        $this->assertEquals(2, count($request->getFiles()));
     }
 
     public function testGetCookie()

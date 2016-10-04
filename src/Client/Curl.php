@@ -87,6 +87,7 @@ class Curl extends AbstractClient
         }
 
         $this->response = curl_exec($this->resource);
+
         if ($this->response === false) {
             $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
         }
@@ -222,8 +223,12 @@ class Curl extends AbstractClient
      */
     public function send()
     {
-        if (null === $this->resource) {
+        if (null === $this->response) {
             $this->open();
+        }
+
+        if ($this->response === false) {
+            $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
         }
 
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
@@ -288,18 +293,6 @@ class Curl extends AbstractClient
                 }
             }
         }
-    }
-
-    /**
-     * Throw an exception upon a cURL error.
-     *
-     * @param  string $error
-     * @throws Exception
-     * @return void
-     */
-    protected function throwError($error)
-    {
-        throw new Exception($error);
     }
 
 }

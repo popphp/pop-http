@@ -4,7 +4,7 @@ Server: Apache/2.4.7 (Ubuntu)
 Last-Modified: Tue, 02 Dec 2014 20:09:59 GMT
 ETag: "84f-509414fcd0819"
 Accept-Ranges: bytes
-Content-Length: 2127
+Content-Length: 229
 Vary: Accept-Encoding
 Content-Type: text/html
 
@@ -15,44 +15,15 @@ Content-Type: text/html
 <head>
 
     <title>
-        Pop PHP Framework 2 : A lightweight, yet feature-rich PHP framework.
+        Hello World
     </title>
 
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="author" content="Pop PHP Framework" />
-    <meta name="keywords" content="pop php 2, pop php framework, php framework, lightweight php framework, php" />
-    <meta name="description" content="Pop PHP Framework is a lightweight, yet feature-rich PHP framework." />
-    <meta name="robots" content="all" />
-
-    <link rel="stylesheet" type="text/css" href="css/styles.css" />
-
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-        ga('create', 'UA-53872942-7', 'auto');
-        ga('send', 'pageview');
-    </script>
 
 </head>
 
 <body>
-    <h1><a href="/">Pop PHP Framework 2 : A lightweight, yet feature-rich PHP framework.</a></h1>
-    <div id="content">
-        <img src="img/pop-php-logo.png" width="320" height="320" alt="pop php framework 2" /><br />
-        <h3>Version <span class="bold">2</span> Coming Soon!</h3>
-        <a class="button" href="https://github.com/popphp/popphp/archive/master.zip">Download 2.0.0 alpha</a>
-        <a class="button" href="https://github.com/nicksagona/PopPHP/archive/master.zip">Download 1.7.0</a>
-        <p class="comments">
-            Please refer any questions, comments or issues to Github:<br />
-            <a href="https://github.com/popphp/popphp" target="_blank">2.0.0 alpha</a> <span class="pad">|</span> <a href="https://github.com/nicksagona/PopPHP" target="_blank">1.7.0</a><br />
-        </p>
-    </div>
-    <footer>
-        &copy; 2014 <a href="http://www.nolainteractive.com/" target="_blank">NOLA Interactive</a>. All Rights Reserved.
-    </footer>
+    <h1>Hello World</h1>
 </body>
 
 </html>
