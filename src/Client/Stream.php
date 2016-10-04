@@ -156,9 +156,6 @@ class Stream extends AbstractClient
     public function addContextOption($name, $option)
     {
         $this->contextOptions[$name] = $option;
-        if (null !== $this->context) {
-            stream_context_set_option($this->context, [$name => $option]);
-        }
         return $this;
     }
 
@@ -172,9 +169,6 @@ class Stream extends AbstractClient
     public function addContextParam($name, $param)
     {
         $this->contextParams[$name] = $param;
-        if (null !== $this->context) {
-            stream_context_set_params($this->context, [$name => $param]);
-        }
         return $this;
     }
 
