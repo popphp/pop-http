@@ -60,6 +60,41 @@ class Curl extends AbstractClient
     }
 
     /**
+     * Return cURL resource (alias to $this->getResource())
+     *
+     * @return resource
+     */
+    public function curl()
+    {
+        return $this->resource;
+    }
+
+    /**
+     * Create and open cURL resource
+     *
+     * @return Curl
+     */
+    public function open()
+    {
+        // Set query data if there is any
+        if (count($this->fields) > 0) {
+            if ($this->isPost()) {
+                $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
+            } else {
+                $url = $this->options[CURLOPT_URL] . '?' . http_build_query($this->fields);
+                $this->setOption(CURLOPT_URL, $url);
+            }
+        }
+
+        $this->response = curl_exec($this->resource);
+        if ($this->response === false) {
+            $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
+        }
+
+        return $this;
+    }
+
+    /**
      * Set cURL session option
      *
      * @param  int    $opt
@@ -187,19 +222,8 @@ class Curl extends AbstractClient
      */
     public function send()
     {
-        // Set query data if there is any
-        if (count($this->fields) > 0) {
-            if ($this->isPost()) {
-                $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
-            } else {
-                $url = $this->options[CURLOPT_URL] . '?' . http_build_query($this->fields);
-                $this->setOption(CURLOPT_URL, $url);
-            }
-        }
-
-        $this->response = curl_exec($this->resource);
-        if ($this->response === false) {
-            $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
+        if (null === $this->resource) {
+            $this->open();
         }
 
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.

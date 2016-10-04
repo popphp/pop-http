@@ -160,6 +160,13 @@ interface ClientInterface
     public function decodeBody();
 
     /**
+     * Create and open the client resource
+     *
+     * @return void
+     */
+    public function open();
+
+    /**
      * Method to send the request and get the response
      *
      * @return void

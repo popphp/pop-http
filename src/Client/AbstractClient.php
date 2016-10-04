@@ -277,7 +277,7 @@ abstract class AbstractClient implements ClientInterface
     /**
      * Decode the body
      *
-     * @return resource
+     * @return void
      */
     public function decodeBody()
     {
@@ -286,6 +286,13 @@ abstract class AbstractClient implements ClientInterface
         }
         $this->body = Response::decodeBody($this->body, $this->headers['Content-Encoding']);
     }
+
+    /**
+     * Create and open the client resource
+     *
+     * @return void
+     */
+    abstract public function open();
 
     /**
      * Method to send the request and get the response

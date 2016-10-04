@@ -73,6 +73,16 @@ class Stream extends AbstractClient
     }
 
     /**
+     * Return stream resource (alias to $this->getResource())
+     *
+     * @return resource
+     */
+    public function stream()
+    {
+        return $this->resource;
+    }
+
+    /**
      * Create stream context
      *
      * @return Stream
@@ -86,6 +96,27 @@ class Stream extends AbstractClient
         } else {
             $this->context = stream_context_create();
         }
+
+        return $this;
+    }
+
+    /**
+     * Create stream resource
+     *
+     * @return Stream
+     */
+    public function open()
+    {
+        if ((null === $this->context) && ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0))) {
+            $this->createContext();
+        }
+
+        if ((null !== $this->context) && ($this->hasContextOption('http')) && (count($this->fields) > 0)) {
+            $this->contextOptions['http']['content'] = http_build_query($this->fields);
+        }
+
+        $this->resource = (null !== $this->context) ?
+            @fopen($this->url, $this->mode, false, $this->context) : @fopen($this->url, $this->mode);
 
         return $this;
     }
@@ -281,16 +312,9 @@ class Stream extends AbstractClient
         $http_response_header = null;
         $headers = [];
 
-        if ((null === $this->context) && ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0))) {
-            $this->createContext();
+        if (null === $this->resource) {
+            $this->open();
         }
-
-        if ((null !== $this->context) && ($this->hasContextOption('http')) && (count($this->fields) > 0)) {
-            $this->contextOptions['http']['content'] = http_build_query($this->fields);
-        }
-
-        $this->resource = (null !== $this->context) ?
-            @fopen($this->url, $this->mode, false, $this->context) : @fopen($this->url, $this->mode);
 
         if ($this->resource != false) {
             $meta      = stream_get_meta_data($this->resource);
