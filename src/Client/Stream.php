@@ -107,12 +107,19 @@ class Stream extends AbstractClient
      */
     public function open()
     {
-        if ((null === $this->context) && ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0))) {
-            $this->createContext();
+        if ((null !== $this->context) && (count($this->fields) > 0)) {
+            if ($this->hasContextOption('http')) {
+                $this->contextOptions['http']['content'] = http_build_query($this->fields);
+            } else {
+                $this->addContextOption('http', [
+                    'method'  => 'get',
+                    'content' => http_build_query($this->fields)
+                ]);
+            }
         }
 
-        if ((null !== $this->context) && ($this->hasContextOption('http')) && (count($this->fields) > 0)) {
-            $this->contextOptions['http']['content'] = http_build_query($this->fields);
+        if ((null === $this->context) && ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0))) {
+            $this->createContext();
         }
 
         $this->resource = (null !== $this->context) ?
