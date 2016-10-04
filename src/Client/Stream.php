@@ -107,7 +107,7 @@ class Stream extends AbstractClient
      */
     public function open()
     {
-        if ((null !== $this->context) && (count($this->fields) > 0)) {
+        if (count($this->fields) > 0) {
             if ($this->hasContextOption('http')) {
                 $this->contextOptions['http']['content'] = http_build_query($this->fields);
             } else {
