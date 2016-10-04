@@ -56,19 +56,19 @@ class Upload
      * @var array
      */
     protected static $errorMessages = [
-        0  => 'The file uploaded successfully.',
-        1  => 'The uploaded file exceeds the upload_max_filesize directive.',
-        2  => 'The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form.',
-        3  => 'The uploaded file was only partially uploaded.',
-        4  => 'No file was uploaded.',
-        6  => 'Missing a temporary folder.',
-        7  => 'Failed to write file to disk.',
-        8  => 'A PHP extension stopped the file upload.',
-        9  => 'The uploaded file exceeds the user-defined max file size.',
-        10 => 'The uploaded file is not allowed.',
-        11 => 'The specified upload directory does not exist.',
-        12 => 'The specified upload directory is not writable.',
-        13 => 'Unexpected error.'
+         0 => 'The file uploaded successfully',
+         1 => 'The uploaded file exceeds the upload_max_filesize directive',
+         2 => 'The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form',
+         3 => 'The uploaded file was only partially uploaded',
+         4 => 'No file was uploaded',
+         6 => 'Missing a temporary folder',
+         7 => 'Failed to write file to disk',
+         8 => 'A PHP extension stopped the file upload',
+         9 => 'The uploaded file exceeds the user-defined max file size',
+        10 => 'The uploaded file is not allowed',
+        11 => 'The specified upload directory does not exist',
+        12 => 'The specified upload directory is not writable',
+        13 => 'Unexpected error'
     ];
 
     /**
@@ -169,7 +169,7 @@ class Upload
      */
     public function setDefaults()
     {
-        // Allow basic text, graphic, video, data and archive file types
+        // Allow basic text, graphic, audio/video, data and archive file types
         $allowedTypes = [
             'ai', 'aif', 'aiff', 'avi', 'bmp', 'bz2', 'csv', 'doc', 'docx', 'eps', 'fla', 'flv', 'gif', 'gz',
             'jpe','jpg', 'jpeg', 'log', 'md', 'mov', 'mp2', 'mp3', 'mp4', 'mpg', 'mpeg', 'otf', 'pdf',
@@ -349,7 +349,7 @@ class Upload
     }
 
     /**
-     * Get the allowed max size
+     * Get the max size allowed
      *
      * @return int
      */
@@ -492,26 +492,29 @@ class Upload
         if ($this->error != 0) {
             return false;
         } else {
-            $this->error = $file['error'];
-
-            if ($this->error != 0) {
+            if (!isset($file['error']) || !isset($file['size']) || !isset($file['tmp_name']) || !isset($file['name'])) {
                 return false;
             } else {
-                $fileSize  = $file['size'];
-                $fileParts = pathinfo($file['name']);
-                $ext       = (isset($fileParts['extension'])) ? $fileParts['extension'] : null;
-
-                if (($this->maxSize > 0) && ($fileSize > $this->maxSize)) {
-                    $this->error = self::UPLOAD_ERR_USER_SIZE;
+                $this->error = $file['error'];
+                if ($this->error != 0) {
                     return false;
-                } else if ((null !== $ext) && (!$this->isAllowed($ext))) {
-                    $this->error = self::UPLOAD_ERR_NOT_ALLOWED;
-                    return false;
-                } else if ($this->error == 0) {
-                    return true;
                 } else {
-                    $this->error = self::UPLOAD_ERR_UNEXPECTED;
-                    return false;
+                    $fileSize  = $file['size'];
+                    $fileParts = pathinfo($file['name']);
+                    $ext       = (isset($fileParts['extension'])) ? $fileParts['extension'] : null;
+
+                    if (($this->maxSize > 0) && ($fileSize > $this->maxSize)) {
+                        $this->error = self::UPLOAD_ERR_USER_SIZE;
+                        return false;
+                    } else if ((null !== $ext) && (!$this->isAllowed($ext))) {
+                        $this->error = self::UPLOAD_ERR_NOT_ALLOWED;
+                        return false;
+                    } else if ($this->error == 0) {
+                        return true;
+                    } else {
+                        $this->error = self::UPLOAD_ERR_UNEXPECTED;
+                        return false;
+                    }
                 }
             }
         }

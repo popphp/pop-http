@@ -13,6 +13,8 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Http\Response;
+
 /**
  * Abstract HTTP client class
  *
@@ -280,9 +282,9 @@ abstract class AbstractClient implements ClientInterface
     public function decodeBody()
     {
         if (isset($this->headers['Transfer-Encoding']) && ($this->headers['Transfer-Encoding'] == 'chunked')) {
-            $this->body = \Pop\Http\Response::decodeChunkedBody($this->body);
+            $this->body = Response::decodeChunkedBody($this->body);
         }
-        $this->body = \Pop\Http\Response::decodeBody($this->body, $this->headers['Content-Encoding']);
+        $this->body = Response::decodeBody($this->body, $this->headers['Content-Encoding']);
     }
 
     /**

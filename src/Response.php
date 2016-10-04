@@ -140,19 +140,31 @@ class Response
      *
      * @param  array $config
      * @throws Exception
-     * @return Response
      */
     public function __construct(array $config = [])
     {
-        $this->setCode((isset($config['code'])) ? $config['code'] : 200);
-        $this->setBody((isset($config['body']))    ? $config['body']    : null);
-        $this->setMessage((isset($config['message'])) ? $config['message'] : self::$responseCodes[$this->code]);
-        $this->setVersion((isset($config['version'])) ? $config['version'] : '1.1');
+        // Check for config values and set defaults
+        if (!isset($config['version'])) {
+            $config['version'] = '1.1';
+        }
+        if (!isset($config['code'])) {
+            $config['code'] = 200;
+        }
+        if (!isset($config['message'])) {
+            $config['message'] = self::$responseCodes[$config['code']];
+        }
+        if (!isset($config['headers']) || (isset($config['headers']) && !is_array($config['headers']))) {
+            $config['headers'] = ['Content-Type' => 'text/html'];
+        }
+        if (!isset($config['body'])) {
+            $config['body'] = null;
+        }
 
-        $headers = (isset($config['headers']) && is_array($config['headers'])) ?
-            $config['headers'] : ['Content-Type' => 'text/html'];
-
-        $this->setHeaders($headers);
+        $this->setVersion($config['version'])
+             ->setCode($config['code'])
+             ->setMessage($config['message'])
+             ->setHeaders($config['headers'])
+             ->setBody($config['body']);
     }
 
     /**
@@ -183,26 +195,26 @@ class Response
         } else if (substr($response, 0, 5) == 'HTTP/'){
             if (strpos($response, "\r") !== false) {
                 $headerStr = substr($response, 0, strpos($response, "\r\n"));
-                $bodyStr = substr($response, (strpos($response, "\r\n") + 2));
+                $bodyStr   = substr($response, (strpos($response, "\r\n") + 2));
             } else {
                 $headerStr = substr($response, 0, strpos($response, "\n\n"));
-                $bodyStr = substr($response, (strpos($response, "\n\n") + 2));
+                $bodyStr   = substr($response, (strpos($response, "\n\n") + 2));
             }
 
-            $firstLine = trim(substr($headerStr, 0, strpos($headerStr, "\n")));
-            $allHeaders = trim(substr($headerStr, strpos($headerStr, "\n")));
+            $firstLine     = trim(substr($headerStr, 0, strpos($headerStr, "\n")));
+            $allHeaders    = trim(substr($headerStr, strpos($headerStr, "\n")));
             $allHeadersAry = explode("\n", $allHeaders);
 
             // Get the version, code and message
             $version = substr($firstLine, 0, strpos($firstLine, ' '));
             $version = substr($version, (strpos($version, '/') + 1));
             preg_match('/\d\d\d/', trim($firstLine), $match);
-            $code = $match[0];
+            $code    = $match[0];
             $message = str_replace('HTTP/' . $version . ' ' . $code . ' ', '', $firstLine);
 
             // Get the headers
             foreach ($allHeadersAry as $hdr) {
-                $name = substr($hdr, 0, strpos($hdr, ':'));
+                $name  = substr($hdr, 0, strpos($hdr, ':'));
                 $value = substr($hdr, (strpos($hdr, ' ') + 1));
                 $headers[trim($name)] = trim($value);
             }
@@ -632,6 +644,10 @@ class Response
      */
     public function sendHeaders()
     {
+        if (headers_sent()) {
+            throw new Exception('The headers have already been sent.');
+        }
+
         header("HTTP/{$this->version} {$this->code} {$this->message}");
         foreach ($this->headers as $name => $value) {
             header($name . ": " . $value);
@@ -643,15 +659,10 @@ class Response
      *
      * @param  int   $code
      * @param  array $headers
-     * @throws Exception
      * @return void
      */
     public function send($code = null, array $headers = null)
     {
-        if (headers_sent()) {
-            throw new Exception('The headers have already been sent.');
-        }
-
         if (null !== $code) {
             $this->setCode($code);
         }
@@ -668,6 +679,23 @@ class Response
 
         $this->sendHeaders();
         echo $body;
+    }
+
+    /**
+     * Magic method to get a value from the headers
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        switch ($name) {
+            case 'headers':
+                return $this->headers;
+                break;
+            default:
+                return null;
+        }
     }
 
     /**

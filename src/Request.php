@@ -45,90 +45,6 @@ class Request
     protected $basePath = null;
 
     /**
-     * Document root
-     * @var string
-     */
-    protected $docRoot = null;
-
-    /**
-     * Full path
-     * @var string
-     */
-    protected $fullPath = null;
-
-    /**
-     * Request filename
-     * @var string
-     */
-    protected $filename = null;
-
-    /**
-     * Is the request a real file
-     * @var boolean
-     */
-    protected $isFile = false;
-
-    /**
-     * Is the request secure
-     * @var boolean
-     */
-    protected $isSecure = false;
-
-    /**
-     * $_GET vars
-     * @var array
-     */
-    protected $get = [];
-
-    /**
-     * $_POST vars
-     * @var array
-     */
-    protected $post = [];
-
-    /**
-     * $_FILES vars
-     * @var array
-     */
-    protected $files = [];
-
-    /**
-     * PUT method vars
-     * @var array
-     */
-    protected $put = [];
-
-    /**
-     * PATCH method vars
-     * @var array
-     */
-    protected $patch = [];
-
-    /**
-     * DELETE method vars
-     * @var array
-     */
-    protected $delete = [];
-
-    /**
-     * $_COOKIE vars
-     * @var array
-     */
-    protected $cookie = [];
-
-    /**
-     * $_SERVER vars
-     * @var array
-     */
-    protected $server = [];
-
-    /**
-     * $_ENV vars
-     * @var array
-     */
-    protected $env = [];
-
-    /**
      * Headers
      * @var array
      */
@@ -147,13 +63,25 @@ class Request
     protected $parsedData = null;
 
     /**
+     * Request, server and environment variables
+     */
+    protected $get    = [];
+    protected $post   = [];
+    protected $files  = [];
+    protected $put    = [];
+    protected $patch  = [];
+    protected $delete = [];
+    protected $cookie = [];
+    protected $server = [];
+    protected $env    = [];
+
+    /**
      * Constructor
      *
      * Instantiate the request object
      *
      * @param  string $uri
      * @param  string $basePath
-     * @return Request
      */
     public function __construct($uri = null, $basePath = null)
     {
@@ -191,16 +119,6 @@ class Request
     }
 
     /**
-     * Return if the file is an actual file
-     *
-     * @return boolean
-     */
-    public function isFile()
-    {
-        return $this->isFile;
-    }
-
-    /**
      * Return whether or not the request has FILES
      *
      * @return boolean
@@ -217,7 +135,7 @@ class Request
      */
     public function isGet()
     {
-        return ($this->server['REQUEST_METHOD'] == 'GET');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'GET'));
     }
 
     /**
@@ -227,7 +145,7 @@ class Request
      */
     public function isHead()
     {
-        return ($this->server['REQUEST_METHOD'] == 'HEAD');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'HEAD'));
     }
 
     /**
@@ -237,7 +155,7 @@ class Request
      */
     public function isPost()
     {
-        return ($this->server['REQUEST_METHOD'] == 'POST');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'POST'));
     }
 
     /**
@@ -247,7 +165,7 @@ class Request
      */
     public function isPut()
     {
-        return ($this->server['REQUEST_METHOD'] == 'PUT');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'PUT'));
     }
 
     /**
@@ -257,7 +175,7 @@ class Request
      */
     public function isDelete()
     {
-        return ($this->server['REQUEST_METHOD'] == 'DELETE');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'DELETE'));
     }
 
     /**
@@ -267,7 +185,7 @@ class Request
      */
     public function isTrace()
     {
-        return ($this->server['REQUEST_METHOD'] == 'TRACE');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'TRACE'));
     }
 
     /**
@@ -277,7 +195,7 @@ class Request
      */
     public function isOptions()
     {
-        return ($this->server['REQUEST_METHOD'] == 'OPTIONS');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'OPTIONS'));
     }
 
     /**
@@ -287,7 +205,7 @@ class Request
      */
     public function isConnect()
     {
-        return ($this->server['REQUEST_METHOD'] == 'CONNECT');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'CONNECT'));
     }
 
     /**
@@ -297,7 +215,7 @@ class Request
      */
     public function isPatch()
     {
-        return ($this->server['REQUEST_METHOD'] == 'PATCH');
+        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'PATCH'));
     }
 
     /**
@@ -307,7 +225,7 @@ class Request
      */
     public function isSecure()
     {
-        return $this->isSecure;
+        return (isset($this->server['HTTPS']) || (isset($_SERVER['SERVER_PORT']) && ($_SERVER['SERVER_PORT'] == '443')));
     }
 
     /**
@@ -331,7 +249,7 @@ class Request
     }
 
     /**
-     * Get the full request URI
+     * Get the full request URI, including base path
      *
      * @return string
      */
@@ -342,49 +260,33 @@ class Request
 
     /**
      * Get a path segment, divided by the forward slash,
-     * where $num refers to the array key index, i.e.,
+     * where $i refers to the array key index, i.e.,
      *    0     1     2
      * /hello/world/page
      *
-     * No $num returns the whole path segment as an array,
-     * and if the $num is not set, then it returns null.
+     * No $i returns the whole path segment as an array,
+     * and if the $i is not set, then it returns null.
      *
-     * @param  int $num
+     * @param  int $i
      * @return string|array
      */
-    public function getPath($num = null)
+    public function getPath($i = null)
     {
-        $path = null;
-
-        if (null !== $num) {
-            if (isset($this->path[(int)$num])) {
-                $path = $this->path[(int)$num];
-            }
+        if (null === $i) {
+            return $this->path;
         } else {
-            $path = $this->path;
+            return (isset($this->path[(int)$i])) ? $this->path[(int)$i] : null;
         }
-
-        return $path;
     }
 
     /**
-     * Get the doc root
+     * Get the document root
      *
      * @return string
      */
-    public function getDocRoot()
+    public function getDocumentRoot()
     {
-        return $this->docRoot;
-    }
-
-    /**
-     * Get the full path
-     *
-     * @return string
-     */
-    public function getFullPath()
-    {
-        return $this->fullPath;
+        return (isset($this->server['DOCUMENT_ROOT'])) ? $this->server['DOCUMENT_ROOT'] : null;
     }
 
     /**
@@ -394,46 +296,69 @@ class Request
      */
     public function getMethod()
     {
-        return $this->server['REQUEST_METHOD'];
+        return (isset($this->server['REQUEST_METHOD'])) ? $this->server['REQUEST_METHOD'] : null;
     }
 
     /**
-     * Get the filename
+     * Get the server port
      *
      * @return string
      */
-    public function getFilename()
+    public function getPort()
     {
-        return $this->filename;
+        return (isset($this->server['SERVER_PORT'])) ? $this->server['SERVER_PORT'] : null;
     }
 
     /**
-     * Get secheme
+     * Get scheme
      *
      * @return string
      */
     public function getScheme()
     {
-        return ($this->isSecure) ? 'https' : 'http';
+        return ($this->isSecure()) ? 'https' : 'http';
     }
 
     /**
-     * Get host
+     * Get host without port)
      *
      * @return string
      */
     public function getHost()
     {
-        $host = $this->server['HTTP_HOST'];
-        $name = $this->server['SERVER_NAME'];
-        $port = $this->server['SERVER_PORT'];
-
         $hostname = null;
 
-        if (!empty($host)) {
-            $hostname = (($port == 80) || ($port == 443)) ? $host : $host . ':' . $port;
-        } else if (!empty($name)) {
-            $hostname = (($port == 80) || ($port == 443)) ? $name : $name . ':' . $port;
+        if (!empty($this->server['HTTP_HOST'])) {
+            $hostname = $this->server['HTTP_HOST'];
+        } else if (!empty($this->server['SERVER_NAME'])) {
+            $hostname =$this->server['SERVER_NAME'];
+        }
+
+        if (strpos($hostname, ':') !== false) {
+            $hostname = substr($hostname, 0, strpos($hostname, ':'));
+        }
+
+        return $hostname;
+    }
+
+    /**
+     * Get host with port
+     *
+     * @return string
+     */
+    public function getFullHost()
+    {
+        $port     = $this->getPort();
+        $hostname = null;
+
+        if (!empty($this->server['HTTP_HOST'])) {
+            $hostname = $this->server['HTTP_HOST'];
+        } else if (!empty($this->server['SERVER_NAME'])) {
+            $hostname =$this->server['SERVER_NAME'];
+        }
+
+        if ((strpos($hostname, ':') === false) && (null !== $port)) {
+            $hostname .= ':' . $port;
         }
 
         return $hostname;
@@ -637,6 +562,18 @@ class Request
     }
 
     /**
+     * Set the base path
+     *
+     * @param  string $path
+     * @return Request
+     */
+    public function setBasePath($path = null)
+    {
+        $this->basePath = $path;
+        return $this;
+    }
+
+    /**
      * Set the request URI
      *
      * @param  string $uri
@@ -662,36 +599,21 @@ class Request
         }
 
         // Some slash clean up
-        $this->docRoot = (isset($_SERVER['DOCUMENT_ROOT'])) ? str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']) : null;
-        $dir = str_replace('\\', '/', getcwd());
+        $this->requestUri = $uri;
+        $docRoot          = (isset($_SERVER['DOCUMENT_ROOT'])) ? str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']) : null;
+        $dir              = str_replace('\\', '/', getcwd());
 
-        if ($dir != $this->docRoot) {
-            $realBasePath = str_replace($this->docRoot, '', $dir);
+        if (($dir != $docRoot) && (strlen($dir) > strlen($docRoot))) {
+            $realBasePath = str_replace($docRoot, '', $dir);
             if (substr($uri, 0, strlen($realBasePath)) == $realBasePath) {
                 $this->requestUri = substr($uri, strlen($realBasePath));
-            } else {
-                $this->requestUri = $uri;
             }
-        } else {
-            $this->requestUri = $uri;
         }
 
-        $this->basePath = (null === $basePath) ? str_replace($this->docRoot, '', $dir) : $basePath;
-        $this->fullPath = $this->docRoot . $this->basePath;
-        if (isset($_SERVER['SERVER_PORT'])) {
-            $this->isSecure = ($_SERVER['SERVER_PORT'] == '443') ? true : false;
-        }
+        $this->basePath = (null === $basePath) ? str_replace($docRoot, '', $dir) : $basePath;
 
         if (strpos($this->requestUri, '?') !== false) {
             $this->requestUri = substr($this->requestUri, 0, strpos($this->requestUri, '?'));
-        }
-
-        if (file_exists($this->fullPath . $this->requestUri)) {
-            $this->isFile   = true;
-            $this->filename = str_replace('/', '', $this->requestUri);
-        } else {
-            $this->isFile   = false;
-            $this->filename = null;
         }
 
         if (($this->requestUri != '/') && (strpos($this->requestUri, '/') !== false)) {
@@ -703,61 +625,48 @@ class Request
     }
 
     /**
-     * Set the base path
+     * Magic method to get a value from one of the server/environment variables
      *
-     * @param  string $path
-     * @return Request
+     * @param  string $name
+     * @return mixed
      */
-    public function setBasePath($path = null)
+    public function __get($name)
     {
-        $this->basePath = $path;
-        return $this;
+        switch ($name) {
+            case 'get':
+                return $this->get;
+                break;
+            case 'post':
+                return $this->post;
+                break;
+            case 'files':
+                return $this->files;
+                break;
+            case 'put':
+                return $this->put;
+                break;
+            case 'patch':
+                return $this->patch;
+                break;
+            case 'delete':
+                return $this->delete;
+                break;
+            case 'cookie':
+                return $this->cookie;
+                break;
+            case 'server':
+                return $this->server;
+                break;
+            case 'env':
+                return $this->env;
+                break;
+            default:
+                return null;
+        }
     }
 
     /**
-     * Set a value for $_GET
-     *
-     * @param  string $key
-     * @param  string $value
-     * @return Request
-     */
-    public function setQuery($key, $value)
-    {
-        $this->get[$key] = $value;
-        $_GET[$key] = $value;
-        return $this;
-    }
-
-    /**
-     * Set a value for $_POST
-     *
-     * @param  string $key
-     * @param  string $value
-     * @return Request
-     */
-    public function setPost($key, $value)
-    {
-        $this->post[$key] = $value;
-        $_POST[$key] = $value;
-        return $this;
-    }
-
-    /**
-     * Set a value for $_FILES
-     *
-     * @param  string $key
-     * @param  string $value
-     * @return Request
-     */
-    public function setFile($key, $value)
-    {
-        $this->files[$key] = $value;
-        $_FILES[$key] = $value;
-        return $this;
-    }
-
-    /**
-     * Parse query data
+     * Parse any data that came with the request
      *
      * @return void
      */

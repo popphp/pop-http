@@ -40,7 +40,6 @@ class Curl extends AbstractClient
      * @param  string $url
      * @param  array  $opts
      * @throws Exception
-     * @return Curl
      */
     public function __construct($url, array $opts = null)
     {
@@ -121,12 +120,11 @@ class Curl extends AbstractClient
     /**
      * Set cURL option for POST
      *
-     * @param  boolean $post
      * @return Curl
      */
-    public function setPost($post = true)
+    public function setPost()
     {
-        $this->setOption(CURLOPT_POST, (bool)$post);
+        $this->setOption(CURLOPT_POST, true);
         return $this;
     }
 
@@ -201,7 +199,7 @@ class Curl extends AbstractClient
 
         $this->response = curl_exec($this->resource);
         if ($this->response === false) {
-            $this->showError();
+            $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
         }
 
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
@@ -271,12 +269,13 @@ class Curl extends AbstractClient
     /**
      * Throw an exception upon a cURL error.
      *
+     * @param  string $error
      * @throws Exception
      * @return void
      */
-    protected function showError()
+    protected function throwError($error)
     {
-        throw new Exception('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
+        throw new Exception($error);
     }
 
 }
