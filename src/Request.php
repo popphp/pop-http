@@ -36,7 +36,7 @@ class Request
      * Path segments
      * @var array
      */
-    protected $path = [];
+    protected $segments = [];
 
     /**
      * Base path
@@ -264,19 +264,22 @@ class Request
      *    0     1     2
      * /hello/world/page
      *
-     * No $i returns the whole path segment as an array,
-     * and if the $i is not set, then it returns null.
-     *
      * @param  int $i
-     * @return string|array
+     * @return string
      */
-    public function getPath($i = null)
+    public function getSegment($i)
     {
-        if (null === $i) {
-            return $this->path;
-        } else {
-            return (isset($this->path[(int)$i])) ? $this->path[(int)$i] : null;
-        }
+        return (isset($this->segments[(int)$i])) ? $this->segments[(int)$i] : null;
+    }
+
+    /**
+     * Get all path segments
+     *
+     * @return array
+     */
+    public function getSegments()
+    {
+        return $this->segments;
     }
 
     /**
@@ -618,7 +621,7 @@ class Request
 
         if (($this->requestUri != '/') && (strpos($this->requestUri, '/') !== false)) {
             $uri = (substr($this->requestUri, 0, 1) == '/') ? substr($this->requestUri, 1) : $this->requestUri;
-            $this->path = explode('/', $uri);
+            $this->segments = explode('/', $uri);
         }
 
         return $this;

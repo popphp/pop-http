@@ -36,8 +36,8 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('var=123&foo=bar', $request->getRawData());
         $this->assertEquals(2, count($request->getParsedData()));
         $this->assertEquals(2, count($request->getQuery()));
-        $this->assertEquals(1, count($request->getPath()));
-        $this->assertEquals('page', $request->getPath(0));
+        $this->assertEquals(1, count($request->getSegments()));
+        $this->assertEquals('page', $request->getSegment(0));
         $this->assertEquals('http', $request->getScheme());
         $this->assertEquals('localhost', $request->getHost());
         $this->assertTrue($request->isGet());
