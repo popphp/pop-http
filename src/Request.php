@@ -524,6 +524,27 @@ class Request
     }
 
     /**
+     * Get a value from parsed data, or the whole array
+     *
+     * @param  string $key
+     * @return string|array
+     */
+    public function getParsedData($key = null)
+    {
+        $result = null;
+
+        if ((null !== $this->parsedData) && is_array($this->parsedData)) {
+            if (null === $key) {
+                $result = $this->parsedData;
+            } else {
+                $result = (isset($this->parsedData[$key])) ? $this->parsedData[$key] : null;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Get a value from the request headers
      *
      * @param  string $key
@@ -552,16 +573,6 @@ class Request
     public function getRawData()
     {
         return $this->rawData;
-    }
-
-    /**
-     * Get the parsed data
-     *
-     * @return mixed
-     */
-    public function getParsedData()
-    {
-        return $this->parsedData;
     }
 
     /**

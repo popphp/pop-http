@@ -35,6 +35,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('bar', $request->getQuery('foo'));
         $this->assertEquals('var=123&foo=bar', $request->getRawData());
         $this->assertEquals(2, count($request->getParsedData()));
+        $this->assertEquals('bar', $request->getParsedData('foo'));
         $this->assertEquals(2, count($request->getQuery()));
         $this->assertEquals(1, count($request->getSegments()));
         $this->assertEquals('page', $request->getSegment(0));
