@@ -674,6 +674,12 @@ class Request
             case 'env':
                 return $this->env;
                 break;
+            case 'parsed':
+                return $this->parsedData;
+                break;
+            case 'raw':
+                return $this->rawData;
+                break;
             default:
                 return null;
         }
