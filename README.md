@@ -1,6 +1,9 @@
 pop-http
 ========
 
+[![Build Status](https://travis-ci.org/popphp/pop-http.svg?branch=master)](https://travis-ci.org/popphp/pop-http)
+[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-http)](http://cc.popphp.org/pop-http/)
+
 OVERVIEW
 --------
 `pop-http` is the main HTTP component for the Pop PHP Framework. It provides the ability
