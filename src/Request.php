@@ -63,16 +63,48 @@ class Request
     protected $parsedData = null;
 
     /**
-     * Request, server and environment variables
+     * GET array
      */
     protected $get    = [];
+
+    /**
+     * POST array
+     */
     protected $post   = [];
+
+    /**
+     * FILES array
+     */
     protected $files  = [];
+
+    /**
+     * PUT array
+     */
     protected $put    = [];
+
+    /**
+     * PATCH array
+     */
     protected $patch  = [];
+
+    /**
+     * DELETE array
+     */
     protected $delete = [];
+
+    /**
+     * COOKIE array
+     */
     protected $cookie = [];
+
+    /**
+     * SERVER array
+     */
     protected $server = [];
+
+    /**
+     * ENV array
+     */
     protected $env    = [];
 
     /**

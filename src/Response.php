@@ -174,8 +174,8 @@ class Response
      * either from a URL or a full response string
      *
      * @param  string $response
-     * @param  array  $options
      * @param  string $mode
+     * @param  array  $options
      * @throws Exception
      * @return Response
      */
