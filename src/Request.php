@@ -754,6 +754,16 @@ class Request
         // Else, default to a regular URL-encoded string
         } else {
             parse_str($this->rawData, $this->parsedData);
+
+            switch (strtoupper($this->getMethod())) {
+                case 'GET':
+                    $this->parsedData = $this->get;
+                    break;
+
+                case 'POST':
+                    $this->parsedData = $this->post;
+                    break;
+            }
         }
 
         switch (strtoupper($this->getMethod())) {
