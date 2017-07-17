@@ -684,6 +684,19 @@ class Response
     }
 
     /**
+     * Send response and exit
+     *
+     * @param  int   $code
+     * @param  array $headers
+     * @return void
+     */
+    public function sendAndExit($code = null, array $headers = null)
+    {
+        $this->send($code, $headers);
+        exit();
+    }
+
+    /**
      * Magic method to get a value from the headers
      *
      * @param  string $name
