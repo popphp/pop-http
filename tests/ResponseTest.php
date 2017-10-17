@@ -29,7 +29,7 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
 
     public function testParse()
     {
-        $response = Response::parse('http://www.popphp.org/');
+        $response = Response::parse('https://www.popphp.org/');
         $this->assertEquals(200, $response->getCode());
         $this->assertEquals(1.1, $response->getVersion());
         $this->assertTrue($response->isSuccess());

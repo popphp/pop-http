@@ -45,8 +45,14 @@ class Stream extends AbstractClient
     protected $contextParams = [];
 
     /**
+     * HTTP Response Headers
+     * @var string
+     */
+    protected $httpResponseHeaders = null;
+
+    /**
      * Stream mode
-     * @var array
+     * @var string
      */
     protected $mode = 'r';
 
@@ -107,6 +113,8 @@ class Stream extends AbstractClient
      */
     public function open()
     {
+        $http_response_header = null;
+
         if (count($this->fields) > 0) {
             if ($this->hasContextOption('http')) {
                 $this->contextOptions['http']['content'] = http_build_query($this->fields);
@@ -124,6 +132,8 @@ class Stream extends AbstractClient
 
         $this->resource = (null !== $this->context) ?
             @fopen($this->url, $this->mode, false, $this->context) : @fopen($this->url, $this->mode);
+
+        $this->httpResponseHeaders = $http_response_header;
 
         return $this;
     }
@@ -310,8 +320,8 @@ class Stream extends AbstractClient
      */
     public function send()
     {
-        $http_response_header = null;
-        $headers = [];
+        $headers   = [];
+        $rawHeader = null;
 
         if (null === $this->resource) {
             $this->open();
@@ -326,38 +336,40 @@ class Stream extends AbstractClient
             unset($meta['wrapper_data'][0]);
             $allHeadersAry = $meta['wrapper_data'];
             $bodyStr       = $body;
-        } else {
-            $rawHeader = implode("\r\n", $http_response_header) . "\r\n\r\n";
-            $firstLine = $http_response_header[0];
-            unset($http_response_header[0]);
-            $allHeadersAry = $http_response_header;
+        } else if (null !== $this->httpResponseHeaders) {
+            $rawHeader = implode("\r\n", $this->httpResponseHeaders) . "\r\n\r\n";
+            $firstLine = $this->httpResponseHeaders[0];
+            unset($this->httpResponseHeaders[0]);
+            $allHeadersAry = $this->httpResponseHeaders;
             $bodyStr       = null;
         }
 
         // Get the version, code and message
-        $version = substr($firstLine, 0, strpos($firstLine, ' '));
-        $version = substr($version, (strpos($version, '/') + 1));
-        preg_match('/\d\d\d/', trim($firstLine), $match);
-        $code    = $match[0];
-        $message = str_replace('HTTP/' . $version . ' ' . $code . ' ', '', $firstLine);
+        if (null !== $rawHeader) {
+            $version = substr($firstLine, 0, strpos($firstLine, ' '));
+            $version = substr($version, (strpos($version, '/') + 1));
+            preg_match('/\d\d\d/', trim($firstLine), $match);
+            $code    = $match[0];
+            $message = str_replace('HTTP/' . $version . ' ' . $code . ' ', '', $firstLine);
 
-        // Get the headers
-        foreach ($allHeadersAry as $hdr) {
-            $name = substr($hdr, 0, strpos($hdr, ':'));
-            $value = substr($hdr, (strpos($hdr, ' ') + 1));
-            $headers[trim($name)] = trim($value);
-        }
+            // Get the headers
+            foreach ($allHeadersAry as $hdr) {
+                $name = substr($hdr, 0, strpos($hdr, ':'));
+                $value = substr($hdr, (strpos($hdr, ' ') + 1));
+                $headers[trim($name)] = trim($value);
+            }
 
-        $this->code     = $code;
-        $this->header   = $rawHeader;
-        $this->headers  = $headers;
-        $this->body     = $bodyStr;
-        $this->response = $rawHeader . $bodyStr;
-        $this->message  = $message;
-        $this->version  = $version;
+            $this->code     = $code;
+            $this->header   = $rawHeader;
+            $this->headers  = $headers;
+            $this->body     = $bodyStr;
+            $this->response = $rawHeader . $bodyStr;
+            $this->message  = $message;
+            $this->version  = $version;
 
-        if (array_key_exists('Content-Encoding', $this->headers)) {
-            $this->decodeBody();
+            if (array_key_exists('Content-Encoding', $this->headers)) {
+                $this->decodeBody();
+            }
         }
     }
 
