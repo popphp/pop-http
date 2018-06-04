@@ -98,8 +98,8 @@ class Curl extends AbstractClient
     /**
      * Set cURL session option
      *
-     * @param  int    $opt
-     * @param  string $val
+     * @param  int   $opt
+     * @param  mixed $val
      * @return Curl
      */
     public function setOption($opt, $val)
