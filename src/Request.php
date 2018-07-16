@@ -753,8 +753,6 @@ class Request
             $this->parsedData = json_decode(json_encode((array)simplexml_load_string($this->rawData)), true);
         // Else, default to a regular URL-encoded string
         } else {
-            parse_str($this->rawData, $this->parsedData);
-
             switch (strtoupper($this->getMethod())) {
                 case 'GET':
                     $this->parsedData = $this->get;
@@ -763,6 +761,10 @@ class Request
                 case 'POST':
                     $this->parsedData = $this->post;
                     break;
+                default:
+                    if (isset($_SERVER['CONTENT_TYPE']) && (strtolower($_SERVER['CONTENT_TYPE']) == 'application/x-www-form-urlencoded')) {
+                        parse_str($this->rawData, $this->parsedData);
+                    }
             }
         }
 
