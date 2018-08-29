@@ -131,10 +131,9 @@ echo $response->getBody();
 ### Using the cURL client
 
 ```php
-$client = new Pop\Http\Client\Curl('http://www.mydomain.com/');
+$client = new Pop\Http\Client\Curl('http://www.mydomain.com/', 'POST');
 $client->setReturnHeader(true)
-       ->setReturnTransfer(true)
-       ->setPost(true);
+       ->setReturnTransfer(true);
 
 $client->setFields([
     'id'    => 1001,
@@ -154,8 +153,7 @@ echo $client->getBody();
 ### Using the Stream client
 
 ```php
-$client = new Pop\Http\Client\Stream('http://www.mydomain.com/');
-$client->setPost(true);
+$client = new Pop\Http\Client\Stream('http://www.mydomain.com/', 'POST');
 
 $client->setFields([
     'id'    => 1001,
