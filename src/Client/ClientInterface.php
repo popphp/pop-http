@@ -42,6 +42,21 @@ interface ClientInterface
     public function getUrl();
 
     /**
+     * Set the method
+     *
+     * @param  string $method
+     * @return ClientInterface
+     */
+    public function setMethod($method);
+
+    /**
+     * Get the method
+     *
+     * @return string
+     */
+    public function getMethod();
+
+    /**
      * Set a field
      *
      * @param  string $name
@@ -82,50 +97,118 @@ interface ClientInterface
     public function removeField($name);
 
     /**
+     * Prepare the HTTP query
+     *
+     * @return string
+     */
+    public function prepareQuery();
+
+    /**
+     * Get HTTP query
+     *
+     * @return string
+     */
+    public function getQuery();
+
+    /**
+     * Get HTTP query length
+     *
+     * @param  boolean $mb
+     * @return int
+     */
+    public function getQueryLength($mb = true);
+
+    /**
+     * Set a request header
+     *
+     * @param  string $name
+     * @param  string $value
+     * @return ClientInterface
+     */
+    public function setRequestHeader($name, $value);
+
+    /**
+     * Set all request headers
+     *
+     * @param  array $headers
+     * @return ClientInterface
+     */
+    public function setRequestHeaders(array $headers);
+
+    /**
+     * Get a request header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getRequestHeader($name);
+
+    /**
+     * Get all request headers
+     *
+     * @return array
+     */
+    public function getRequestHeaders();
+
+    /**
+     * Determine if there are request headers
+     *
+     * @return boolean
+     */
+    public function hasRequestHeaders();
+
+    /**
      * Get a response header
      *
      * @param  string $name
      * @return mixed
      */
-    public function getHeader($name);
+    public function getResponseHeader($name);
 
     /**
      * Get all response headers
      *
      * @return array
      */
-    public function getHeaders();
+    public function getResponseHeaders();
+
+    /**
+     * Determine if there are response headers
+     *
+     * @return boolean
+     */
+    public function hasResponseHeaders();
 
     /**
      * Get raw response header
      *
      * @return string
      */
-    public function getRawHeader();
+    public function getRawResponseHeader();
 
     /**
-     * Get the cURL response body
+     * Get the response body
      *
      * @return string
      */
     public function getBody();
 
     /**
-     * Get the cURL response code
+     * Get the response code
      *
      * @return string
      */
     public function getCode();
 
     /**
-     * Get the cURL response HTTP version
+     * Get the response HTTP version
      *
      * @return string
      */
     public function getHttpVersion();
 
     /**
-     * Get the cURL response HTTP message
+     * Get the response HTTP message
      *
      * @return string
      */
@@ -160,7 +243,7 @@ interface ClientInterface
     public function decodeBody();
 
     /**
-     * Throw an exception upon a cURL error.
+     * Throw an exception upon an error.
      *
      * @param  string $error
      * @throws Exception

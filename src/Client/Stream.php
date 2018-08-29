@@ -62,13 +62,15 @@ class Stream extends AbstractClient
      * Instantiate the stream object
      *
      * @param  string $url
+     * @param  string $method
      * @param  string $mode
      * @param  array  $options
      * @param  array  $params
      */
-    public function __construct($url, $mode = 'r', array $options = [], array $params = [])
+    public function __construct($url, $method = 'GET', $mode = 'r', array $options = [], array $params = [])
     {
         $this->setUrl($url);
+        $this->setMethod($method);
         $this->setMode($mode);
         if (count($options) > 0) {
             $this->setContextOptions($options);
@@ -76,6 +78,26 @@ class Stream extends AbstractClient
         if (count($params) > 0) {
             $this->setContextParams($params);
         }
+    }
+
+    /**
+     * Set the method
+     *
+     * @param  string $method
+     * @throws Exception
+     * @return Stream
+     */
+    public function setMethod($method)
+    {
+        parent::setMethod($method);
+
+        if (!isset($this->contextOptions['http'])) {
+            $this->contextOptions['http'] = [];
+        }
+
+        $this->contextOptions['http']['method'] = $this->method;
+
+        return $this;
     }
 
     /**
@@ -115,14 +137,28 @@ class Stream extends AbstractClient
     {
         $http_response_header = null;
 
+        $url     = $this->url;
+        $headers = [];
+
+        // Set query data if there is any
         if (count($this->fields) > 0) {
-            if ($this->hasContextOption('http')) {
-                $this->contextOptions['http']['content'] = http_build_query($this->fields);
+            if ($this->method == 'GET') {
+                $url .= '?' . $this->getQuery();
             } else {
-                $this->addContextOption('http', [
-                    'method'  => 'get',
-                    'content' => http_build_query($this->fields)
-                ]);
+                $this->contextOptions['http']['content'] = $this->getQuery();
+                $headers['Content-Length'] = $this->getQueryLength();
+            }
+        }
+
+        if ($this->hasRequestHeaders()) {
+            foreach ($this->requestHeaders as $header => $value) {
+                $headers[] = $header . ': ' . $value;
+            }
+
+            if (isset($this->contextOptions['http']['header'])) {
+                $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers);
+            } else {
+                $this->contextOptions['http']['header'] = implode("\r\n", $headers);
             }
         }
 
@@ -131,36 +167,11 @@ class Stream extends AbstractClient
         }
 
         $this->resource = (null !== $this->context) ?
-            @fopen($this->url, $this->mode, false, $this->context) : @fopen($this->url, $this->mode);
+            @fopen($url, $this->mode, false, $this->context) : @fopen($url, $this->mode);
 
         $this->httpResponseHeaders = $http_response_header;
 
         return $this;
-    }
-
-    /**
-     * Set stream to POST
-     *
-     * @return Stream
-     */
-    public function setPost()
-    {
-        if (!isset($this->contextOptions['http'])) {
-            $this->contextOptions['http'] = [];
-        }
-        $this->contextOptions['http']['method'] = 'post';
-        return $this;
-    }
-
-    /**
-     * Check if stream is POST
-     *
-     * @return boolean
-     */
-    public function isPost()
-    {
-        return (isset($this->contextOptions['http']) && isset($this->contextOptions['http']['method']) &&
-            (strtolower($this->contextOptions['http']['method']) == 'post'));
     }
 
     /**
@@ -359,15 +370,15 @@ class Stream extends AbstractClient
                 $headers[trim($name)] = trim($value);
             }
 
-            $this->code     = $code;
-            $this->header   = $rawHeader;
-            $this->headers  = $headers;
-            $this->body     = $bodyStr;
-            $this->response = $rawHeader . $bodyStr;
-            $this->message  = $message;
-            $this->version  = $version;
+            $this->code            = $code;
+            $this->responseHeader  = $rawHeader;
+            $this->responseHeaders = $headers;
+            $this->body            = $bodyStr;
+            $this->response        = $rawHeader . $bodyStr;
+            $this->message         = $message;
+            $this->version         = $version;
 
-            if (array_key_exists('Content-Encoding', $this->headers)) {
+            if (array_key_exists('Content-Encoding', $this->responseHeaders)) {
                 $this->decodeBody();
             }
         }

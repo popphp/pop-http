@@ -185,11 +185,11 @@ class Response
 
         // If a URL, use a stream to get the header and URL contents
         if ((strtolower(substr($response, 0, 7)) == 'http://') || (strtolower(substr($response, 0, 8)) == 'https://')) {
-            $client  = new Client\Stream($response, $mode, $options);
+            $client  = new Client\Stream($response, 'GET', $mode, $options);
             $client->send();
 
             $code    = $client->getCode();
-            $headers = $client->getHeaders();
+            $headers = $client->getResponseHeaders();
             $body    = $client->getBody();
             $message = $client->getMessage();
             $version = $client->getHttpVersion();

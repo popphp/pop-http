@@ -38,18 +38,19 @@ class Curl extends AbstractClient
      * Instantiate the cURL object
      *
      * @param  string $url
+     * @param  string $method
      * @param  array  $opts
      * @throws Exception
      */
-    public function __construct($url, array $opts = null)
+    public function __construct($url, $method = 'GET', array $opts = null)
     {
         if (!function_exists('curl_init')) {
             throw new Exception('Error: cURL is not available.');
         }
-
-        $this->setUrl($url);
         $this->resource = curl_init();
 
+        $this->setUrl($url);
+        $this->setMethod($method);
         $this->setOption(CURLOPT_URL, $this->url);
         $this->setOption(CURLOPT_HEADER, true);
         $this->setOption(CURLOPT_RETURNTRANSFER, true);
@@ -57,6 +58,31 @@ class Curl extends AbstractClient
         if (null !== $opts) {
             $this->setOptions($opts);
         }
+    }
+
+    /**
+     * Set the method
+     *
+     * @param  string $method
+     * @throws Exception
+     * @return Curl
+     */
+    public function setMethod($method)
+    {
+        parent::setMethod($method);
+
+        if ($this->method != 'GET') {
+            switch ($this->method) {
+                case 'POST':
+                    $this->setOption(CURLOPT_POST, true);
+                    break;
+                default:
+                    $this->setOption(CURLOPT_CUSTOMREQUEST, $this->method);
+            }
+        }
+
+
+        return $this;
     }
 
     /**
@@ -76,14 +102,31 @@ class Curl extends AbstractClient
      */
     public function open()
     {
+        $url     = $this->url;
+        $headers = [];
+
         // Set query data if there is any
         if (count($this->fields) > 0) {
-            if ($this->isPost()) {
-                $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
-            } else {
-                $url = $this->options[CURLOPT_URL] . '?' . http_build_query($this->fields);
+            if ($this->method == 'GET') {
+                $url = $this->options[CURLOPT_URL] . '?' . $this->getQuery();
                 $this->setOption(CURLOPT_URL, $url);
+            } else {
+                if (isset($this->requestHeaders['Content-Type']) && ($this->requestHeaders['Content-Type'] != 'multipart/form-data')) {
+                    $this->setOption(CURLOPT_POSTFIELDS, $this->getQuery());
+                } else {
+                    $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
+                }
+                $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
+                $this->setOption(CURLOPT_URL, $url);
+                $this->setRequestHeader('Content-Length', $this->getQueryLength());
             }
+        }
+
+        if ($this->hasRequestHeaders()) {
+            foreach ($this->requestHeaders as $header => $value) {
+                $headers[] = $header . ': ' . $value;
+            }
+            $this->setOption(CURLOPT_HTTPHEADER, $headers);
         }
 
         $this->response = curl_exec($this->resource);
@@ -154,17 +197,6 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Set cURL option for POST
-     *
-     * @return Curl
-     */
-    public function setPost()
-    {
-        $this->setOption(CURLOPT_POST, true);
-        return $this;
-    }
-
-    /**
      * Check if cURL is set to return header
      *
      * @return boolean
@@ -182,16 +214,6 @@ class Curl extends AbstractClient
     public function isReturnTransfer()
     {
         return (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true));
-    }
-
-    /**
-     * Check if cURL is set to POST
-     *
-     * @return boolean
-     */
-    public function isPost()
-    {
-        return (isset($this->options[CURLOPT_POST]) && ($this->options[CURLOPT_POST] == true));
     }
 
     /**
@@ -235,15 +257,15 @@ class Curl extends AbstractClient
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true)) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
             if ($this->options[CURLOPT_HEADER]) {
-                $this->header = substr($this->response, 0, $headerSize);
+                $this->responseHeader = substr($this->response, 0, $headerSize);
                 $this->body   = substr($this->response, $headerSize);
-                $this->parseHeaders();
+                $this->parseResponseHeaders();
             } else {
                 $this->body = $this->response;
             }
         }
 
-        if (array_key_exists('Content-Encoding', $this->headers)) {
+        if (array_key_exists('Content-Encoding', $this->responseHeaders)) {
             $this->decodeBody();
         }
     }
@@ -275,10 +297,10 @@ class Curl extends AbstractClient
      *
      * @return void
      */
-    protected function parseHeaders()
+    protected function parseResponseHeaders()
     {
-        if (null !== $this->header) {
-            $headers = explode("\n", $this->header);
+        if (null !== $this->responseHeader) {
+            $headers = explode("\n", $this->responseHeader);
             foreach ($headers as $header) {
                 if (strpos($header, 'HTTP') !== false) {
                     $this->version = substr($header, 0, strpos($header, ' '));
@@ -289,7 +311,7 @@ class Curl extends AbstractClient
                 } else if (strpos($header, ':') !== false) {
                     $name  = substr($header, 0, strpos($header, ':'));
                     $value = substr($header, strpos($header, ':') + 1);
-                    $this->headers[trim($name)] = trim($value);
+                    $this->responseHeaders[trim($name)] = trim($value);
                 }
             }
         }

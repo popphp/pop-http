@@ -41,10 +41,28 @@ abstract class AbstractClient implements ClientInterface
     protected $url = null;
 
     /**
+     * Method
+     * @var string
+     */
+    protected $method = null;
+
+    /**
      * Fields
      * @var array
      */
     protected $fields = [];
+
+    /**
+     * Query
+     * @var string
+     */
+    protected $query = null;
+
+    /**
+     * Request headers
+     * @var array
+     */
+    protected $requestHeaders = [];
 
     /**
      * HTTP version from response
@@ -74,13 +92,13 @@ abstract class AbstractClient implements ClientInterface
      * Raw response header
      * @var string
      */
-    protected $header = null;
+    protected $responseHeader = null;
 
     /**
      * Response headers
      * @var array
      */
-    protected $headers = [];
+    protected $responseHeaders = [];
 
     /**
      * Response body
@@ -111,6 +129,36 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Set the method
+     *
+     * @param  string $method
+     * @throws Exception
+     * @return AbstractClient
+     */
+    public function setMethod($method)
+    {
+        $valid  = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT'];
+        $method = strtoupper($method);
+
+        if (!in_array($method, $valid)) {
+            throw new Exception('Error: That request method is not valid.');
+        }
+
+        $this->method = $method;
+        return $this;
+    }
+
+    /**
+     * Get the method
+     *
+     * @return string
+     */
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+    /**
      * Set a field
      *
      * @param  string $name
@@ -120,6 +168,8 @@ abstract class AbstractClient implements ClientInterface
     public function setField($name, $value)
     {
         $this->fields[$name] = $value;
+        $this->prepareQuery();
+
         return $this;
     }
 
@@ -134,6 +184,9 @@ abstract class AbstractClient implements ClientInterface
         foreach ($fields as $name => $value) {
             $this->setField($name, $value);
         }
+
+        $this->prepareQuery();
+
         return $this;
     }
 
@@ -170,7 +223,97 @@ abstract class AbstractClient implements ClientInterface
             unset($this->fields[$name]);
         }
 
+        $this->prepareQuery();
+
         return $this;
+    }
+
+    /**
+     * Prepare the HTTP query
+     *
+     * @return string
+     */
+    public function prepareQuery()
+    {
+        $this->query = http_build_query($this->fields);
+        return $this->query;
+    }
+
+    /**
+     * Get HTTP query
+     *
+     * @return string
+     */
+    public function getQuery()
+    {
+        return $this->query;
+    }
+
+    /**
+     * Get HTTP query length
+     *
+     * @param  boolean $mb
+     * @return int
+     */
+    public function getQueryLength($mb = true)
+    {
+        return ($mb) ? mb_strlen($this->query) : strlen($this->query);
+    }
+
+    /**
+     * Set a request header
+     *
+     * @param  string $name
+     * @param  string $value
+     * @return AbstractClient
+     */
+    public function setRequestHeader($name, $value)
+    {
+        $this->requestHeaders[$name] = $value;
+        return $this;
+    }
+
+    /**
+     * Set all request headers
+     *
+     * @param  array $headers
+     * @return AbstractClient
+     */
+    public function setRequestHeaders(array $headers)
+    {
+        $this->requestHeaders = $headers;
+        return $this;
+    }
+
+    /**
+     * Get a request header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getRequestHeader($name)
+    {
+        return (isset($this->requestHeaders[$name])) ? $this->requestHeaders[$name] : null;
+    }
+
+    /**
+     * Get all request headers
+     *
+     * @return array
+     */
+    public function getRequestHeaders()
+    {
+        return $this->requestHeaders;
+    }
+
+    /**
+     * Determine if there are request headers
+     *
+     * @return boolean
+     */
+    public function hasRequestHeaders()
+    {
+        return (count($this->requestHeaders) > 0);
     }
 
     /**
@@ -179,9 +322,9 @@ abstract class AbstractClient implements ClientInterface
      * @param  string $name
      * @return mixed
      */
-    public function getHeader($name)
+    public function getResponseHeader($name)
     {
-        return (isset($this->headers[$name])) ? $this->headers[$name] : null;
+        return (isset($this->responseHeaders[$name])) ? $this->responseHeaders[$name] : null;
     }
 
     /**
@@ -189,9 +332,19 @@ abstract class AbstractClient implements ClientInterface
      *
      * @return array
      */
-    public function getHeaders()
+    public function getResponseHeaders()
     {
-        return $this->headers;
+        return $this->responseHeaders;
+    }
+
+    /**
+     * Determine if there are response headers
+     *
+     * @return boolean
+     */
+    public function hasResponseHeaders()
+    {
+        return (count($this->responseHeaders) > 0);
     }
 
     /**
@@ -199,13 +352,13 @@ abstract class AbstractClient implements ClientInterface
      *
      * @return string
      */
-    public function getRawHeader()
+    public function getRawResponseHeader()
     {
-        return $this->header;
+        return $this->responseHeader;
     }
 
     /**
-     * Get the cURL response body
+     * Get the response body
      *
      * @return string
      */
@@ -215,7 +368,7 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
-     * Get the cURL response code
+     * Get the response code
      *
      * @return string
      */
@@ -225,7 +378,7 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
-     * Get the cURL response HTTP version
+     * Get the response HTTP version
      *
      * @return string
      */
@@ -235,7 +388,7 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
-     * Get the cURL response HTTP message
+     * Get the response HTTP message
      *
      * @return string
      */
@@ -281,14 +434,14 @@ abstract class AbstractClient implements ClientInterface
      */
     public function decodeBody()
     {
-        if (isset($this->headers['Transfer-Encoding']) && ($this->headers['Transfer-Encoding'] == 'chunked')) {
+        if (isset($this->responseHeaders['Transfer-Encoding']) && ($this->responseHeaders['Transfer-Encoding'] == 'chunked')) {
             $this->body = Response::decodeChunkedBody($this->body);
         }
-        $this->body = Response::decodeBody($this->body, $this->headers['Content-Encoding']);
+        $this->body = Response::decodeBody($this->body, $this->responseHeaders['Content-Encoding']);
     }
 
     /**
-     * Throw an exception upon a cURL error.
+     * Throw an exception upon an error.
      *
      * @param  string $error
      * @throws Exception

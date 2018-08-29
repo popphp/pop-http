@@ -166,6 +166,12 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertGreaterThan(1, count($request->getServer()));
     }
 
+    public function testGetDocRoot()
+    {
+        $request = new Request();
+        $this->assertEmpty($request->getDocumentRoot());
+    }
+
     public function testGetEnv()
     {
         $_ENV = [
@@ -211,6 +217,23 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $request = new Request();
         $request->setBasePath('/home');
         $this->assertEquals('/home', $request->getBasePath());;
+    }
+
+    public function testGetMagicMethod()
+    {
+        $request = new Request();
+        $this->assertEmpty($request->get);
+        $this->assertEmpty($request->post);
+        $this->assertEmpty($request->files);
+        $this->assertEmpty($request->put);
+        $this->assertEmpty($request->patch);
+        $this->assertEmpty($request->delete);
+        $this->assertEmpty($request->cookie);
+        $this->assertTrue(is_array($request->server));
+        $this->assertTrue(is_array($request->env));
+        $this->assertEmpty($request->parsed);
+        $this->assertEmpty($request->raw);
+        $this->assertNull($request->bad);
     }
 
 }
