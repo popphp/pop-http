@@ -146,7 +146,7 @@ class Stream extends AbstractClient
                 $url .= '?' . $this->getQuery();
             } else {
                 $this->contextOptions['http']['content'] = $this->getQuery();
-                $headers['Content-Length'] = $this->getQueryLength();
+                $headers[] = 'Content-Length: ' . $this->getQueryLength();
             }
         }
 
@@ -156,9 +156,9 @@ class Stream extends AbstractClient
             }
 
             if (isset($this->contextOptions['http']['header'])) {
-                $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers);
+                $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers) . "\r\n";
             } else {
-                $this->contextOptions['http']['header'] = implode("\r\n", $headers);
+                $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
             }
         }
 
@@ -183,7 +183,12 @@ class Stream extends AbstractClient
      */
     public function addContextOption($name, $option)
     {
-        $this->contextOptions[$name] = $option;
+        if (isset($this->contextOptions[$name]) && is_array($this->contextOptions[$name]) && is_array($option)) {
+            $this->contextOptions[$name] = array_merge($this->contextOptions[$name], $option);
+        } else {
+            $this->contextOptions[$name] = $option;
+        }
+
         return $this;
     }
 
