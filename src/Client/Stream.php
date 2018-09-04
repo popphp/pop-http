@@ -140,6 +140,10 @@ class Stream extends AbstractClient
         $url     = $this->url;
         $headers = [];
 
+        if (isset($this->contextOptions['http']['header'])) {
+            $this->contextOptions['http']['header'] = null;
+        }
+
         // Set query data if there is any
         if (count($this->fields) > 0) {
             if ($this->method == 'GET') {
