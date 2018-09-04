@@ -129,7 +129,7 @@ class Stream extends AbstractClient
     }
 
     /**
-     * Create stream resource
+     * Create and open stream resource
      *
      * @return Stream
      */
@@ -339,9 +339,7 @@ class Stream extends AbstractClient
         $headers   = [];
         $rawHeader = null;
 
-        if (null === $this->resource) {
-            $this->open();
-        }
+        $this->open();
 
         if ($this->resource != false) {
             $meta      = stream_get_meta_data($this->resource);

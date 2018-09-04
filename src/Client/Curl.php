@@ -245,9 +245,7 @@ class Curl extends AbstractClient
      */
     public function send()
     {
-        if (null === $this->response) {
-            $this->open();
-        }
+        $this->open();
 
         if ($this->response === false) {
             $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
