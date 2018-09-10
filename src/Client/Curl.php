@@ -113,12 +113,12 @@ class Curl extends AbstractClient
             } else {
                 if (isset($this->requestHeaders['Content-Type']) && ($this->requestHeaders['Content-Type'] != 'multipart/form-data')) {
                     $this->setOption(CURLOPT_POSTFIELDS, $this->getQuery());
+                    $this->setRequestHeader('Content-Length', $this->getQueryLength());
                 } else {
                     $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
                 }
                 $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
                 $this->setOption(CURLOPT_URL, $url);
-                $this->setRequestHeader('Content-Length', $this->getQueryLength());
             }
         }
 
