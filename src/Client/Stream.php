@@ -166,7 +166,7 @@ class Stream extends AbstractClient
             }
         }
 
-        if ((null === $this->context) && ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0))) {
+        if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {
             $this->createContext();
         }
 
