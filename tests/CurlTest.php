@@ -3,8 +3,9 @@
 namespace Pop\Http\Test;
 
 use Pop\Http\Client\Curl;
+use PHPUnit\Framework\TestCase;
 
-class CurlTest extends \PHPUnit_Framework_TestCase
+class CurlTest extends TestCase
 {
 
     public function testConstructor()

@@ -170,80 +170,6 @@ class Response
     }
 
     /**
-     * Parse a response and create a new response object,
-     * either from a URL or a full response string
-     *
-     * @param  string $response
-     * @param  string $mode
-     * @param  array  $options
-     * @throws Exception
-     * @return Response
-     */
-    public static function parse($response, $mode = 'r', array $options = [])
-    {
-        $headers = [];
-
-        // If a URL, use a stream to get the header and URL contents
-        if ((strtolower(substr($response, 0, 7)) == 'http://') || (strtolower(substr($response, 0, 8)) == 'https://')) {
-            $client  = new Client\Stream($response, 'GET', $mode, $options);
-            $client->send();
-
-            $code    = $client->getCode();
-            $headers = $client->getResponseHeaders();
-            $body    = $client->getBody();
-            $message = $client->getMessage();
-            $version = $client->getHttpVersion();
-        // Else, if a response string, parse the headers and contents
-        } else if (substr($response, 0, 5) == 'HTTP/'){
-            if (strpos($response, "\r") !== false) {
-                $headerStr = substr($response, 0, strpos($response, "\r\n"));
-                $bodyStr   = substr($response, (strpos($response, "\r\n") + 2));
-            } else {
-                $headerStr = substr($response, 0, strpos($response, "\n\n"));
-                $bodyStr   = substr($response, (strpos($response, "\n\n") + 2));
-            }
-
-            $firstLine     = trim(substr($headerStr, 0, strpos($headerStr, "\n")));
-            $allHeaders    = trim(substr($headerStr, strpos($headerStr, "\n")));
-            $allHeadersAry = explode("\n", $allHeaders);
-
-            // Get the version, code and message
-            $version = substr($firstLine, 0, strpos($firstLine, ' '));
-            $version = substr($version, (strpos($version, '/') + 1));
-            preg_match('/\d\d\d/', trim($firstLine), $match);
-            $code    = $match[0];
-            $message = str_replace('HTTP/' . $version . ' ' . $code . ' ', '', $firstLine);
-
-            // Get the headers
-            foreach ($allHeadersAry as $hdr) {
-                $name  = substr($hdr, 0, strpos($hdr, ':'));
-                $value = substr($hdr, (strpos($hdr, ' ') + 1));
-                $headers[trim($name)] = trim($value);
-            }
-
-            // If the body content is encoded, decode the body content
-            if (array_key_exists('Content-Encoding', $headers)) {
-                if (isset($headers['Transfer-Encoding']) && ($headers['Transfer-Encoding'] == 'chunked')) {
-                    $bodyStr = self::decodeChunkedBody($bodyStr);
-                }
-                $body = self::decodeBody($bodyStr, $headers['Content-Encoding']);
-            } else {
-                $body = $bodyStr;
-            }
-        } else {
-            throw new Exception('The response was not properly formatted.');
-        }
-
-        return new self([
-            'code'    => $code,
-            'headers' => $headers,
-            'body'    => $body,
-            'message' => $message,
-            'version' => $version
-        ]);
-    }
-
-    /**
      * Send redirect
      *
      * @param  string $url
@@ -280,123 +206,6 @@ class Response
         }
 
         return self::$responseCodes[$code];
-    }
-
-    /**
-     * Encode the body data
-     *
-     * @param  string $body
-     * @param  string $encode
-     * @throws Exception
-     * @return string
-     */
-    public static function encodeBody($body, $encode = 'gzip')
-    {
-        switch ($encode) {
-            // GZIP compression
-            case 'gzip':
-                if (!function_exists('gzencode')) {
-                    throw new Exception('Gzip compression is not available.');
-                }
-                $encodedBody = gzencode($body);
-                break;
-
-            // Deflate compression
-            case 'deflate':
-                if (!function_exists('gzdeflate')) {
-                    throw new Exception('Deflate compression is not available.');
-                }
-                $encodedBody = gzdeflate($body);
-                break;
-
-            // Unknown compression
-            default:
-                $encodedBody = $body;
-
-        }
-
-        return $encodedBody;
-    }
-
-    /**
-     * Decode the body data
-     *
-     * @param  string $body
-     * @param  string $decode
-     * @throws Exception
-     * @return string
-     */
-    public static function decodeBody($body, $decode = 'gzip')
-    {
-        switch ($decode) {
-            // GZIP compression
-            case 'gzip':
-                if (!function_exists('gzinflate')) {
-                    throw new Exception('Gzip compression is not available.');
-                }
-                $decodedBody = gzinflate(substr($body, 10));
-                break;
-
-            // Deflate compression
-            case 'deflate':
-                if (!function_exists('gzinflate')) {
-                    throw new Exception('Deflate compression is not available.');
-                }
-                $zlibHeader = unpack('n', substr($body, 0, 2));
-                $decodedBody = ($zlibHeader[1] % 31 == 0) ? gzuncompress($body) : gzinflate($body);
-                break;
-
-            // Unknown compression
-            default:
-                $decodedBody = $body;
-
-        }
-
-        return $decodedBody;
-    }
-
-    /**
-     * Decode a chunked transfer-encoded body and return the decoded text
-     *
-     * @param string $body
-     * @return string
-     */
-    public static function decodeChunkedBody($body)
-    {
-        $decoded = '';
-
-        while($body != '') {
-            $lfPos = strpos($body, "\012");
-
-            if ($lfPos === false) {
-                $decoded .= $body;
-                break;
-            }
-
-            $chunkHex = trim(substr($body, 0, $lfPos));
-            $scPos    = strpos($chunkHex, ';');
-
-            if ($scPos !== false) {
-                $chunkHex = substr($chunkHex, 0, $scPos);
-            }
-
-            if ($chunkHex == '') {
-                $decoded .= substr($body, 0, $lfPos);
-                $body = substr($body, $lfPos + 1);
-                continue;
-            }
-
-            $chunkLength = hexdec($chunkHex);
-
-            if ($chunkLength) {
-                $decoded .= substr($body, $lfPos + 1, $chunkLength);
-                $body = substr($body, $lfPos + 2 + $chunkLength);
-            } else {
-                $body = '';
-            }
-        }
-
-        return $decoded;
     }
 
     /**
@@ -625,21 +434,7 @@ class Response
     }
 
     /**
-     * Set SSL headers to fix file cache issues over SSL in certain browsers.
-     *
-     * @return Response
-     */
-    public function setSslHeaders()
-    {
-        $this->headers['Expires']       = 0;
-        $this->headers['Cache-Control'] = 'private, must-revalidate';
-        $this->headers['Pragma']        = 'cache';
-
-        return $this;
-    }
-
-    /**
-     * Send headers
+     * Send response headers
      *
      * @throws Exception
      * @return void
@@ -657,13 +452,34 @@ class Response
     }
 
     /**
-     * Send response
+     * Prepare response body
      *
-     * @param  int   $code
-     * @param  array $headers
+     * @param  boolean $length
+     * @return string
+     */
+    public function prepareBody($length = false)
+    {
+        $body = $this->body;
+
+        if (array_key_exists('Content-Encoding', $this->headers)) {
+            $body = Response\Parser::encodeBody($body, $this->headers['Content-Encoding']);
+            $this->headers['Content-Length'] = strlen($body);
+        } else if ($length) {
+            $this->headers['Content-Length'] = strlen($body);
+        }
+
+        return $body;
+    }
+
+    /**
+     * Send full response
+     *
+     * @param  int     $code
+     * @param  array   $headers
+     * @param  boolean $length
      * @return void
      */
-    public function send($code = null, array $headers = null)
+    public function send($code = null, array $headers = null, $length = false)
     {
         if (null !== $code) {
             $this->setCode($code);
@@ -672,27 +488,23 @@ class Response
             $this->setHeaders($headers);
         }
 
-        $body = $this->body;
-
-        if (array_key_exists('Content-Encoding', $this->headers)) {
-            $body = self::encodeBody($body, $this->headers['Content-Encoding']);
-            $this->headers['Content-Length'] = strlen($body);
-        }
+        $body = $this->prepareBody($length);
 
         $this->sendHeaders();
         echo $body;
     }
 
     /**
-     * Send response and exit
+     * Send full response and exit
      *
      * @param  int   $code
      * @param  array $headers
+     * @param  boolean $length
      * @return void
      */
-    public function sendAndExit($code = null, array $headers = null)
+    public function sendAndExit($code = null, array $headers = null, $length = false)
     {
-        $this->send($code, $headers);
+        $this->send($code, $headers, $length);
         exit();
     }
 
@@ -720,13 +532,7 @@ class Response
      */
     public function __toString()
     {
-        $body = $this->body;
-
-        if (array_key_exists('Content-Encoding', $this->headers)) {
-            $body = self::encodeBody($body, $this->headers['Content-Encoding']);
-            $this->headers['Content-Length'] = strlen($body);
-        }
-
+        $body = $this->prepareBody();
         return $this->getHeadersAsString() . "\n" . $body;
     }
 

@@ -3,8 +3,9 @@
 namespace Pop\Http\Test;
 
 use Pop\Http\Request;
+use PHPUnit\Framework\TestCase;
 
-class RequestTest extends \PHPUnit_Framework_TestCase
+class RequestTest extends TestCase
 {
 
     public function testConstructor()
@@ -98,6 +99,8 @@ class RequestTest extends \PHPUnit_Framework_TestCase
             'foo' => 'bar'
         ];
 
+        unset($_SERVER['CONTENT_TYPE']);
+
         $request = new Request(null, '/home');
         $this->assertEquals('localhost:8000', $request->getFullHost());
     }
@@ -168,8 +171,9 @@ class RequestTest extends \PHPUnit_Framework_TestCase
 
     public function testGetDocRoot()
     {
+        $_SERVER['DOCUMENT_ROOT'] = getcwd();
         $request = new Request();
-        $this->assertEmpty($request->getDocumentRoot());
+        $this->assertEquals(getcwd(), $request->getDocumentRoot());
     }
 
     public function testGetEnv()
@@ -222,17 +226,18 @@ class RequestTest extends \PHPUnit_Framework_TestCase
     public function testGetMagicMethod()
     {
         $request = new Request();
-        $this->assertEmpty($request->get);
-        $this->assertEmpty($request->post);
-        $this->assertEmpty($request->files);
-        $this->assertEmpty($request->put);
-        $this->assertEmpty($request->patch);
-        $this->assertEmpty($request->delete);
-        $this->assertEmpty($request->cookie);
+        $this->assertTrue(is_array($request->get));
+        $this->assertTrue(is_array($request->post));
+        $this->assertTrue(is_array($request->files));
+        $this->assertTrue(is_array($request->put));
+        $this->assertTrue(is_array($request->patch));
+        $this->assertTrue(is_array($request->delete));
+        $this->assertTrue(is_array($request->cookie));
         $this->assertTrue(is_array($request->server));
         $this->assertTrue(is_array($request->env));
-        $this->assertEmpty($request->parsed);
-        $this->assertEmpty($request->raw);
+        $this->assertTrue(is_array($request->headers));
+        $this->assertTrue(is_array($request->parsed));
+        $this->assertNotEmpty($request->raw);
         $this->assertNull($request->bad);
     }
 

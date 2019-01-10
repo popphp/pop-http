@@ -12,6 +12,7 @@
  * @namespace
  */
 namespace Pop\Http;
+use SebastianBergmann\Diff\Parser;
 
 /**
  * HTTP request class
@@ -705,6 +706,9 @@ class Request
                 break;
             case 'env':
                 return $this->env;
+                break;
+            case 'headers':
+                return $this->headers;
                 break;
             case 'parsed':
                 return $this->parsedData;

@@ -3,8 +3,9 @@
 namespace Pop\Http\Test;
 
 use Pop\Http\Client\Stream;
+use PHPUnit\Framework\TestCase;
 
-class StreamTest extends \PHPUnit_Framework_TestCase
+class StreamTest extends TestCase
 {
 
     public function testConstructor()
@@ -28,6 +29,8 @@ class StreamTest extends \PHPUnit_Framework_TestCase
         $client = new Stream('https://www.popphp.org/version');
         $client->setField('foo', 'bar');
         $client->open();
+
+        $this->assertInstanceOf('Pop\Http\Client\Stream', $client);
     }
 
     public function testPostWithFields()
@@ -35,6 +38,8 @@ class StreamTest extends \PHPUnit_Framework_TestCase
         $client = new Stream('https://www.popphp.org/version', 'POST');
         $client->setField('foo', 'bar');
         $client->send();
+
+        $this->assertInstanceOf('Pop\Http\Client\Stream', $client);
     }
 
     public function testAddContextParam()

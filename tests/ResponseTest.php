@@ -3,8 +3,9 @@
 namespace Pop\Http\Test;
 
 use Pop\Http\Response;
+use PHPUnit\Framework\TestCase;
 
-class ResponseTest extends \PHPUnit_Framework_TestCase
+class ResponseTest extends TestCase
 {
 
     public function testConstructor()
@@ -29,7 +30,7 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
 
     public function testParse()
     {
-        $response = Response::parse('https://www.popphp.org/');
+        $response = Response\Parser::parseFromUri('https://www.popphp.org/');
         $this->assertEquals(200, $response->getCode());
         $this->assertEquals(1.1, $response->getVersion());
         $this->assertTrue($response->isSuccess());
@@ -43,7 +44,7 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
 
     public function testParseString()
     {
-        $response = Response::parse(file_get_contents(__DIR__ . '/tmp/response.txt'));
+        $response = Response\Parser::parseFromString(file_get_contents(__DIR__ . '/tmp/response.txt'));
         $this->assertEquals(200, $response->getCode());
         $this->assertContains('<html', $response->getBody());
         $this->assertEquals('text/html', $response->getHeader('Content-Type'));
@@ -53,20 +54,20 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
 
     public function testEncodeBodyWithGzip()
     {
-        $body = Response::encodeBody('Hello World');
-        $this->assertEquals('Hello World', Response::decodeBody($body));
+        $body = Response\Parser::encodeBody('Hello World');
+        $this->assertEquals('Hello World', Response\Parser::decodeBody($body));
     }
 
     public function testEncodeBodyWithDeflate()
     {
-        $body = Response::encodeBody('Hello World', 'deflate');
-        $this->assertEquals('Hello World', Response::decodeBody($body, 'deflate'));
+        $body = Response\Parser::encodeBody('Hello World', 'deflate');
+        $this->assertEquals('Hello World', Response\Parser::decodeBody($body, 'deflate'));
     }
 
     public function testEncodeBodyNoEncode()
     {
-        $body = Response::encodeBody('Hello World', 'none');
-        $this->assertEquals('Hello World', Response::decodeBody($body, 'none'));
+        $body = Response\Parser::encodeBody('Hello World', 'none');
+        $this->assertEquals('Hello World', Response\Parser::decodeBody($body, 'none'));
     }
 
     public function testDecodeChunkedBody()
@@ -81,7 +82,7 @@ e\r\n
 0\r\n
 \r\n
 BODY;
-        $this->assertContains('Wik', Response::decodeChunkedBody($body));
+        $this->assertContains('Wik', Response\Parser::decodeChunkedBody($body));
     }
 
     public function testRedirectHeadersSentException()
@@ -108,15 +109,6 @@ BODY;
     {
         $this->expectException('Pop\Http\Exception');
         Response::redirect('http://www.popphp.org/version', 700);
-    }
-
-    public function testSslHeaders()
-    {
-        $response = new Response();
-        $response->setSslHeaders();
-        $this->assertEquals(0, $response->getHeader('Expires'));
-        $this->assertEquals('private, must-revalidate', $response->getHeader('Cache-Control'));
-        $this->assertEquals('cache', $response->getHeader('Pragma'));
     }
 
     public function testToString()

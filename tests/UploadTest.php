@@ -3,8 +3,9 @@
 namespace Pop\Http\Test;
 
 use Pop\Http\Upload;
+use PHPUnit\Framework\TestCase;
 
-class UploadTest extends \PHPUnit_Framework_TestCase
+class UploadTest extends TestCase
 {
 
     public function testConstructor()
@@ -23,10 +24,9 @@ class UploadTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($upload->isError());
     }
 
-
-    public function testMake()
+    public function testCreate()
     {
-        $upload = Upload::make(__DIR__ . '/tmp', 10000, ['php'], ['txt']);
+        $upload = Upload::create(__DIR__ . '/tmp', 10000, ['php'], ['txt']);
         $this->assertInstanceOf('Pop\Http\Upload', $upload);
     }
 
