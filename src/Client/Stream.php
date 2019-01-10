@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2018 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Http\Client;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2018 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.0.4
+ * @version    3.2.0
  */
 class Stream extends AbstractClient
 {
@@ -340,8 +340,9 @@ class Stream extends AbstractClient
      */
     public function send()
     {
-        $headers   = [];
-        $rawHeader = null;
+        $headers    = [];
+        $rawHeader  = null;
+        $bodyString = null;
 
         $this->open();
 
@@ -353,13 +354,12 @@ class Stream extends AbstractClient
             $firstLine     = $meta['wrapper_data'][0];
             unset($meta['wrapper_data'][0]);
             $allHeadersAry = $meta['wrapper_data'];
-            $bodyStr       = $body;
+            $bodyString    = $body;
         } else if (null !== $this->httpResponseHeaders) {
             $rawHeader = implode("\r\n", $this->httpResponseHeaders) . "\r\n\r\n";
             $firstLine = $this->httpResponseHeaders[0];
             unset($this->httpResponseHeaders[0]);
             $allHeadersAry = $this->httpResponseHeaders;
-            $bodyStr       = null;
         }
 
         // Get the version, code and message
@@ -380,8 +380,8 @@ class Stream extends AbstractClient
             $this->code            = $code;
             $this->responseHeader  = $rawHeader;
             $this->responseHeaders = $headers;
-            $this->body            = $bodyStr;
-            $this->response        = $rawHeader . $bodyStr;
+            $this->body            = $bodyString;
+            $this->response        = $rawHeader . $bodyString;
             $this->message         = $message;
             $this->version         = $version;
 
