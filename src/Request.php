@@ -12,7 +12,6 @@
  * @namespace
  */
 namespace Pop\Http;
-use SebastianBergmann\Diff\Parser;
 
 /**
  * HTTP request class
