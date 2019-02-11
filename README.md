@@ -110,7 +110,7 @@ Pop\Http\Response::redirect('http://www.newlocation.com/');
 ### Parsing a response
 
 ```php
-$response = Pop\Http\Response::parse('http://www.mydomain.com/');
+$response = Pop\Http\Response\Parser::parseFromUri('http://www.mydomain.com/');
 
 if ($response->isSuccess()) { } // Returns true
 if ($response->isError())   { } // Returns false
