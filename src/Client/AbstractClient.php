@@ -13,7 +13,7 @@
  */
 namespace Pop\Http\Client;
 
-use Pop\Http\Response;
+use Pop\Http\Response\Parser;
 
 /**
  * Abstract HTTP client class
@@ -378,6 +378,61 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Determine if the response is a success
+     *
+     * @return boolean
+     */
+    public function isSuccess()
+    {
+        $type = floor($this->code / 100);
+        return (($type == 1) || ($type == 2) || ($type == 3));
+    }
+
+    /**
+     * Determine if the response is a redirect
+     *
+     * @return boolean
+     */
+    public function isRedirect()
+    {
+        $type = floor($this->code / 100);
+        return ($type == 3);
+    }
+
+    /**
+     * Determine if the response is an error
+     *
+     * @return boolean
+     */
+    public function isError()
+    {
+        $type = floor($this->code / 100);
+        return (($type == 4) || ($type == 5));
+    }
+
+    /**
+     * Determine if the response is a client error
+     *
+     * @return boolean
+     */
+    public function isClientError()
+    {
+        $type = floor($this->code / 100);
+        return ($type == 4);
+    }
+
+    /**
+     * Determine if the response is a server error
+     *
+     * @return boolean
+     */
+    public function isServerError()
+    {
+        $type = floor($this->code / 100);
+        return ($type == 5);
+    }
+
+    /**
      * Get the response HTTP version
      *
      * @return string
@@ -435,9 +490,9 @@ abstract class AbstractClient implements ClientInterface
     public function decodeBody()
     {
         if (isset($this->responseHeaders['Transfer-Encoding']) && ($this->responseHeaders['Transfer-Encoding'] == 'chunked')) {
-            $this->body = Response::decodeChunkedBody($this->body);
+            $this->body = Parser::decodeChunkedBody($this->body);
         }
-        $this->body = Response::decodeBody($this->body, $this->responseHeaders['Content-Encoding']);
+        $this->body = Parser::decodeBody($this->body, $this->responseHeaders['Content-Encoding']);
     }
 
     /**
