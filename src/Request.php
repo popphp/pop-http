@@ -737,10 +737,12 @@ class Request
         }
 
         // If the content-type is JSON
-        if (isset($_SERVER['CONTENT_TYPE']) && (stripos($_SERVER['CONTENT_TYPE'], 'json') !== false)) {
+        if (isset($_SERVER['CONTENT_TYPE']) && (stripos($_SERVER['CONTENT_TYPE'], 'json') !== false) &&
+            (strtoupper($this->getMethod()) != 'GET')) {
             $this->parsedData = json_decode($this->rawData, true);
         // Else, if the content-type is XML
-        } else if (isset($_SERVER['CONTENT_TYPE']) && (stripos($_SERVER['CONTENT_TYPE'], 'xml') !== false)) {
+        } else if (isset($_SERVER['CONTENT_TYPE']) && (stripos($_SERVER['CONTENT_TYPE'], 'xml') !== false) &&
+            (strtoupper($this->getMethod()) != 'GET')) {
             $matches = [];
             preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $this->rawData, $matches);
 
