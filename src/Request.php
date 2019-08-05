@@ -730,9 +730,13 @@ class Request
         if (strtoupper($this->getMethod()) == 'GET') {
             $this->rawData = (isset($_SERVER['QUERY_STRING'])) ? rawurldecode($_SERVER['QUERY_STRING']) : null;
         } else {
-            $input = fopen('php://input', 'r');
-            while ($data = fread($input, 1024)) {
-                $this->rawData .= $data;
+            if (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) { // For testing purposes only
+                $this->rawData = $_SERVER['X_POP_HTTP_RAW_DATA'];
+            } else {
+                $input = fopen('php://input', 'r');
+                while ($data = fread($input, 1024)) {
+                    $this->rawData .= $data;
+                }
             }
         }
 

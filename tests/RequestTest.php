@@ -57,14 +57,14 @@ class RequestTest extends TestCase
 
     public function testParseJsonData()
     {
-        $_SERVER['HTTP_HOST']      = 'localhost';
-        $_SERVER['SERVER_NAME']    = 'localhost';
-        $_SERVER['SERVER_PORT']    = 8000;
-        $_SERVER['DOCUMENT_ROOT']  = getcwd();
-        $_SERVER['REQUEST_URI']    = '/page';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['CONTENT_TYPE']   = 'application/json';
-        $_SERVER['QUERY_STRING']   = '{"foo" : "bar"}';
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_NAME']         = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['DOCUMENT_ROOT']       = getcwd();
+        $_SERVER['REQUEST_URI']         = '/page';
+        $_SERVER['REQUEST_METHOD']      = 'POST';
+        $_SERVER['CONTENT_TYPE']        = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo" : "bar"}';
 
         $request = new Request(null, '/home');
         $this->assertEquals('bar', $request->getParsedData()['foo']);
@@ -72,14 +72,14 @@ class RequestTest extends TestCase
 
     public function testParseXmlData()
     {
-        $_SERVER['HTTP_HOST']      = 'localhost';
-        $_SERVER['SERVER_NAME']    = 'localhost';
-        $_SERVER['SERVER_PORT']    = 8000;
-        $_SERVER['DOCUMENT_ROOT']  = getcwd();
-        $_SERVER['REQUEST_URI']    = '/page';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['CONTENT_TYPE']   = 'application/xml';
-        $_SERVER['QUERY_STRING']   = '<root><node><![CDATA[Hello World]]></node></root>';
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_NAME']         = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['DOCUMENT_ROOT']       = getcwd();
+        $_SERVER['REQUEST_URI']         = '/page';
+        $_SERVER['REQUEST_METHOD']      = 'POST';
+        $_SERVER['CONTENT_TYPE']        = 'application/xml';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '<root><node><![CDATA[Hello World]]></node></root>';
 
         $request = new Request(null, '/home');
         $this->assertEquals('Hello World', $request->getParsedData()['node']);
