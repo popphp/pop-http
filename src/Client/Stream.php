@@ -372,9 +372,16 @@ class Stream extends AbstractClient
 
             // Get the headers
             foreach ($allHeadersAry as $hdr) {
-                $name = substr($hdr, 0, strpos($hdr, ':'));
-                $value = substr($hdr, (strpos($hdr, ' ') + 1));
-                $headers[trim($name)] = trim($value);
+                $name  = trim(substr($hdr, 0, strpos($hdr, ':')));
+                $value = trim(substr($hdr, (strpos($hdr, ' ') + 1)));
+                if (isset($headers[$name])) {
+                    if (!is_array($headers[$name])) {
+                        $headers[$name] = [$headers[$name]];
+                    }
+                    $headers[$name][] = $value;
+                } else {
+                    $headers[$name] = $value;
+                }
             }
 
             $this->code            = $code;

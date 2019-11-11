@@ -307,9 +307,16 @@ class Curl extends AbstractClient
                     $this->code    = $match[0];
                     $this->message = trim(str_replace('HTTP/' . $this->version . ' ' . $this->code . ' ', '', $header));
                 } else if (strpos($header, ':') !== false) {
-                    $name  = substr($header, 0, strpos($header, ':'));
-                    $value = substr($header, strpos($header, ':') + 1);
-                    $this->responseHeaders[trim($name)] = trim($value);
+                    $name  = trim(substr($header, 0, strpos($header, ':')));
+                    $value = trim(substr($header, strpos($header, ':') + 1));
+                    if (isset($this->responseHeaders[$name])) {
+                        if (!is_array($this->responseHeaders[$name])) {
+                            $this->responseHeaders[$name] = [$this->responseHeaders[$name]];
+                        }
+                        $this->responseHeaders[$name][] = $value;
+                    } else {
+                        $this->responseHeaders[$name] = $value;
+                    }
                 }
             }
         }
