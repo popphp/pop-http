@@ -124,7 +124,13 @@ class Curl extends AbstractClient
 
         if ($this->hasRequestHeaders()) {
             foreach ($this->requestHeaders as $header => $value) {
-                $headers[] = $header . ': ' . $value;
+                if (is_array($value)) {
+                    foreach ($value as $hdr => $val) {
+                        $headers[] = $hdr . ': ' . $val;
+                    }
+                } else {
+                    $headers[] = $header . ': ' . $value;
+                }
             }
             $this->setOption(CURLOPT_HTTPHEADER, $headers);
         }
