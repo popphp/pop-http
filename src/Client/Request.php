@@ -249,6 +249,9 @@ class Request extends AbstractClientObject
      */
     public function getQuery()
     {
+        if ((null === $this->query) && ($this->hasFields())) {
+            $this->prepareQuery();
+        }
         return $this->query;
     }
 
@@ -292,7 +295,7 @@ class Request extends AbstractClientObject
     public function isUrlEncodedForm()
     {
         return (isset($this->headers['Content-Type']) &&
-            ($this->headers['Content-Type'] != 'application/x-www-form-urlencoded'));
+            (stripos($this->headers['Content-Type'], 'application/x-www-form-urlencoded' !== false)));
     }
 
     /**
@@ -303,7 +306,7 @@ class Request extends AbstractClientObject
     public function isMultipartForm()
     {
         return (isset($this->headers['Content-Type']) &&
-            ($this->headers['Content-Type'] != 'multipart/form-data'));
+            (stripos($this->headers['Content-Type'], 'multipart/form-data' !== false)));
     }
 
     /**
@@ -324,6 +327,10 @@ class Request extends AbstractClientObject
             $boundary = $this->generateBoundary();
         }
 
+        if (!$this->hasHeader('Content-Type')) {
+            $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
+        }
+
         foreach ($this->fields as $name => $value) {
             if (is_array($value)) {
                 foreach ($value as $val) {
@@ -341,6 +348,8 @@ class Request extends AbstractClientObject
         if (!empty($this->multipartBody)) {
             $this->multipartBody .= '--' . $boundary;
         }
+
+        $this->setHeader('Content-Length', $this->getMultipartBodyLength());
 
         return $this->multipartBody;
     }

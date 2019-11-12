@@ -81,17 +81,19 @@ abstract class AbstractClient implements ClientInterface
     /**
      * Set the method
      *
-     * @param  string $method
+     * @param  string  $method
+     * @param  boolean $strict
      * @throws Exception
      * @return AbstractClient
      */
-    public function setMethod($method)
+    public function setMethod($method, $strict = true)
     {
-        $valid  = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT'];
         $method = strtoupper($method);
 
-        if (!in_array($method, $valid)) {
-            throw new Exception('Error: That request method is not valid.');
+        if ($strict) {
+            if (!in_array($method, ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE'])) {
+                throw new Exception('Error: That request method is not valid.');
+            }
         }
 
         $this->method = $method;
@@ -129,6 +131,28 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Get the resource (alias method)
+     *
+     * @return resource
+     */
+    public function resource()
+    {
+        return $this->resource;
+    }
+
+    /**
+     * Set the request object
+     *
+     * @param  Request $request
+     * @return AbstractClient
+     */
+    public function setRequest(Request $request)
+    {
+        $this->request = $request;
+        return $this;
+    }
+
+    /**
      * Has request object
      *
      * @return boolean
@@ -145,7 +169,32 @@ abstract class AbstractClient implements ClientInterface
      */
     public function getRequest()
     {
+        if (null === $this->request) {
+            $this->request = new Request();
+        }
         return $this->request;
+    }
+
+    /**
+     * Get the request object (alias method)
+     *
+     * @return Request
+     */
+    public function request()
+    {
+        return $this->getRequest();
+    }
+
+    /**
+     * Set the response object
+     *
+     * @param  Response $response
+     * @return AbstractClient
+     */
+    public function setResponse(Response $response)
+    {
+        $this->response = $response;
+        return $this;
     }
 
     /**
@@ -165,7 +214,20 @@ abstract class AbstractClient implements ClientInterface
      */
     public function getResponse()
     {
+        if (null === $this->response) {
+            $this->response = new Response();
+        }
         return $this->response;
+    }
+
+    /**
+     * Get the response object (alias method)
+     *
+     * @return Response
+     */
+    public function response()
+    {
+        return $this->getResponse();
     }
 
     /**

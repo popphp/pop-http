@@ -44,10 +44,12 @@ interface ClientInterface
     /**
      * Set the method
      *
-     * @param  string $method
-     * @return ClientInterface
+     * @param  string  $method
+     * @param  boolean $strict
+     * @throws Exception
+     * @return AbstractClient
      */
-    public function setMethod($method);
+    public function setMethod($method, $strict = true);
 
     /**
      * Get the method
@@ -71,6 +73,21 @@ interface ClientInterface
     public function getResource();
 
     /**
+     * Get the resource (alias method)
+     *
+     * @return resource
+     */
+    public function resource();
+
+    /**
+     * Set the request object
+     *
+     * @param  Request $request
+     * @return ClientInterface
+     */
+    public function setRequest(Request $request);
+
+    /**
      * Has request object
      *
      * @return boolean
@@ -85,6 +102,21 @@ interface ClientInterface
     public function getRequest();
 
     /**
+     * Get the request object (alias method)
+     *
+     * @return Request
+     */
+    public function request();
+
+    /**
+     * Set the response object
+     *
+     * @param  Response $response
+     * @return ClientInterface
+     */
+    public function setResponse(Response $response);
+
+    /**
      * Has response object
      *
      * @return boolean
@@ -97,6 +129,13 @@ interface ClientInterface
      * @return Response
      */
     public function getResponse();
+
+    /**
+     * Get the response object (alias method)
+     *
+     * @return Response
+     */
+    public function response();
 
     /**
      * Throw an exception upon an error.

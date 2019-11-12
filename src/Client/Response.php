@@ -211,6 +211,18 @@ class Response extends AbstractClientObject
     }
 
     /**
+     * Set the response body
+     *
+     * @param  string $body
+     * @return Response
+     */
+    public function setBody($body = null)
+    {
+        $this->body = $body;
+        return $this;
+    }
+
+    /**
      * Get the response body
      *
      * @return string
@@ -221,15 +233,25 @@ class Response extends AbstractClientObject
     }
 
     /**
-     * Set the response body
+     * Set the raw response string
      *
-     * @param  string $body
+     * @param  string $response
      * @return Response
      */
-    public function setBody($body = null)
+    public function setResponse($response)
     {
-        $this->body = $body;
+        $this->response = $response;
         return $this;
+    }
+
+    /**
+     * Get the raw response
+     *
+     * @return string
+     */
+    public function getResponse()
+    {
+        return $this->response;
     }
 
     /**
@@ -286,28 +308,57 @@ class Response extends AbstractClientObject
         $type = floor($this->code / 100);
         return ($type == 5);
     }
-
-    /**
-     * Get the raw response
-     *
-     * @return string
-     */
-    public function getResponse()
-    {
-        return $this->response;
-    }
     
     /**
      * Decode the body
      *
-     * @return void
+     * @param  string $body
+     * @return string
      */
-    public function decodeBody()
+    public function decodeBody($body = null)
     {
-        if (isset($this->headers['Transfer-Encoding']) && ($this->headers['Transfer-Encoding'] == 'chunked')) {
+        if (null !== $body) {
+            $this->setBody($body);
+        }
+        if (isset($this->headers['Transfer-Encoding']) && (strtolower($this->headers['Transfer-Encoding'] == 'chunked'))) {
             $this->body = Parser::decodeChunkedBody($this->body);
         }
         $this->body = Parser::decodeBody($this->body, $this->headers['Content-Encoding']);
+
+        return $this->body;
+    }
+
+    /**
+     * Parse response headers
+     *
+     * @param  string $responseHeader
+     * @return void
+     */
+    public function parseResponseHeaders($responseHeader)
+    {
+        if (null !== $responseHeader) {
+            $headers = explode("\n", $responseHeader);
+            foreach ($headers as $header) {
+                if (strpos($header, 'HTTP') !== false) {
+                    $this->version = substr($header, 0, strpos($header, ' '));
+                    $this->version = substr($this->version, (strpos($this->version, '/') + 1));
+                    preg_match('/\d\d\d/', trim($header), $match);
+                    $this->code    = $match[0];
+                    $this->message = trim(str_replace('HTTP/' . $this->version . ' ' . $this->code . ' ', '', $header));
+                } else if (strpos($header, ':') !== false) {
+                    $name  = trim(substr($header, 0, strpos($header, ':')));
+                    $value = trim(substr($header, strpos($header, ':') + 1));
+                    if (isset($this->headers[$name])) {
+                        if (!is_array($this->headers[$name])) {
+                            $this->headers[$name] = [$this->headers[$name]];
+                        }
+                        $this->headers[$name][] = $value;
+                    } else {
+                        $this->headers[$name] = $value;
+                    }
+                }
+            }
+        }
     }
 
 }

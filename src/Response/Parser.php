@@ -44,11 +44,11 @@ class Parser
         $client->send();
 
         return new Http\Response([
-            'code'    => $client->getResponse()->getCode(),
-            'headers' => $client->getResponse()->getHeaders(),
-            'body'    => $client->getResponse()->getBody(),
-            'message' => $client->getResponse()->getMessage(),
-            'version' => $client->getResponse()->getVersion()
+            'code'    => $client->response()->getCode(),
+            'headers' => $client->response()->getHeaders(),
+            'body'    => $client->response()->getBody(),
+            'message' => $client->response()->getMessage(),
+            'version' => $client->response()->getVersion()
         ]);
     }
 

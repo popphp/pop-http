@@ -51,7 +51,6 @@ class Curl extends AbstractClient
 
         $this->setUrl($url);
         $this->setMethod($method);
-        $this->setOption(CURLOPT_URL, $this->url);
         $this->setOption(CURLOPT_HEADER, true);
         $this->setOption(CURLOPT_RETURNTRANSFER, true);
 
@@ -63,13 +62,14 @@ class Curl extends AbstractClient
     /**
      * Set the method
      *
-     * @param  string $method
+     * @param  string  $method
+     * @param  boolean $strict
      * @throws Exception
      * @return Curl
      */
-    public function setMethod($method)
+    public function setMethod($method, $strict = true)
     {
-        parent::setMethod($method);
+        parent::setMethod($method, $strict);
 
         if ($this->method != 'GET') {
             switch ($this->method) {
@@ -102,46 +102,41 @@ class Curl extends AbstractClient
      */
     public function open()
     {
-        $url     = $this->url;
-        $headers = [];
-
-        // Set query data if there is any
-        /*
-        if (count($this->fields) > 0) {
-            if ($this->method == 'GET') {
-                $url = $this->options[CURLOPT_URL] . '?' . $this->getQuery();
-                $this->setOption(CURLOPT_URL, $url);
-            } else {
-                if (isset($this->requestHeaders['Content-Type']) && ($this->requestHeaders['Content-Type'] != 'multipart/form-data')) {
-                    $this->setOption(CURLOPT_POSTFIELDS, $this->getQuery());
-                    $this->setRequestHeader('Content-Length', $this->getQueryLength());
+        if (null !== $this->request) {
+            // Set query data if there is any
+            if ($this->request->hasFields()) {
+                if ($this->method == 'GET') {
+                    $this->setOption(CURLOPT_URL, $this->url . '?' . $this->request->getQuery());
                 } else {
-                    $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
-                }
-                $this->setOption(CURLOPT_POSTFIELDS, $this->fields);
-                $this->setOption(CURLOPT_URL, $url);
-            }
-        }
-
-        if ($this->hasRequestHeaders()) {
-            foreach ($this->requestHeaders as $header => $value) {
-                if (is_array($value)) {
-                    foreach ($value as $hdr => $val) {
-                        $headers[] = $hdr . ': ' . $val;
+                    if ($this->request->isMultipartForm()) {
+                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->createMultipartBody());
+                    } else if ($this->request->isUrlEncodedForm()) {
+                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getQuery());
+                        $this->request->setHeader('Content-Length', $this->request->getQueryLength());
+                    } else {
+                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getFields());
                     }
-                } else {
-                    $headers[] = $header . ': ' . $value;
+
+                    $this->setOption(CURLOPT_URL, $this->url);
                 }
             }
-            $this->setOption(CURLOPT_HTTPHEADER, $headers);
+
+            if ($this->request->hasHeaders()) {
+                $headers = [];
+
+                foreach ($this->request->getHeaders() as $header => $value) {
+                    if (is_array($value)) {
+                        foreach ($value as $hdr => $val) {
+                            $headers[] = $hdr . ': ' . $val;
+                        }
+                    } else {
+                        $headers[] = $header . ': ' . $value;
+                    }
+                }
+                $this->setOption(CURLOPT_HTTPHEADER, $headers);
+            }
         }
 
-        $this->response = curl_exec($this->resource);
-
-        if ($this->response === false) {
-            $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
-        }
-*/
         return $this;
     }
 
@@ -254,27 +249,30 @@ class Curl extends AbstractClient
     {
         $this->open();
 
-        if ($this->response === false) {
+        $response = curl_exec($this->resource);
+
+        if ($response === false) {
             $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
         }
 
+        if (null === $this->response) {
+            $this->response = new Response();
+        }
+
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
-        /*
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true)) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
             if ($this->options[CURLOPT_HEADER]) {
-                $this->responseHeader = substr($this->response, 0, $headerSize);
-                $this->body   = substr($this->response, $headerSize);
-                $this->parseResponseHeaders();
+                $this->response->parseResponseHeaders(substr($response, 0, $headerSize));
+                $this->response->setBody(substr($response, $headerSize));
             } else {
-                $this->body = $this->response;
+                $this->response->setBody($response);
             }
         }
 
-        if (array_key_exists('Content-Encoding', $this->responseHeaders)) {
-            $this->decodeBody();
+        if ($this->response->hasHeader('Content-Encoding')) {
+            $this->response->decodeBody();
         }
-        */
     }
 
     /**
@@ -297,40 +295,6 @@ class Curl extends AbstractClient
         if ($this->hasResource()) {
             curl_close($this->resource);
         }
-    }
-
-    /**
-     * Parse headers
-     *
-     * @return void
-     */
-    protected function parseResponseHeaders()
-    {
-        /*
-        if (null !== $this->responseHeader) {
-            $headers = explode("\n", $this->responseHeader);
-            foreach ($headers as $header) {
-                if (strpos($header, 'HTTP') !== false) {
-                    $this->version = substr($header, 0, strpos($header, ' '));
-                    $this->version = substr($this->version, (strpos($this->version, '/') + 1));
-                    preg_match('/\d\d\d/', trim($header), $match);
-                    $this->code    = $match[0];
-                    $this->message = trim(str_replace('HTTP/' . $this->version . ' ' . $this->code . ' ', '', $header));
-                } else if (strpos($header, ':') !== false) {
-                    $name  = trim(substr($header, 0, strpos($header, ':')));
-                    $value = trim(substr($header, strpos($header, ':') + 1));
-                    if (isset($this->responseHeaders[$name])) {
-                        if (!is_array($this->responseHeaders[$name])) {
-                            $this->responseHeaders[$name] = [$this->responseHeaders[$name]];
-                        }
-                        $this->responseHeaders[$name][] = $value;
-                    } else {
-                        $this->responseHeaders[$name] = $value;
-                    }
-                }
-            }
-        }
-        */
     }
 
 }

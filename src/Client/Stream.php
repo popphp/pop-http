@@ -51,6 +51,12 @@ class Stream extends AbstractClient
     protected $mode = 'r';
 
     /**
+     * HTTP response headers
+     * @var array
+     */
+    protected $httpResponseHeaders = null;
+
+    /**
      * Constructor
      *
      * Instantiate the stream object
@@ -77,13 +83,14 @@ class Stream extends AbstractClient
     /**
      * Set the method
      *
-     * @param  string $method
+     * @param  string  $method
+     * @param  boolean $strict
      * @throws Exception
      * @return Stream
      */
-    public function setMethod($method)
+    public function setMethod($method, $strict = true)
     {
-        parent::setMethod($method);
+        parent::setMethod($method, $strict);
 
         if (!isset($this->contextOptions['http'])) {
             $this->contextOptions['http'] = [];
@@ -129,43 +136,48 @@ class Stream extends AbstractClient
      */
     public function open()
     {
+        $url                  = $this->url;
         $http_response_header = null;
-
-        $url     = $this->url;
-        $headers = [];
 
         if (isset($this->contextOptions['http']['header'])) {
             $this->contextOptions['http']['header'] = null;
         }
-/*
-        // Set query data if there is any
-        if (count($this->fields) > 0) {
-            if ($this->method == 'GET') {
-                $url .= '?' . $this->getQuery();
-            } else {
-                $this->contextOptions['http']['content'] = $this->getQuery();
-                $headers[] = 'Content-Length: ' . $this->getQueryLength();
-            }
-        }
 
-        if ($this->hasRequestHeaders()) {
-            foreach ($this->requestHeaders as $header => $value) {
-                if (is_array($value)) {
-                    foreach ($value as $hdr => $val) {
-                        $headers[] = $hdr . ': ' . $val;
-                    }
+        if (null !== $this->request) {
+            if ($this->request->hasFields()) {
+                if ($this->method == 'GET') {
+                    $url .= '?' . $this->request->getQuery();
                 } else {
-                    $headers[] = $header . ': ' . $value;
+                    if ($this->request->isMultipartForm()) {
+                        $this->contextOptions['http']['content'] = $this->request->createMultipartBody();
+                    } else {
+                        $this->contextOptions['http']['content'] = $this->request->getQuery();
+                        $this->request->setHeader('Content-Length', $this->request->getQueryLength());
+                    }
                 }
             }
 
-            if (isset($this->contextOptions['http']['header'])) {
-                $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers) . "\r\n";
-            } else {
-                $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
+            if ($this->request->hasHeaders()) {
+                $headers = [];
+
+                foreach ($this->request->getHeaders() as $header => $value) {
+                    if (is_array($value)) {
+                        foreach ($value as $hdr => $val) {
+                            $headers[] = $hdr . ': ' . $val;
+                        }
+                    } else {
+                        $headers[] = $header . ': ' . $value;
+                    }
+                }
+
+                if (isset($this->contextOptions['http']['header'])) {
+                    $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers) . "\r\n";
+                } else {
+                    $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
+                }
             }
         }
-*/
+
         if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {
             $this->createContext();
         }
@@ -173,9 +185,8 @@ class Stream extends AbstractClient
         $this->resource = (null !== $this->context) ?
             @fopen($url, $this->mode, false, $this->context) : @fopen($url, $this->mode);
 
-/*
         $this->httpResponseHeaders = $http_response_header;
-*/
+
         return $this;
     }
 
@@ -341,13 +352,19 @@ class Stream extends AbstractClient
      */
     public function send()
     {
-        $headers    = [];
-        $rawHeader  = null;
-        $bodyString = null;
+        $rawHeader     = null;
+        $bodyString    = null;
+        $firstLine     = null;
+        $headers       = [];
+        $allHeadersAry = [];
 
         $this->open();
-/*
-        if ($this->resource != false) {
+
+        if (null === $this->response) {
+            $this->response = new Response();
+        }
+
+        if ($this->resource !== false) {
             $meta      = stream_get_meta_data($this->resource);
             $rawHeader = implode("\r\n", $meta['wrapper_data']) . "\r\n\r\n";
             $body      = stream_get_contents($this->resource);
@@ -385,19 +402,17 @@ class Stream extends AbstractClient
                 }
             }
 
-            $this->code            = $code;
-            $this->responseHeader  = $rawHeader;
-            $this->responseHeaders = $headers;
-            $this->body            = $bodyString;
-            $this->response        = $rawHeader . $bodyString;
-            $this->message         = $message;
-            $this->version         = $version;
+            $this->response->setCode($code);
+            $this->response->setHeaders($headers);
+            $this->response->setBody($bodyString);
+            $this->response->setResponse($rawHeader . $bodyString);
+            $this->response->setMessage($message);
+            $this->response->setVersion($version);
 
-            if (array_key_exists('Content-Encoding', $this->responseHeaders)) {
-                $this->decodeBody();
+            if ($this->response->hasHeader('Content-Encoding')) {
+                $this->response->decodeBody();
             }
         }
-*/
     }
 
     /**
