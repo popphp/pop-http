@@ -14,7 +14,7 @@
 namespace Pop\Http\Client;
 
 /**
- * Curl class
+ * HTTP curl client class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -106,6 +106,7 @@ class Curl extends AbstractClient
         $headers = [];
 
         // Set query data if there is any
+        /*
         if (count($this->fields) > 0) {
             if ($this->method == 'GET') {
                 $url = $this->options[CURLOPT_URL] . '?' . $this->getQuery();
@@ -140,7 +141,7 @@ class Curl extends AbstractClient
         if ($this->response === false) {
             $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
         }
-
+*/
         return $this;
     }
 
@@ -258,6 +259,7 @@ class Curl extends AbstractClient
         }
 
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
+        /*
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true)) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
             if ($this->options[CURLOPT_HEADER]) {
@@ -272,6 +274,7 @@ class Curl extends AbstractClient
         if (array_key_exists('Content-Encoding', $this->responseHeaders)) {
             $this->decodeBody();
         }
+        */
     }
 
     /**
@@ -303,6 +306,7 @@ class Curl extends AbstractClient
      */
     protected function parseResponseHeaders()
     {
+        /*
         if (null !== $this->responseHeader) {
             $headers = explode("\n", $this->responseHeader);
             foreach ($headers as $header) {
@@ -326,6 +330,7 @@ class Curl extends AbstractClient
                 }
             }
         }
+        */
     }
 
 }

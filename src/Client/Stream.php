@@ -14,7 +14,7 @@
 namespace Pop\Http\Client;
 
 /**
- * HTTP response class
+ * HTTP stream client class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -43,12 +43,6 @@ class Stream extends AbstractClient
      * @var array
      */
     protected $contextParams = [];
-
-    /**
-     * HTTP Response Headers
-     * @var string
-     */
-    protected $httpResponseHeaders = null;
 
     /**
      * Stream mode
@@ -143,7 +137,7 @@ class Stream extends AbstractClient
         if (isset($this->contextOptions['http']['header'])) {
             $this->contextOptions['http']['header'] = null;
         }
-
+/*
         // Set query data if there is any
         if (count($this->fields) > 0) {
             if ($this->method == 'GET') {
@@ -171,7 +165,7 @@ class Stream extends AbstractClient
                 $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
             }
         }
-
+*/
         if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {
             $this->createContext();
         }
@@ -179,8 +173,9 @@ class Stream extends AbstractClient
         $this->resource = (null !== $this->context) ?
             @fopen($url, $this->mode, false, $this->context) : @fopen($url, $this->mode);
 
+/*
         $this->httpResponseHeaders = $http_response_header;
-
+*/
         return $this;
     }
 
@@ -351,7 +346,7 @@ class Stream extends AbstractClient
         $bodyString = null;
 
         $this->open();
-
+/*
         if ($this->resource != false) {
             $meta      = stream_get_meta_data($this->resource);
             $rawHeader = implode("\r\n", $meta['wrapper_data']) . "\r\n\r\n";
@@ -402,6 +397,7 @@ class Stream extends AbstractClient
                 $this->decodeBody();
             }
         }
+*/
     }
 
     /**

@@ -43,18 +43,12 @@ class Parser
         $client  = new Stream($uri, $method, $mode, $options);
         $client->send();
 
-        $code    = $client->getCode();
-        $headers = $client->getResponseHeaders();
-        $body    = $client->getBody();
-        $message = $client->getMessage();
-        $version = $client->getHttpVersion();
-
         return new Http\Response([
-            'code'    => $code,
-            'headers' => $headers,
-            'body'    => $body,
-            'message' => $message,
-            'version' => $version
+            'code'    => $client->getResponse()->getCode(),
+            'headers' => $client->getResponse()->getHeaders(),
+            'body'    => $client->getResponse()->getBody(),
+            'message' => $client->getResponse()->getMessage(),
+            'version' => $client->getResponse()->getVersion()
         ]);
     }
 
