@@ -366,7 +366,7 @@ class Request
         if (!empty($this->server['HTTP_HOST'])) {
             $hostname = $this->server['HTTP_HOST'];
         } else if (!empty($this->server['SERVER_NAME'])) {
-            $hostname =$this->server['SERVER_NAME'];
+            $hostname = $this->server['SERVER_NAME'];
         }
 
         if (strpos($hostname, ':') !== false) {
@@ -389,7 +389,7 @@ class Request
         if (!empty($this->server['HTTP_HOST'])) {
             $hostname = $this->server['HTTP_HOST'];
         } else if (!empty($this->server['SERVER_NAME'])) {
-            $hostname =$this->server['SERVER_NAME'];
+            $hostname = $this->server['SERVER_NAME'];
         }
 
         if ((strpos($hostname, ':') === false) && (null !== $port)) {
@@ -771,9 +771,14 @@ class Request
                     $this->parsedData = $this->post;
                     break;
                 default:
-                    if (isset($_SERVER['CONTENT_TYPE']) && (strtolower($_SERVER['CONTENT_TYPE']) == 'application/x-www-form-urlencoded')) {
-                        parse_str($this->rawData, $this->parsedData);
+                    if (isset($_SERVER['CONTENT_TYPE'])) {
+                        if (stripos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
+                            parse_str($this->rawData, $this->parsedData);
+                        } else if (stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') !== false) {
+
+                        }
                     }
+
             }
         }
 

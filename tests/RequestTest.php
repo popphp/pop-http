@@ -16,7 +16,7 @@ class RequestTest extends TestCase
 
     public function testParseData()
     {
-        $_SERVER['HTTP_HOST']  = 'localhost';
+        $_SERVER['HTTP_HOST']  = 'localhost:8000';
         $_SERVER['SERVER_NAME']  = 'localhost';
         $_SERVER['SERVER_PORT']  = 8000;
         $_SERVER['DOCUMENT_ROOT']  = getcwd();
@@ -55,6 +55,17 @@ class RequestTest extends TestCase
         $this->assertFalse($request->hasFiles());
     }
 
+    public function testGetHostFromServerName()
+    {
+        if (isset($_SERVER['HTTP_HOST'])) {
+            unset($_SERVER['HTTP_HOST']);
+        }
+        $_SERVER['SERVER_NAME']  = 'localhost';
+
+        $request = new Request();
+        $this->assertEquals('localhost', $request->getHost());
+    }
+
     public function testParseJsonData()
     {
         $_SERVER['HTTP_HOST']           = 'localhost';
@@ -85,7 +96,23 @@ class RequestTest extends TestCase
         $this->assertEquals('Hello World', $request->getParsedData()['node']);
     }
 
-    public function testGetHost()
+    public function testParseDataWithNoContentType()
+    {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_NAME']         = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['DOCUMENT_ROOT']       = getcwd();
+        $_SERVER['REQUEST_METHOD']      = 'POST';
+        $_POST                          = ["foo" => "bar"];
+
+        $request = new Request(null, '/home');
+        $this->assertEquals('bar', $request->getParsedData()['foo']);
+    }
+
+    public function testGetFullHost()
     {
         $_SERVER['HTTP_HOST']      = '';
         $_SERVER['SERVER_NAME']    = 'localhost';
@@ -105,6 +132,16 @@ class RequestTest extends TestCase
         $this->assertEquals('localhost:8000', $request->getFullHost());
     }
 
+    public function testGetFullHostFromHttpHost()
+    {
+        $_SERVER['HTTP_HOST']      = 'localhost';
+        $_SERVER['SERVER_NAME']    = '';
+        $_SERVER['SERVER_PORT']    = 8000;
+
+        $request = new Request();
+        $this->assertEquals('localhost:8000', $request->getFullHost());
+    }
+
     public function testGetIpFromRemoteAddress()
     {
         $_SERVER['REMOTE_ADDR']    = '127.0.0.1';
@@ -121,6 +158,9 @@ class RequestTest extends TestCase
 
     public function testGetIpFromForwardedFor()
     {
+        if (isset($_SERVER['HTTP_CLIENT_IP'])) {
+            unset($_SERVER['HTTP_CLIENT_IP']);
+        }
         $_SERVER['HTTP_X_FORWARDED_FOR'] = '127.0.0.1';
         $request = new Request(null, '/home');
         $this->assertEquals('127.0.0.1', $request->getIp(true));
@@ -221,6 +261,27 @@ class RequestTest extends TestCase
         $request = new Request();
         $request->setBasePath('/home');
         $this->assertEquals('/home', $request->getBasePath());;
+    }
+
+    public function testSetBasePathTrailingSlash()
+    {
+        $request = new Request('/home/', '/home');
+        $this->assertEquals('/home', $request->getBasePath());;
+    }
+
+    public function testSetBasePathTrailingQuery()
+    {
+        $request = new Request('/home?', '/home');
+        $this->assertEquals('/home', $request->getBasePath());;
+    }
+
+    public function testDocRoot()
+    {
+        $cwd = getcwd();
+        $uri = substr($cwd, strrpos($cwd, DIRECTORY_SEPARATOR));
+        $_SERVER['DOCUMENT_ROOT']  = substr($cwd, 0, strrpos($cwd, DIRECTORY_SEPARATOR));
+        $request = new Request($uri);
+        $this->assertEquals('', $request->getRequestUri());
     }
 
     public function testGetMagicMethod()
