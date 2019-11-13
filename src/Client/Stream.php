@@ -352,11 +352,9 @@ class Stream extends AbstractClient
      */
     public function send()
     {
-        $rawHeader     = null;
-        $bodyString    = null;
-        $firstLine     = null;
-        $headers       = [];
-        $allHeadersAry = [];
+        $rawHeader = null;
+        $headers   = [];
+        $body      = null;
 
         $this->open();
 
@@ -367,51 +365,20 @@ class Stream extends AbstractClient
         if ($this->resource !== false) {
             $meta      = stream_get_meta_data($this->resource);
             $rawHeader = implode("\r\n", $meta['wrapper_data']) . "\r\n\r\n";
+            $headers   = $meta['wrapper_data'];
             $body      = stream_get_contents($this->resource);
-
-            $firstLine     = $meta['wrapper_data'][0];
-            unset($meta['wrapper_data'][0]);
-            $allHeadersAry = $meta['wrapper_data'];
-            $bodyString    = $body;
         } else if (null !== $this->httpResponseHeaders) {
             $rawHeader = implode("\r\n", $this->httpResponseHeaders) . "\r\n\r\n";
-            $firstLine = $this->httpResponseHeaders[0];
-            unset($this->httpResponseHeaders[0]);
-            $allHeadersAry = $this->httpResponseHeaders;
+            $headers   = $this->httpResponseHeaders;
         }
 
-        // Get the version, code and message
-        if (null !== $rawHeader) {
-            $version = substr($firstLine, 0, strpos($firstLine, ' '));
-            $version = substr($version, (strpos($version, '/') + 1));
-            preg_match('/\d\d\d/', trim($firstLine), $match);
-            $code    = $match[0];
-            $message = str_replace('HTTP/' . $version . ' ' . $code . ' ', '', $firstLine);
+        // Parse response headers
+        $this->response->parseResponseHeaders($headers);
+        $this->response->setBody($body);
+        $this->response->setResponse($rawHeader . $body);
 
-            // Get the headers
-            foreach ($allHeadersAry as $hdr) {
-                $name  = trim(substr($hdr, 0, strpos($hdr, ':')));
-                $value = trim(substr($hdr, (strpos($hdr, ' ') + 1)));
-                if (isset($headers[$name])) {
-                    if (!is_array($headers[$name])) {
-                        $headers[$name] = [$headers[$name]];
-                    }
-                    $headers[$name][] = $value;
-                } else {
-                    $headers[$name] = $value;
-                }
-            }
-
-            $this->response->setCode($code);
-            $this->response->setHeaders($headers);
-            $this->response->setBody($bodyString);
-            $this->response->setResponse($rawHeader . $bodyString);
-            $this->response->setMessage($message);
-            $this->response->setVersion($version);
-
-            if ($this->response->hasHeader('Content-Encoding')) {
-                $this->response->decodeBody();
-            }
+        if ($this->response->hasHeader('Content-Encoding')) {
+            $this->response->decodeBody();
         }
     }
 

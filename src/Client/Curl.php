@@ -268,6 +268,7 @@ class Curl extends AbstractClient
             } else {
                 $this->response->setBody($response);
             }
+            $this->response->setResponse($response);
         }
 
         if ($this->response->hasHeader('Content-Encoding')) {

@@ -231,6 +231,195 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Set a field
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return AbstractClient
+     */
+    public function setField($name, $value)
+    {
+        $this->getRequest()->setField($name, $value);
+        return $this;
+    }
+
+    /**
+     * Set all fields
+     *
+     * @param  array $fields
+     * @return AbstractClient
+     */
+    public function setFields(array $fields)
+    {
+        $this->getRequest()->setFields($fields);
+        return $this;
+    }
+
+    /**
+     * Get a field
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getField($name)
+    {
+        return $this->getRequest()->getField($name);
+    }
+
+    /**
+     * Get all field
+     *
+     * @return array
+     */
+    public function getFields()
+    {
+        return $this->getRequest()->getFields();
+    }
+
+    /**
+     * Remove a field
+     *
+     * @param  string $name
+     * @return AbstractClient
+     */
+    public function removeField($name)
+    {
+        $this->getRequest()->removeField($name);
+        return $this;
+    }
+
+    /**
+     * Set all request headers
+     *
+     * @param  array $headers
+     * @return AbstractClient
+     */
+    public function setRequestHeaders(array $headers)
+    {
+        $this->getRequest()->setHeaders($headers);
+        return $this;
+    }
+
+    /**
+     * Set request header
+     *
+     * @param  string $name
+     * @param  string $value
+     * @return AbstractClient
+     */
+    public function setRequestHeader($name, $value)
+    {
+        $this->getRequest()->setHeader($name, $value);
+        return $this;
+    }
+
+    /**
+     * Has request headers
+     *
+     * @return boolean
+     */
+    public function hasRequestHeaders()
+    {
+        return $this->getRequest()->hasHeaders();
+    }
+
+    /**
+     * Get the request headers
+     *
+     * @return array
+     */
+    public function getRequestHeaders()
+    {
+        return $this->getRequest()->getHeaders();
+    }
+
+    /**
+     * Get the request header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getRequestHeader($name)
+    {
+        return $this->getRequest()->getHeader($name);
+    }
+
+    /**
+     * Set all response headers
+     *
+     * @param  array $headers
+     * @return AbstractClient
+     */
+    public function setResponseHeaders(array $headers)
+    {
+        $this->getResponse()->setHeaders($headers);
+        return $this;
+    }
+
+    /**
+     * Set response header
+     *
+     * @param  string $name
+     * @param  string $value
+     * @return AbstractClient
+     */
+    public function setResponseHeader($name, $value)
+    {
+        $this->getResponse()->setHeader($name, $value);
+        return $this;
+    }
+
+    /**
+     * Has response headers
+     *
+     * @return boolean
+     */
+    public function hasResponseHeaders()
+    {
+        return $this->getResponse()->hasHeaders();
+    }
+
+    /**
+     * Get the response headers
+     *
+     * @return array
+     */
+    public function getResponseHeaders()
+    {
+        return $this->getResponse()->getHeaders();
+    }
+
+    /**
+     * Get the response header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getResponseHeader($name)
+    {
+        return $this->getResponse()->getHeader($name);
+    }
+
+    /**
+     * Get the response body
+     *
+     * @return string
+     */
+    public function getBody()
+    {
+        return $this->getResponse()->getBody();
+    }
+    /**
+     * Get the response code
+     *
+     * @return string
+     */
+    public function getCode()
+    {
+        return $this->getResponse()->getCode();
+    }
+
+    /**
      * Throw an exception upon an error.
      *
      * @param  string $error

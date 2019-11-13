@@ -163,13 +163,13 @@ class Response extends AbstractClientObject
      * Set the response code
      *
      * @param  int $code
-     * @throws Exception
+     * @throws \Pop\Http\Exception
      * @return Response
      */
     public function setCode($code = 200)
     {
         if (!array_key_exists($code, self::$responseCodes)) {
-            throw new Exception('The header code ' . $code . ' is not allowed.');
+            throw new \Pop\Http\Exception('The header code ' . $code . ' is not allowed.');
         }
 
         $this->code    = $code;
@@ -331,13 +331,13 @@ class Response extends AbstractClientObject
     /**
      * Parse response headers
      *
-     * @param  string $responseHeader
+     * @param  string|array $responseHeader
      * @return void
      */
     public function parseResponseHeaders($responseHeader)
     {
         if (null !== $responseHeader) {
-            $headers = explode("\n", $responseHeader);
+            $headers = (is_string($responseHeader)) ? explode("\n", $responseHeader) : (array)$responseHeader;
             foreach ($headers as $header) {
                 if (strpos($header, 'HTTP') !== false) {
                     $this->version = substr($header, 0, strpos($header, ' '));
