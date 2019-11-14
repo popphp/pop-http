@@ -104,6 +104,7 @@ class Curl extends AbstractClient
     {
         if (null !== $this->request) {
             // Set query data if there is any
+            /*
             if ($this->request->hasFields()) {
                 if ($this->method == 'GET') {
                     $this->setOption(CURLOPT_URL, $this->url . '?' . $this->request->getQuery());
@@ -120,6 +121,7 @@ class Curl extends AbstractClient
                     $this->setOption(CURLOPT_URL, $this->url);
                 }
             }
+            */
 
             if ($this->request->hasHeaders()) {
                 $headers = [];

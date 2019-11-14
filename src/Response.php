@@ -149,7 +149,7 @@ class Response extends Client\Response
      */
     public function prepareBody($length = false, $mb = false)
     {
-        $body = $this->body;
+        $body = $this->body->render();
 
         if (array_key_exists('Content-Encoding', $this->headers)) {
             $body = Response\Parser::encodeBody($body, $this->headers['Content-Encoding']);
@@ -175,7 +175,7 @@ class Response extends Client\Response
             $this->setCode($code);
         }
         if (null !== $headers) {
-            $this->setHeaders($headers);
+            $this->addHeaders($headers);
         }
 
         $body = $this->prepareBody($length);

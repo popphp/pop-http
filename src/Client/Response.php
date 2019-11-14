@@ -14,6 +14,7 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\Response\Parser;
+use Pop\Mime\Part\Body;
 
 /**
  * HTTP client response class
@@ -124,12 +125,6 @@ class Response extends AbstractClientObject
     protected $message = null;
 
     /**
-     * Response body
-     * @var string
-     */
-    protected $body = null;
-
-    /**
      * Raw response string
      * @var string
      */
@@ -208,28 +203,6 @@ class Response extends AbstractClientObject
     public function getMessage()
     {
         return $this->message;
-    }
-
-    /**
-     * Set the response body
-     *
-     * @param  string $body
-     * @return Response
-     */
-    public function setBody($body = null)
-    {
-        $this->body = $body;
-        return $this;
-    }
-
-    /**
-     * Get the response body
-     *
-     * @return string
-     */
-    public function getBody()
-    {
-        return $this->body;
     }
 
     /**
@@ -313,7 +286,7 @@ class Response extends AbstractClientObject
      * Decode the body
      *
      * @param  string $body
-     * @return string
+     * @return Body
      */
     public function decodeBody($body = null)
     {
@@ -321,9 +294,9 @@ class Response extends AbstractClientObject
             $this->setBody($body);
         }
         if (isset($this->headers['Transfer-Encoding']) && (strtolower($this->headers['Transfer-Encoding'] == 'chunked'))) {
-            $this->body = Parser::decodeChunkedBody($this->body);
+            $this->body->setContent(Parser::decodeChunkedBody($this->body->getContent()));
         }
-        $this->body = Parser::decodeBody($this->body, $this->headers['Content-Encoding']);
+        $this->body->setContent(Parser::decodeBody($this->body->getContent(), $this->headers['Content-Encoding']));
 
         return $this->body;
     }

@@ -13,6 +13,9 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Mime\Part\Header;
+use Pop\Mime\Part\Body;
+
 /**
  * Abstract HTTP client object class
  *
@@ -33,32 +36,49 @@ abstract class AbstractClientObject implements ClientObjectInterface
     protected $headers = [];
 
     /**
-     * Set a request header
+     * Body
+     * @var Body
+     */
+    protected $body = null;
+
+    /**
+     * Add a header
      *
-     * @param  string $name
+     * @param  Header|string $header
      * @param  string $value
      * @return AbstractClientObject
      */
-    public function setHeader($name, $value)
+    public function addHeader($header, $value = null)
     {
-        $this->headers[$name] = $value;
+        if ($header instanceof Header) {
+            $this->headers[$header->getName()] = $header;
+        } else {
+            $this->headers[$header] = new Header($header, $value);
+        }
+
         return $this;
     }
 
     /**
-     * Set all request headers
+     * Add all headers
      *
      * @param  array $headers
      * @return AbstractClientObject
      */
-    public function setHeaders(array $headers)
+    public function addHeaders(array $headers)
     {
-        $this->headers = $headers;
+        foreach ($headers as $header => $value) {
+            if ($value instanceof Header) {
+                $this->addHeader($value);
+            } else {
+                $this->addHeader($header, $value);
+            }
+        }
         return $this;
     }
 
     /**
-     * Get a request header
+     * Get a header
      *
      * @param  string $name
      * @return mixed
@@ -69,7 +89,7 @@ abstract class AbstractClientObject implements ClientObjectInterface
     }
 
     /**
-     * Get all request headers
+     * Get all headers
      *
      * @return array
      */
@@ -79,7 +99,7 @@ abstract class AbstractClientObject implements ClientObjectInterface
     }
 
     /**
-     * Determine if there are request headers
+     * Determine if there are headers
      *
      * @return boolean
      */
@@ -89,7 +109,7 @@ abstract class AbstractClientObject implements ClientObjectInterface
     }
 
     /**
-     * Has a request header
+     * Has a header
      *
      * @param  string $name
      * @return boolean
@@ -100,7 +120,39 @@ abstract class AbstractClientObject implements ClientObjectInterface
     }
 
     /**
-     * Magic method to get a value from the headers
+     * Set the body
+     *
+     * @param  string|Body $body
+     * @return AbstractClientObject
+     */
+    public function setBody($body = null)
+    {
+        $this->body = ($body instanceof Body) ? $body : new Body($body);
+        return $this;
+    }
+
+    /**
+     * Get the body
+     *
+     * @return Body
+     */
+    public function getBody()
+    {
+        return $this->body;
+    }
+
+    /**
+     * Has a body
+     *
+     * @return boolean
+     */
+    public function hasBody()
+    {
+        return (null !== $this->body);
+    }
+
+    /**
+     * Magic method to get either the headers or body
      *
      * @param  string $name
      * @return mixed
@@ -110,6 +162,9 @@ abstract class AbstractClientObject implements ClientObjectInterface
         switch ($name) {
             case 'headers':
                 return $this->headers;
+                break;
+            case 'body':
+                return $this->body;
                 break;
             default:
                 return null;

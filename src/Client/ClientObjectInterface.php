@@ -13,6 +13,9 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Mime\Part\Header;
+use Pop\Mime\Part\Body;
+
 /**
  * HTTP client object interface
  *
@@ -27,24 +30,24 @@ interface ClientObjectInterface
 {
 
     /**
-     * Set a request header
+     * Set a header
      *
-     * @param  string $name
+     * @param  Header|string $header
      * @param  string $value
      * @return ClientObjectInterface
      */
-    public function setHeader($name, $value);
+    public function addHeader($header, $value);
 
     /**
-     * Set all request headers
+     * Set all headers
      *
      * @param  array $headers
      * @return ClientObjectInterface
      */
-    public function setHeaders(array $headers);
+    public function addHeaders(array $headers);
 
     /**
-     * Get a request header
+     * Get a header
      *
      * @param  string $name
      * @return mixed
@@ -52,25 +55,47 @@ interface ClientObjectInterface
     public function getHeader($name);
 
     /**
-     * Get all request headers
+     * Get all headers
      *
      * @return array
      */
     public function getHeaders();
 
     /**
-     * Determine if there are request headers
+     * Determine if there are headers
      *
      * @return boolean
      */
     public function hasHeaders();
 
     /**
-     * Has a request header
+     * Has a header
      *
      * @param  string $name
      * @return boolean
      */
     public function hasHeader($name);
+
+    /**
+     * Set the body
+     *
+     * @param  string|Body $body
+     * @return ClientObjectInterface
+     */
+    public function setBody($body = null);
+
+    /**
+     * Get the body
+     *
+     * @return Body
+     */
+    public function getBody();
+
+    /**
+     * Has a body
+     *
+     * @return boolean
+     */
+    public function hasBody();
 
 }

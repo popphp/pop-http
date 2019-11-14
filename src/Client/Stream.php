@@ -144,6 +144,7 @@ class Stream extends AbstractClient
         }
 
         if (null !== $this->request) {
+            /*
             if ($this->request->hasFields()) {
                 if ($this->method == 'GET') {
                     $url .= '?' . $this->request->getQuery();
@@ -156,6 +157,7 @@ class Stream extends AbstractClient
                     }
                 }
             }
+            */
 
             if ($this->request->hasHeaders()) {
                 $headers = [];

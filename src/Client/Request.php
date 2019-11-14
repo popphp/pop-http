@@ -13,6 +13,8 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Mime\Part;
+
 /**
  * HTTP client request class
  *
@@ -43,18 +45,6 @@ class Request extends AbstractClientObject
      * @var string
      */
     protected $query = null;
-
-    /**
-     * Request boundary
-     * @var string
-     */
-    protected $boundary = null;
-
-    /**
-     * Multipart request body
-     * @var string
-     */
-    protected $multipartBody = null;
 
     /**
      * Set a field
@@ -266,166 +256,29 @@ class Request extends AbstractClientObject
         return ($mb) ? mb_strlen($this->query) : strlen($this->query);
     }
 
+
     /**
-     * Set as URL-encoded form
+     * Create request as a URL-encoded form
      *
      * @return Request|AbstractClientObject
      */
-    public function setAsUrlEncodedForm()
+    public function createUrlEncodedForm()
     {
         return $this->setHeader('Content-Type', 'application/x-www-form-urlencoded');
     }
 
     /**
-     * Set as multipart form
+     * Create request as a multipart form
      *
      * @param  string $boundary
      * @return Request|AbstractClientObject
      */
-    public function setMultipartForm($boundary = null)
+    public function createMultipartForm($boundary = null)
     {
+        if (null === $boundary) {
+            $boundary = (new Part())->generateBoundary();
+        }
         return $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
-    }
-
-    /**
-     * Is URL-encoded form
-     *
-     * @return boolean
-     */
-    public function isUrlEncodedForm()
-    {
-        return (isset($this->headers['Content-Type']) &&
-            (stripos($this->headers['Content-Type'], 'application/x-www-form-urlencoded' !== false)));
-    }
-
-    /**
-     * Is multipart form
-     *
-     * @return boolean
-     */
-    public function isMultipartForm()
-    {
-        return (isset($this->headers['Content-Type']) &&
-            (stripos($this->headers['Content-Type'], 'multipart/form-data' !== false)));
-    }
-
-    /**
-     * Create multipart body
-     *
-     * @param  string $boundary
-     * @return string
-     */
-    public function createMultipartBody($boundary = null)
-    {
-        $this->multipartBody = '';
-
-        if (null !== $boundary) {
-            $this->setBoundary($boundary);
-        } else if ($this->hasBoundary()) {
-            $boundary = $this->getBoundary();
-        } else {
-            $boundary = $this->generateBoundary();
-        }
-
-        if (!$this->hasHeader('Content-Type')) {
-            $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
-        }
-
-        foreach ($this->fields as $name => $value) {
-            if (is_array($value)) {
-                foreach ($value as $val) {
-                    $this->multipartBody .= '--' . $boundary . "\r\n" .
-                        'Content-Disposition: form-data; name="' . $name . '[]"' . "\r\n\r\n" .
-                        rawurlencode($val) . "\r\n";
-                }
-            } else {
-                $this->multipartBody .= '--' . $boundary . "\r\n" .
-                    'Content-Disposition: form-data; name="' . $name . '"' . "\r\n\r\n" .
-                    rawurlencode($value) . "\r\n";
-            }
-        }
-
-        if (!empty($this->multipartBody)) {
-            $this->multipartBody .= '--' . $boundary;
-        }
-
-        $this->setHeader('Content-Length', $this->getMultipartBodyLength());
-
-        return $this->multipartBody;
-    }
-
-    /**
-     * Has multipart body
-     *
-     * @return boolean
-     */
-    public function hasMultipartBody()
-    {
-        return (null !== $this->multipartBody);
-    }
-
-    /**
-     * Get multipart body
-     *
-     * @return string
-     */
-    public function getMultipartBody()
-    {
-        return $this->multipartBody;
-    }
-
-    /**
-     * Get multipart body length
-     *
-     * @param  boolean $mb
-     * @return int
-     */
-    public function getMultipartBodyLength($mb = true)
-    {
-        return ($mb) ? mb_strlen($this->multipartBody) : strlen($this->multipartBody);
-    }
-
-    /**
-     * Set boundary
-     *
-     * @param  string
-     * @return Request
-     */
-    public function setBoundary($boundary)
-    {
-        $this->boundary = $boundary;
-        return $this;
-    }
-
-    /**
-     * Get boundary
-     *
-     * @return string
-     */
-    public function getBoundary()
-    {
-        return $this->boundary;
-    }
-
-    /**
-     * Has boundary
-     *
-     * @return string
-     */
-    public function hasBoundary()
-    {
-        return (null !== $this->boundary);
-    }
-
-    /**
-     * Generate boundary
-     *
-     * @return string
-     */
-    public function generateBoundary()
-    {
-        $this->setBoundary(sha1(uniqid()));
-        return $this->boundary;
     }
 
 }
