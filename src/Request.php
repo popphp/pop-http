@@ -727,22 +727,27 @@ class Request
      */
     protected function parseData()
     {
+        $contentType = null;
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            $contentType = $_SERVER['CONTENT_TYPE'];
+        } else if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+            $contentType = $_SERVER['HTTP_CONTENT_TYPE'];
+        }
+
         if (strtoupper($this->getMethod()) == 'GET') {
             $this->rawData = (isset($_SERVER['QUERY_STRING'])) ? rawurldecode($_SERVER['QUERY_STRING']) : null;
         } else {
-            if (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) { // For testing purposes only
-                $this->rawData = $_SERVER['X_POP_HTTP_RAW_DATA'];
-            } else {
-                $this->rawData = file_get_contents('php://input');
-            }
+            // $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
+            $this->rawData = (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) ?
+                $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input');
         }
 
         // If the content-type is JSON
-        if (isset($_SERVER['CONTENT_TYPE']) && (stripos($_SERVER['CONTENT_TYPE'], 'json') !== false) &&
+        if (isset($contentType) && (stripos($contentType, 'json') !== false) &&
             (strtoupper($this->getMethod()) != 'GET')) {
             $this->parsedData = json_decode($this->rawData, true);
         // Else, if the content-type is XML
-        } else if (isset($_SERVER['CONTENT_TYPE']) && (stripos($_SERVER['CONTENT_TYPE'], 'xml') !== false) &&
+        } else if (isset($contentType) && (stripos($contentType, 'xml') !== false) &&
             (strtoupper($this->getMethod()) != 'GET')) {
             $matches = [];
             preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $this->rawData, $matches);
@@ -757,7 +762,7 @@ class Request
             }
 
             $this->parsedData = json_decode(json_encode((array)simplexml_load_string($this->rawData)), true);
-        // Else, default to a regular URL-encoded string
+        // Else, default regular data parsing
         } else {
             switch (strtoupper($this->getMethod())) {
                 case 'GET':
@@ -767,17 +772,12 @@ class Request
                     $this->parsedData = $this->post;
                     break;
                 default:
-                    $contentType = null;
-                    if (isset($_SERVER['CONTENT_TYPE'])) {
-                        $contentType = $_SERVER['CONTENT_TYPE'];
-                    } else if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
-                        $contentType = $_SERVER['HTTP_CONTENT_TYPE'];
-                    }
                     if (null !== $contentType) {
                         if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
                             parse_str($this->rawData, $this->parsedData);
                         } else if (stripos($contentType, 'multipart/form-data') !== false) {
-                            $formContent      = 'Content-Type: ' . $contentType . "\r\n\r\n" . $this->rawData;
+                            $formContent = (strpos($this->rawData, 'Content-Type:') === false) ?
+                                'Content-Type: ' . $contentType . "\r\n\r\n" . $this->rawData : $this->rawData;
                             $this->parsedData = \Pop\Mime\Message::parseForm($formContent);
                         }
                     }
