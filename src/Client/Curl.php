@@ -13,6 +13,8 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Mime\Part;
+
 /**
  * HTTP curl client class
  *
@@ -102,42 +104,47 @@ class Curl extends AbstractClient
      */
     public function open()
     {
+        $url = $this->url;
         if (null !== $this->request) {
             // Set query data if there is any
-            /*
             if ($this->request->hasFields()) {
                 if ($this->method == 'GET') {
-                    $this->setOption(CURLOPT_URL, $this->url . '?' . $this->request->getQuery());
+                    $url .= '?' . $this->request->getQuery();
                 } else {
+                    if ($this->request->isUrlEncodedForm()) {
+                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getQuery());
+                        $this->request->addHeader('Content-Length', $this->request->getQueryLength());
+                    } else if ($this->request->isMultipartForm()) {
+                        $part = new Part();
+                        $part->setBoundary($this->request->getBoundary());
+                        //foreach ()
+
+                    } else {
+                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getFields());
+                    }
+                    /*
                     if ($this->request->isMultipartForm()) {
                         $this->setOption(CURLOPT_POSTFIELDS, $this->request->createMultipartBody());
                     } else if ($this->request->isUrlEncodedForm()) {
                         $this->setOption(CURLOPT_POSTFIELDS, $this->request->getQuery());
-                        $this->request->setHeader('Content-Length', $this->request->getQueryLength());
+                        $this->request->addHeader('Content-Length', $this->request->getQueryLength());
                     } else {
                         $this->setOption(CURLOPT_POSTFIELDS, $this->request->getFields());
                     }
-
-                    $this->setOption(CURLOPT_URL, $this->url);
+                    */
                 }
             }
-            */
 
             if ($this->request->hasHeaders()) {
                 $headers = [];
-
-                foreach ($this->request->getHeaders() as $header => $value) {
-                    if (is_array($value)) {
-                        foreach ($value as $hdr => $val) {
-                            $headers[] = $hdr . ': ' . $val;
-                        }
-                    } else {
-                        $headers[] = $header . ': ' . $value;
-                    }
+                foreach ($this->request->getHeaders() as $header) {
+                    $headers[] = $header->render();
                 }
                 $this->setOption(CURLOPT_HTTPHEADER, $headers);
             }
         }
+
+        $this->setOption(CURLOPT_URL, $url);
 
         return $this;
     }

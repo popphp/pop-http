@@ -264,7 +264,18 @@ class Request extends AbstractClientObject
      */
     public function createUrlEncodedForm()
     {
-        return $this->setHeader('Content-Type', 'application/x-www-form-urlencoded');
+        return $this->addHeader('Content-Type', 'application/x-www-form-urlencoded');
+    }
+
+    /**
+     * Create request as a URL-encoded form
+     *
+     * @return boolean
+     */
+    public function isUrlEncodedForm()
+    {
+        return (($this->hasHeader('Content-Type')) &&
+            (strpos($this->getHeader('Content-Type')->getValue(), 'application/x-www-form-urlencoded') !== false));
     }
 
     /**
@@ -278,7 +289,30 @@ class Request extends AbstractClientObject
         if (null === $boundary) {
             $boundary = (new Part())->generateBoundary();
         }
-        return $this->setHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
+        return $this->addHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
+    }
+
+    /**
+     * Create request as a URL-encoded form
+     *
+     * @return boolean
+     */
+    public function isMultipartForm()
+    {
+        return (($this->hasHeader('Content-Type')) &&
+            (strpos($this->getHeader('Content-Type')->getValue(), 'multipart/form-data') !== false));
+    }
+
+    /**
+     * Get boundary
+     *
+     * @return string
+     */
+    public function getBoundary()
+    {
+        return (($this->hasHeader('Content-Type')) &&
+            ($this->getHeader('Content-Type')->hasParameter('boundary'))) ?
+            $this->getHeader('Content-Type')->getParameter('boundary') : null;
     }
 
 }

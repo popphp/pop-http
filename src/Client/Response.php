@@ -15,6 +15,7 @@ namespace Pop\Http\Client;
 
 use Pop\Http\Response\Parser;
 use Pop\Mime\Part\Body;
+use Pop\Mime\Part\Header;
 
 /**
  * HTTP client response class
@@ -319,16 +320,7 @@ class Response extends AbstractClientObject
                     $this->code    = $match[0];
                     $this->message = trim(str_replace('HTTP/' . $this->version . ' ' . $this->code . ' ', '', $header));
                 } else if (strpos($header, ':') !== false) {
-                    $name  = trim(substr($header, 0, strpos($header, ':')));
-                    $value = trim(substr($header, strpos($header, ':') + 1));
-                    if (isset($this->headers[$name])) {
-                        if (!is_array($this->headers[$name])) {
-                            $this->headers[$name] = [$this->headers[$name]];
-                        }
-                        $this->headers[$name][] = $value;
-                    } else {
-                        $this->headers[$name] = $value;
-                    }
+                    $this->addHeader(Header::parse($header));
                 }
             }
         }

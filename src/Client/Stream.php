@@ -153,7 +153,7 @@ class Stream extends AbstractClient
                         $this->contextOptions['http']['content'] = $this->request->createMultipartBody();
                     } else {
                         $this->contextOptions['http']['content'] = $this->request->getQuery();
-                        $this->request->setHeader('Content-Length', $this->request->getQueryLength());
+                        $this->request->addHeader('Content-Length', $this->request->getQueryLength());
                     }
                 }
             }

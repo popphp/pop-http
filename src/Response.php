@@ -57,7 +57,7 @@ class Response extends Client\Response
         }
 
         $this->setMessage($config['message'])
-             ->setHeaders($config['headers'])
+             ->addHeaders($config['headers'])
              ->setBody($config['body']);
     }
 

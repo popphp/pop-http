@@ -296,7 +296,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function setRequestHeaders(array $headers)
     {
-        $this->getRequest()->setHeaders($headers);
+        $this->getRequest()->addHeaders($headers);
         return $this;
     }
 
@@ -309,7 +309,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function setRequestHeader($name, $value)
     {
-        $this->getRequest()->setHeader($name, $value);
+        $this->getRequest()->addHeader($name, $value);
         return $this;
     }
 
@@ -352,7 +352,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function setResponseHeaders(array $headers)
     {
-        $this->getResponse()->setHeaders($headers);
+        $this->getResponse()->addHeaders($headers);
         return $this;
     }
 
@@ -365,7 +365,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function setResponseHeader($name, $value)
     {
-        $this->getResponse()->setHeader($name, $value);
+        $this->getResponse()->addHeader($name, $value);
         return $this;
     }
 
