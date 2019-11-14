@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2020 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Http;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2020 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.2.0
+ * @version    3.5.0
  */
 class Request
 {
@@ -733,10 +733,7 @@ class Request
             if (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) { // For testing purposes only
                 $this->rawData = $_SERVER['X_POP_HTTP_RAW_DATA'];
             } else {
-                $input = fopen('php://input', 'r');
-                while ($data = fread($input, 1024)) {
-                    $this->rawData .= $data;
-                }
+                $this->rawData = file_get_contents('php://input');
             }
         }
 
@@ -766,19 +763,24 @@ class Request
                 case 'GET':
                     $this->parsedData = $this->get;
                     break;
-
                 case 'POST':
                     $this->parsedData = $this->post;
                     break;
                 default:
+                    $contentType = null;
                     if (isset($_SERVER['CONTENT_TYPE'])) {
-                        if (stripos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
+                        $contentType = $_SERVER['CONTENT_TYPE'];
+                    } else if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+                        $contentType = $_SERVER['HTTP_CONTENT_TYPE'];
+                    }
+                    if (null !== $contentType) {
+                        if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
                             parse_str($this->rawData, $this->parsedData);
-                        } else if (stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') !== false) {
-
+                        } else if (stripos($contentType, 'multipart/form-data') !== false) {
+                            $formContent      = 'Content-Type: ' . $contentType . "\r\n\r\n" . $this->rawData;
+                            $this->parsedData = \Pop\Mime\Message::parseForm($formContent);
                         }
                     }
-
             }
         }
 
