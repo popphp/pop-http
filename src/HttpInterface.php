@@ -11,13 +11,13 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Client;
+namespace Pop\Http;
 
 use Pop\Mime\Part\Header;
 use Pop\Mime\Part\Body;
 
 /**
- * HTTP client object interface
+ * HTTP interface
  *
  * @category   Pop
  * @package    Pop\Http
@@ -26,7 +26,7 @@ use Pop\Mime\Part\Body;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    3.5.0
  */
-interface ClientObjectInterface
+interface HttpInterface
 {
 
     /**
@@ -34,7 +34,7 @@ interface ClientObjectInterface
      *
      * @param  Header|string $header
      * @param  string $value
-     * @return ClientObjectInterface
+     * @return HttpInterface
      */
     public function addHeader($header, $value);
 
@@ -42,7 +42,7 @@ interface ClientObjectInterface
      * Set all headers
      *
      * @param  array $headers
-     * @return ClientObjectInterface
+     * @return HttpInterface
      */
     public function addHeaders(array $headers);
 
@@ -80,7 +80,7 @@ interface ClientObjectInterface
      * Set the body
      *
      * @param  string|Body $body
-     * @return ClientObjectInterface
+     * @return HttpInterface
      */
     public function setBody($body = null);
 

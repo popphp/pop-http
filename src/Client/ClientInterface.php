@@ -47,7 +47,7 @@ interface ClientInterface
      * @param  string  $method
      * @param  boolean $strict
      * @throws Exception
-     * @return AbstractClient
+     * @return ClientInterface
      */
     public function setMethod($method, $strict = true);
 
@@ -136,6 +136,138 @@ interface ClientInterface
      * @return Response
      */
     public function response();
+
+    /**
+     * Set a field
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return ClientInterface
+     */
+    public function setField($name, $value);
+
+    /**
+     * Set all fields
+     *
+     * @param  array $fields
+     * @return ClientInterface
+     */
+    public function setFields(array $fields);
+
+    /**
+     * Get a field
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getField($name);
+
+    /**
+     * Get all field
+     *
+     * @return array
+     */
+    public function getFields();
+
+    /**
+     * Remove a field
+     *
+     * @param  string $name
+     * @return ClientInterface
+     */
+    public function removeField($name);
+
+    /**
+     * Set all request headers
+     *
+     * @param  array $headers
+     * @return ClientInterface
+     */
+    public function setRequestHeaders(array $headers);
+
+    /**
+     * Set request header
+     *
+     * @param  string $name
+     * @param  string $value
+     * @return ClientInterface
+     */
+    public function setRequestHeader($name, $value);
+
+    /**
+     * Has request headers
+     *
+     * @return boolean
+     */
+    public function hasRequestHeaders();
+
+    /**
+     * Get the request headers
+     *
+     * @return array
+     */
+    public function getRequestHeaders();
+
+    /**
+     * Get the request header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getRequestHeader($name);
+
+    /**
+     * Set all response headers
+     *
+     * @param  array $headers
+     * @return ClientInterface
+     */
+    public function setResponseHeaders(array $headers);
+
+    /**
+     * Set response header
+     *
+     * @param  string $name
+     * @param  string $value
+     * @return ClientInterface
+     */
+    public function setResponseHeader($name, $value);
+
+    /**
+     * Has response headers
+     *
+     * @return boolean
+     */
+    public function hasResponseHeaders();
+
+    /**
+     * Get the response headers
+     *
+     * @return array
+     */
+    public function getResponseHeaders();
+
+    /**
+     * Get the response header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getResponseHeader($name);
+
+    /**
+     * Get the response body
+     *
+     * @return string
+     */
+    public function getBody();
+
+    /**
+     * Get the response code
+     *
+     * @return string
+     */
+    public function getCode();
 
     /**
      * Throw an exception upon an error.

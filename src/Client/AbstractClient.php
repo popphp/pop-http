@@ -409,6 +409,7 @@ abstract class AbstractClient implements ClientInterface
     {
         return $this->getResponse()->getBody();
     }
+
     /**
      * Get the response code
      *

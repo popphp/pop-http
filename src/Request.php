@@ -772,7 +772,7 @@ class Request
                     $this->parsedData = $this->post;
                     break;
                 default:
-                    if (null !== $contentType) {
+                    if ((null !== $contentType) && !empty($this->rawData)) {
                         if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
                             parse_str($this->rawData, $this->parsedData);
                         } else if (stripos($contentType, 'multipart/form-data') !== false) {

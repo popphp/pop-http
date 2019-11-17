@@ -11,13 +11,13 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Client;
+namespace Pop\Http;
 
 use Pop\Mime\Part\Header;
 use Pop\Mime\Part\Body;
 
 /**
- * Abstract HTTP client object class
+ * Abstract HTTP class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -26,7 +26,7 @@ use Pop\Mime\Part\Body;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    3.5.0
  */
-abstract class AbstractClientObject implements ClientObjectInterface
+abstract class AbstractHttp implements HttpInterface
 {
 
     /**
@@ -46,7 +46,7 @@ abstract class AbstractClientObject implements ClientObjectInterface
      *
      * @param  Header|string $header
      * @param  string $value
-     * @return AbstractClientObject
+     * @return AbstractHttp
      */
     public function addHeader($header, $value = null)
     {
@@ -63,7 +63,7 @@ abstract class AbstractClientObject implements ClientObjectInterface
      * Add all headers
      *
      * @param  array $headers
-     * @return AbstractClientObject
+     * @return AbstractHttp
      */
     public function addHeaders(array $headers)
     {
@@ -123,7 +123,7 @@ abstract class AbstractClientObject implements ClientObjectInterface
      * Set the body
      *
      * @param  string|Body $body
-     * @return AbstractClientObject
+     * @return AbstractHttp
      */
     public function setBody($body = null)
     {

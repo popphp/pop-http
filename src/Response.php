@@ -23,43 +23,8 @@ namespace Pop\Http;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    3.5.0
  */
-class Response extends Client\Response
+class Response extends Response\AbstractResponse
 {
-
-    /**
-     * Constructor
-     *
-     * Instantiate the response object
-     *
-     * @param  array $config
-     */
-    public function __construct(array $config = [])
-    {
-        // Check for config values and set defaults
-        if (!isset($config['version'])) {
-            $config['version'] = '1.1';
-        }
-        if (!isset($config['code'])) {
-            $config['code'] = 200;
-        }
-
-        $this->setVersion($config['version'])
-             ->setCode($config['code']);
-
-        if (!isset($config['message'])) {
-            $config['message'] = self::$responseCodes[$config['code']];
-        }
-        if (!isset($config['headers']) || (isset($config['headers']) && !is_array($config['headers']))) {
-            $config['headers'] = ['Content-Type' => 'text/html'];
-        }
-        if (!isset($config['body'])) {
-            $config['body'] = null;
-        }
-
-        $this->setMessage($config['message'])
-             ->addHeaders($config['headers'])
-             ->setBody($config['body']);
-    }
 
     /**
      * Send redirect
@@ -107,7 +72,7 @@ class Response extends Client\Response
      * @param  string  $eol
      * @return string
      */
-    public function getHeadersAsString($status = true, $eol = "\n")
+    public function getHeadersAsString($status = true, $eol = "\r\n")
     {
         $headers = '';
 
@@ -206,7 +171,7 @@ class Response extends Client\Response
     public function __toString()
     {
         $body = $this->prepareBody();
-        return $this->getHeadersAsString() . "\n" . $body;
+        return $this->getHeadersAsString() . "\r\n" . $body;
     }
 
 }

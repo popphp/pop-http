@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Http\AbstractHttp;
 use Pop\Mime\Part;
 
 /**
@@ -25,7 +26,7 @@ use Pop\Mime\Part;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    3.5.0
  */
-class Request extends AbstractClientObject
+class Request extends AbstractHttp
 {
 
     /**
@@ -260,59 +261,59 @@ class Request extends AbstractClientObject
     /**
      * Create request as a URL-encoded form
      *
-     * @return Request|AbstractClientObject
+     * @return Request
      */
-    public function createUrlEncodedForm()
-    {
-        return $this->addHeader('Content-Type', 'application/x-www-form-urlencoded');
-    }
+    //public function createUrlEncodedForm()
+    //{
+    //    return $this->addHeader('Content-Type', 'application/x-www-form-urlencoded');
+    //}
 
     /**
      * Create request as a URL-encoded form
      *
      * @return boolean
      */
-    public function isUrlEncodedForm()
-    {
-        return (($this->hasHeader('Content-Type')) &&
-            (strpos($this->getHeader('Content-Type')->getValue(), 'application/x-www-form-urlencoded') !== false));
-    }
+    //public function isUrlEncodedForm()
+    //{
+    //    return (($this->hasHeader('Content-Type')) &&
+    //        (strpos($this->getHeader('Content-Type')->getValue(), 'application/x-www-form-urlencoded') !== false));
+    //}
 
     /**
      * Create request as a multipart form
      *
      * @param  string $boundary
-     * @return Request|AbstractClientObject
+     * @return Request
      */
-    public function createMultipartForm($boundary = null)
-    {
-        if (null === $boundary) {
-            $boundary = (new Part())->generateBoundary();
-        }
-        return $this->addHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
-    }
+    //public function createMultipartForm($boundary = null)
+    //{
+    //    if (null === $boundary) {
+    //        $boundary = (new Part())->generateBoundary();
+    //    }
+    //    return $this->addHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
+    //}
 
     /**
      * Create request as a URL-encoded form
      *
      * @return boolean
      */
-    public function isMultipartForm()
-    {
-        return (($this->hasHeader('Content-Type')) &&
-            (strpos($this->getHeader('Content-Type')->getValue(), 'multipart/form-data') !== false));
-    }
+    //public function isMultipartForm()
+    //{
+    //    return (($this->hasHeader('Content-Type')) &&
+    //        (strpos($this->getHeader('Content-Type')->getValue(), 'multipart/form-data') !== false));
+    //}
 
     /**
      * Get boundary
      *
      * @return string
      */
-    public function getBoundary()
-    {
-        return (($this->hasHeader('Content-Type')) &&
-            ($this->getHeader('Content-Type')->hasParameter('boundary'))) ?
-            $this->getHeader('Content-Type')->getParameter('boundary') : null;
-    }
+    //public function getBoundary()
+    //{
+    //    return (($this->hasHeader('Content-Type')) &&
+    //        ($this->getHeader('Content-Type')->hasParameter('boundary'))) ?
+    //        $this->getHeader('Content-Type')->getParameter('boundary') : null;
+    //}
 
 }
