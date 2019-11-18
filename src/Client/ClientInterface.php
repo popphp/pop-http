@@ -217,6 +217,34 @@ interface ClientInterface
     public function getRequestHeader($name);
 
     /**
+     * Create request as a URL-encoded form
+     *
+     * @return ClientInterface
+     */
+    public function createUrlEncodedForm();
+
+    /**
+     * Check if request is a URL-encoded form
+     *
+     * @return boolean
+     */
+    public function isUrlEncodedForm();
+
+    /**
+     * Create request as a multipart form
+     *
+     * @return ClientInterface
+     */
+    public function createMultipartForm();
+
+    /**
+     * Check if request is a multipart form
+     *
+     * @return boolean
+     */
+    public function isMultipartForm();
+
+    /**
      * Set all response headers
      *
      * @param  array $headers

@@ -345,6 +345,48 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Create request as a URL-encoded form
+     *
+     * @return AbstractClient
+     */
+    public function createUrlEncodedForm()
+    {
+        $this->request->createUrlEncodedForm();
+        return $this;
+    }
+
+    /**
+     * Check if request is a URL-encoded form
+     *
+     * @return boolean
+     */
+    public function isUrlEncodedForm()
+    {
+        return $this->request->isUrlEncodedForm();
+    }
+
+    /**
+     * Create request as a multipart form
+     *
+     * @return AbstractClient
+     */
+    public function createMultipartForm()
+    {
+        $this->request->createMultipartForm();
+        return $this;
+    }
+
+    /**
+     * Check if request is a multipart form
+     *
+     * @return boolean
+     */
+    public function isMultipartForm()
+    {
+        return $this->request->isMultipartForm();
+    }
+
+    /**
      * Set all response headers
      *
      * @param  array $headers

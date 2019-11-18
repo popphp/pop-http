@@ -13,6 +13,8 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Mime\Message;
+
 /**
  * HTTP stream client class
  *
@@ -125,69 +127,6 @@ class Stream extends AbstractClient
         } else {
             $this->context = stream_context_create();
         }
-
-        return $this;
-    }
-
-    /**
-     * Create and open stream resource
-     *
-     * @return Stream
-     */
-    public function open()
-    {
-        $url                  = $this->url;
-        $http_response_header = null;
-
-        if (isset($this->contextOptions['http']['header'])) {
-            $this->contextOptions['http']['header'] = null;
-        }
-
-        if (null !== $this->request) {
-            /*
-            if ($this->request->hasFields()) {
-                if ($this->method == 'GET') {
-                    $url .= '?' . $this->request->getQuery();
-                } else {
-                    if ($this->request->isMultipartForm()) {
-                        $this->contextOptions['http']['content'] = $this->request->createMultipartBody();
-                    } else {
-                        $this->contextOptions['http']['content'] = $this->request->getQuery();
-                        $this->request->addHeader('Content-Length', $this->request->getQueryLength());
-                    }
-                }
-            }
-            */
-
-            if ($this->request->hasHeaders()) {
-                $headers = [];
-
-                foreach ($this->request->getHeaders() as $header => $value) {
-                    if (is_array($value)) {
-                        foreach ($value as $hdr => $val) {
-                            $headers[] = $hdr . ': ' . $val;
-                        }
-                    } else {
-                        $headers[] = $header . ': ' . $value;
-                    }
-                }
-
-                if (isset($this->contextOptions['http']['header'])) {
-                    $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers) . "\r\n";
-                } else {
-                    $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
-                }
-            }
-        }
-
-        if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {
-            $this->createContext();
-        }
-
-        $this->resource = (null !== $this->context) ?
-            @fopen($url, $this->mode, false, $this->context) : @fopen($url, $this->mode);
-
-        $this->httpResponseHeaders = $http_response_header;
 
         return $this;
     }
@@ -345,6 +284,82 @@ class Stream extends AbstractClient
     public function getMode()
     {
         return $this->mode;
+    }
+
+    /**
+     * Create and open stream resource
+     *
+     * @return Stream
+     */
+    public function open()
+    {
+        $url                  = $this->url;
+        $http_response_header = null;
+
+        if (isset($this->contextOptions['http']['header'])) {
+            $this->contextOptions['http']['header'] = null;
+        }
+
+        if (null !== $this->request) {
+            // Set query data if there is any
+            if ($this->request->hasFields()) {
+                // Append GET query string to URL
+                if ($this->method == 'GET') {
+                    $url .= '?' . $this->request->getQuery();
+                // Else, prepare request data for transmission
+                } else {
+                    // If request if a URL-encoded form
+                    if ($this->request->isUrlEncodedForm()) {
+                        $this->request->addHeader('Content-Type', 'application/x-www-form-urlencoded')
+                            ->addHeader('Content-Length', $this->request->getQueryLength());
+                        $this->contextOptions['http']['content'] = $this->request->getQuery();
+                    // Else, if request if a multipart form
+                    } else if ($this->request->isMultipartForm()) {
+                        $formMessage = Message::createForm($this->request->getFields());
+                        $header      = $formMessage->getHeader('Content-Type');
+                        $content     = $formMessage->render(false);
+                        $formMessage->removeHeader('Content-Type');
+                        $this->request->addHeader($header)
+                            ->addHeader('Content-Length', strlen($content));
+                        $this->contextOptions['http']['content'] = $content;
+                    // Else, basic request with data
+                    } else {
+                        $this->contextOptions['http']['content'] = $this->request->getQuery();
+                    }
+                }
+            }
+
+            if ($this->request->hasHeaders()) {
+                $headers = [];
+
+                foreach ($this->request->getHeaders() as $header => $value) {
+                    if (is_array($value)) {
+                        foreach ($value as $hdr => $val) {
+                            $headers[] = (string)$val;
+                        }
+                    } else {
+                        $headers[] = (string)$value;
+                    }
+                }
+
+                if (isset($this->contextOptions['http']['header'])) {
+                    $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers) . "\r\n";
+                } else {
+                    $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
+                }
+            }
+        }
+
+        if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {
+            $this->createContext();
+        }
+
+        $this->resource = (null !== $this->context) ?
+            @fopen($url, $this->mode, false, $this->context) : @fopen($url, $this->mode);
+
+        $this->httpResponseHeaders = $http_response_header;
+
+        return $this;
     }
 
     /**

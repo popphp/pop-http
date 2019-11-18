@@ -13,7 +13,7 @@
  */
 namespace Pop\Http\Client;
 
-use Pop\Mime\Part;
+use Pop\Mime\Message;
 
 /**
  * HTTP curl client class
@@ -95,58 +95,6 @@ class Curl extends AbstractClient
     public function curl()
     {
         return $this->resource;
-    }
-
-    /**
-     * Create and open cURL resource
-     *
-     * @return Curl
-     */
-    public function open()
-    {
-        $url = $this->url;
-        if (null !== $this->request) {
-            // Set query data if there is any
-            if ($this->request->hasFields()) {
-                if ($this->method == 'GET') {
-                    $url .= '?' . $this->request->getQuery();
-                } else {
-                    if ($this->request->isUrlEncodedForm()) {
-                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getQuery());
-                        $this->request->addHeader('Content-Length', $this->request->getQueryLength());
-                    } else if ($this->request->isMultipartForm()) {
-                        $part = new Part();
-                        $part->setBoundary($this->request->getBoundary());
-                        //foreach ()
-
-                    } else {
-                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getFields());
-                    }
-                    /*
-                    if ($this->request->isMultipartForm()) {
-                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->createMultipartBody());
-                    } else if ($this->request->isUrlEncodedForm()) {
-                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getQuery());
-                        $this->request->addHeader('Content-Length', $this->request->getQueryLength());
-                    } else {
-                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getFields());
-                    }
-                    */
-                }
-            }
-
-            if ($this->request->hasHeaders()) {
-                $headers = [];
-                foreach ($this->request->getHeaders() as $header) {
-                    $headers[] = $header->render();
-                }
-                $this->setOption(CURLOPT_HTTPHEADER, $headers);
-            }
-        }
-
-        $this->setOption(CURLOPT_URL, $url);
-
-        return $this;
     }
 
     /**
@@ -239,6 +187,17 @@ class Curl extends AbstractClient
     }
 
     /**
+     * Has a cURL session option
+     *
+     * @param  int $opt
+     * @return boolean
+     */
+    public function hasOption($opt)
+    {
+        return (isset($this->options[$opt]));
+    }
+
+    /**
      * Return the cURL session last info
      *
      * @param  int $opt
@@ -247,6 +206,58 @@ class Curl extends AbstractClient
     public function getInfo($opt = null)
     {
         return (null !== $opt) ? curl_getinfo($this->resource, $opt) : curl_getinfo($this->resource);
+    }
+
+    /**
+     * Create and open cURL resource
+     *
+     * @return Curl
+     */
+    public function open()
+    {
+        $url = $this->url;
+
+        if (null !== $this->request) {
+            // Set query data if there is any
+            if ($this->request->hasFields()) {
+                // Append GET query string to URL
+                if ($this->method == 'GET') {
+                    $url .= '?' . $this->request->getQuery();
+                // Else, prepare request data for transmission
+                } else {
+                    // If request if a URL-encoded form
+                    if ($this->request->isUrlEncodedForm()) {
+                        $this->request->addHeader('Content-Type', 'application/x-www-form-urlencoded')
+                            ->addHeader('Content-Length', $this->request->getQueryLength());
+                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getQuery());
+                    // Else, if request if a multipart form
+                    } else if ($this->request->isMultipartForm()) {
+                        $formMessage = Message::createForm($this->request->getFields());
+                        $header      = $formMessage->getHeader('Content-Type');
+                        $content     = $formMessage->render(false);
+                        $formMessage->removeHeader('Content-Type');
+                        $this->request->addHeader($header)
+                            ->addHeader('Content-Length', strlen($content));
+                        $this->setOption(CURLOPT_POSTFIELDS, $content);
+                    // Else, basic request with data
+                    } else {
+                        $this->setOption(CURLOPT_POSTFIELDS, $this->request->getFields());
+                    }
+                }
+            }
+
+            if ($this->request->hasHeaders()) {
+                $headers = [];
+                foreach ($this->request->getHeaders() as $header) {
+                    $headers[] = $header->render();
+                }
+                $this->setOption(CURLOPT_HTTPHEADER, $headers);
+            }
+        }
+
+        $this->setOption(CURLOPT_URL, $url);
+
+        return $this;
     }
 
     /**

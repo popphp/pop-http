@@ -30,22 +30,34 @@ class Request extends AbstractHttp
 {
 
     /**
-     * Fields
+     * Fields (form fields and files)
+     *    $fields = [
+     *      'username' => 'admin'
+     *      'file1'     => [
+     *          'filename'    => __DIR__ . '/path/to/file.txt',
+     *          'contentType' => 'text/plain'
+     *      ],
+     *      'file2'     => [
+     *          'filename'    => 'test.pdf',
+     *          'contentType' => 'application/pdf',
+     *          'contents'    => file_get_contents(__DIR__ . '/path/to/test.pdf'
+     *      ]
+     *    ]
      * @var array
      */
     protected $fields = [];
-
-    /**
-     * Files
-     * @var array
-     */
-    protected $files = [];
 
     /**
      * Request query
      * @var string
      */
     protected $query = null;
+
+    /**
+     * Request form type
+     * @var string
+     */
+    protected $formType = null;
 
     /**
      * Set a field
@@ -139,80 +151,6 @@ class Request extends AbstractHttp
     }
 
     /**
-     * Set a file
-     *
-     * @param  string $name
-     * @param  string $path
-     * @return Request
-     */
-    public function setFile($name, $path)
-    {
-        $this->files[$name] = $path;
-        return $this;
-    }
-
-    /**
-     * Set all files
-     *
-     * @param  array $files
-     * @return Request
-     */
-    public function setFiles(array $files)
-    {
-        foreach ($files as $name => $path) {
-            $this->setFile($name, $path);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Get a file
-     *
-     * @param  string $name
-     * @return mixed
-     */
-    public function getFile($name)
-    {
-        return (isset($this->files[$name])) ? $this->files[$name] : null;
-    }
-
-    /**
-     * Get all files
-     *
-     * @return array
-     */
-    public function getFiles()
-    {
-        return $this->files;
-    }
-
-    /**
-     * Has files
-     *
-     * @return boolean
-     */
-    public function hasFiles()
-    {
-        return (!empty($this->files));
-    }
-
-    /**
-     * Remove a file
-     *
-     * @param  string $name
-     * @return Request
-     */
-    public function removeFile($name)
-    {
-        if (isset($this->files[$name])) {
-            unset($this->files[$name]);
-        }
-
-        return $this;
-    }
-
-    /**
      * Prepare the HTTP query
      *
      * @return string
@@ -254,66 +192,62 @@ class Request extends AbstractHttp
      */
     public function getQueryLength($mb = true)
     {
+        if ((null === $this->query) && ($this->hasFields())) {
+            $this->prepareQuery();
+        }
         return ($mb) ? mb_strlen($this->query) : strlen($this->query);
     }
 
-
     /**
      * Create request as a URL-encoded form
      *
-     * @return Request
+     * @return Request|AbstractHttp
      */
-    //public function createUrlEncodedForm()
-    //{
-    //    return $this->addHeader('Content-Type', 'application/x-www-form-urlencoded');
-    //}
+    public function createUrlEncodedForm()
+    {
+        $this->formType = 'application/x-www-form-urlencoded';
+        return $this;
+    }
 
     /**
-     * Create request as a URL-encoded form
+     * Check if request is a URL-encoded form
      *
      * @return boolean
      */
-    //public function isUrlEncodedForm()
-    //{
-    //    return (($this->hasHeader('Content-Type')) &&
-    //        (strpos($this->getHeader('Content-Type')->getValue(), 'application/x-www-form-urlencoded') !== false));
-    //}
+    public function isUrlEncodedForm()
+    {
+        return ($this->formType == 'application/x-www-form-urlencoded');
+    }
 
     /**
      * Create request as a multipart form
      *
-     * @param  string $boundary
-     * @return Request
+     * @return Request|AbstractHttp
      */
-    //public function createMultipartForm($boundary = null)
-    //{
-    //    if (null === $boundary) {
-    //        $boundary = (new Part())->generateBoundary();
-    //    }
-    //    return $this->addHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
-    //}
+    public function createMultipartForm()
+    {
+        $this->formType = 'multipart/form-data';
+        return $this;
+    }
 
     /**
-     * Create request as a URL-encoded form
+     * Check if request is a multipart form
      *
      * @return boolean
      */
-    //public function isMultipartForm()
-    //{
-    //    return (($this->hasHeader('Content-Type')) &&
-    //        (strpos($this->getHeader('Content-Type')->getValue(), 'multipart/form-data') !== false));
-    //}
+    public function isMultipartForm()
+    {
+        return ($this->formType == 'multipart/form-data');
+    }
 
     /**
-     * Get boundary
+     * Get form type
      *
      * @return string
      */
-    //public function getBoundary()
-    //{
-    //    return (($this->hasHeader('Content-Type')) &&
-    //        ($this->getHeader('Content-Type')->hasParameter('boundary'))) ?
-    //        $this->getHeader('Content-Type')->getParameter('boundary') : null;
-    //}
+    public function getFormType()
+    {
+        return $this->formType;
+    }
 
 }
