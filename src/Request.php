@@ -13,7 +13,7 @@
  */
 namespace Pop\Http;
 
-use Pop\Filter\AbstractFilterable;
+use Pop\Filter\FilterableTrait;
 
 /**
  * HTTP request class
@@ -25,8 +25,10 @@ use Pop\Filter\AbstractFilterable;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    3.5.0
  */
-class Request extends AbstractFilterable
+class Request
 {
+
+    use FilterableTrait;
 
     /**
      * Request URI
