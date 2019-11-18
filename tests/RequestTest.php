@@ -2,6 +2,7 @@
 
 namespace Pop\Http\Test;
 
+use Pop\Filter\Filter;
 use Pop\Http\Request;
 use PHPUnit\Framework\TestCase;
 use Pop\Mime\Message;
@@ -362,6 +363,22 @@ class RequestTest extends TestCase
 
         $request = new Request();
         $this->assertEquals('bar', $request->getPut('foo'));
+    }
+
+    public function testFilter()
+    {
+        $_SERVER['HTTP_HOST']  = 'localhost';
+        $_SERVER['SERVER_PORT']  = 8000;
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['QUERY_STRING']   = 'var=<b>123</b>&foo=bar';
+        $_GET = [
+            'var' => '<b>123</b>',
+            'foo' => 'bar'
+        ];
+
+        $request = new Request(null, null, new Filter('strip_tags'));
+        $this->assertEquals(123, $request->getQuery('var'));
+
     }
 
     public function testGetMagicMethod()

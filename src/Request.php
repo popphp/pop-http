@@ -13,6 +13,8 @@
  */
 namespace Pop\Http;
 
+use Pop\Filter\AbstractFilterable;
+
 /**
  * HTTP request class
  *
@@ -23,7 +25,7 @@ namespace Pop\Http;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    3.5.0
  */
-class Request
+class Request extends AbstractFilterable
 {
 
     /**
@@ -114,8 +116,9 @@ class Request
      *
      * @param  string $uri
      * @param  string $basePath
+     * @param  mixed  $filters
      */
-    public function __construct($uri = null, $basePath = null)
+    public function __construct($uri = null, $basePath = null, $filters = null)
     {
         $this->setRequestUri($uri, $basePath);
 
@@ -125,6 +128,14 @@ class Request
         $this->cookie = (isset($_COOKIE)) ? $_COOKIE : [];
         $this->server = (isset($_SERVER)) ? $_SERVER : [];
         $this->env    = (isset($_ENV))    ? $_ENV    : [];
+
+        if (null !== $filters) {
+            if (is_array($filters)) {
+                $this->addFilters($filters);
+            } else {
+                $this->addFilter($filters);
+            }
+        }
 
         if (isset($_SERVER['REQUEST_METHOD'])) {
             $this->parseData();
@@ -671,6 +682,23 @@ class Request
     }
 
     /**
+     * Filter values
+     *
+     * @param  array $values
+     * @return array
+     */
+    public function filter(array $values)
+    {
+        foreach ($this->filters as $filter) {
+            foreach ($values as $key => $value) {
+                $values[$key] = $filter->filter($value, $key);
+            }
+        }
+
+        return $values;
+    }
+
+    /**
      * Magic method to get a value from one of the server/environment variables
      *
      * @param  string $name
@@ -781,6 +809,18 @@ class Request
                             $this->parsedData = \Pop\Mime\Message::parseForm($formContent);
                         }
                     }
+            }
+        }
+
+        // If request has filters, filter parsed input data
+        if ($this->hasFilters()) {
+            $this->parsedData = $this->filter($this->parsedData);
+
+            if (!empty($this->post)) {
+                $this->post = $this->filter($this->post);
+            }
+            if (!empty($this->get)) {
+                $this->get = $this->filter($this->get);
             }
         }
 
