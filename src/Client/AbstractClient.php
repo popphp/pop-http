@@ -324,6 +324,17 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Has request header
+     *
+     * @param  string $name
+     * @return boolean
+     */
+    public function hasRequestHeader($name)
+    {
+        return $this->getRequest()->hasHeader($name);
+    }
+
+    /**
      * Get the request headers
      *
      * @return array
@@ -342,6 +353,16 @@ abstract class AbstractClient implements ClientInterface
     public function getRequestHeader($name)
     {
         return $this->getRequest()->getHeader($name);
+    }
+
+    /**
+     * Get the request body
+     *
+     * @return string
+     */
+    public function getRequestBody()
+    {
+        return $this->getRequest()->getBody();
     }
 
     /**
@@ -422,6 +443,17 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Has response header
+     *
+     * @param  string $name
+     * @return boolean
+     */
+    public function hasResponseHeader($name)
+    {
+        return $this->getResponse()->hasHeader($name);
+    }
+
+    /**
      * Get the response headers
      *
      * @return array
@@ -447,7 +479,7 @@ abstract class AbstractClient implements ClientInterface
      *
      * @return string
      */
-    public function getBody()
+    public function getResponseBody()
     {
         return $this->getResponse()->getBody();
     }
@@ -457,7 +489,7 @@ abstract class AbstractClient implements ClientInterface
      *
      * @return string
      */
-    public function getCode()
+    public function getResponseCode()
     {
         return $this->getResponse()->getCode();
     }

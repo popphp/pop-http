@@ -329,10 +329,12 @@ abstract class AbstractResponse extends AbstractHttp
         if (null !== $body) {
             $this->setBody($body);
         }
-        if (isset($this->headers['Transfer-Encoding']) && (strtolower($this->headers['Transfer-Encoding'] == 'chunked'))) {
+        if (($this->hasHeader('Transfer-Encoding')) &&
+            (strtolower($this->getHeader('Transfer-Encoding')->getValue()) == 'chunked')) {
             $this->body->setContent(Parser::decodeChunkedBody($this->body->getContent()));
         }
-        $this->body->setContent(Parser::decodeBody($this->body->getContent(), $this->headers['Content-Encoding']));
+        $contentEncoding = ($this->hasHeader('Content-Encoding')) ? $this->getHeader('Content-Encoding')->getValue() : null;
+        $this->body->setContent(Parser::decodeBody($this->body->getContent(), $contentEncoding));
 
         return $this->body;
     }

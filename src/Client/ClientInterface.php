@@ -202,6 +202,14 @@ interface ClientInterface
     public function hasRequestHeaders();
 
     /**
+     * Has request header
+     *
+     * @param  string $name
+     * @return boolean
+     */
+    public function hasRequestHeader($name);
+
+    /**
      * Get the request headers
      *
      * @return array
@@ -215,6 +223,13 @@ interface ClientInterface
      * @return mixed
      */
     public function getRequestHeader($name);
+
+    /**
+     * Get the request body
+     *
+     * @return string
+     */
+    public function getRequestBody();
 
     /**
      * Create request as a URL-encoded form
@@ -269,6 +284,14 @@ interface ClientInterface
     public function hasResponseHeaders();
 
     /**
+     * Has response header
+     *
+     * @param  string $name
+     * @return boolean
+     */
+    public function hasResponseHeader($name);
+
+    /**
      * Get the response headers
      *
      * @return array
@@ -288,14 +311,14 @@ interface ClientInterface
      *
      * @return string
      */
-    public function getBody();
+    public function getResponseBody();
 
     /**
      * Get the response code
      *
      * @return string
      */
-    public function getCode();
+    public function getResponseCode();
 
     /**
      * Throw an exception upon an error.

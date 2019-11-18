@@ -66,8 +66,8 @@ class Parser
         }
 
         if (strpos($responseString, "\r") !== false) {
-            $headerString = substr($responseString, 0, strpos($responseString, "\r\n"));
-            $bodyString   = substr($responseString, (strpos($responseString, "\r\n") + 2));
+            $headerString = substr($responseString, 0, strpos($responseString, "\r\n\r\n"));
+            $bodyString   = substr($responseString, (strpos($responseString, "\r\n\r\n") + 4));
         } else {
             $headerString = substr($responseString, 0, strpos($responseString, "\n\n"));
             $bodyString   = substr($responseString, (strpos($responseString, "\n\n") + 2));

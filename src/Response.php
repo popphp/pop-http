@@ -114,13 +114,14 @@ class Response extends Response\AbstractResponse
      */
     public function prepareBody($length = false, $mb = false)
     {
-        $body = $this->body->render();
+        $body        = $this->body->render();
+        $lengthValue = ($mb) ? mb_strlen($body) : strlen($body);
 
-        if (array_key_exists('Content-Encoding', $this->headers)) {
-            $body = Response\Parser::encodeBody($body, $this->headers['Content-Encoding']);
-            $this->headers['Content-Length'] = ($mb) ? mb_strlen($body) : strlen($body);
+        if ($this->hasHeader('Content-Encoding')) {
+            $body = Response\Parser::encodeBody($body, $this->getHeader('Content-Encoding')->getValue());
+            $this->addHeader('Content-Length', $lengthValue);
         } else if ($length) {
-            $this->headers['Content-Length'] = ($mb) ? mb_strlen($body) : strlen($body);
+            $this->addHeader('Content-Length', $lengthValue);
         }
 
         return $body;

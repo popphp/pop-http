@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+Date: Wed, 24 Jun 2015 20:18:05 GMT
+Server: Apache/2.4.7 (Ubuntu)
+Last-Modified: Tue, 02 Dec 2014 20:09:59 GMT
+ETag: "84f-509414fcd0819"
+Accept-Ranges: bytes
+Transfer-Encoding: chunked
+Content-Encoding: test
+Content-Type: text/plain
+
+4\r\n
+Wiki\r\n
+5\r\n
+pedia\r\n
+e\r\n
+ in\r\n\r\nchunks.\r\n
+0\r\n
+\r\n

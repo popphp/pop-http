@@ -4,6 +4,7 @@ namespace Pop\Http\Test;
 
 use Pop\Http\Request;
 use PHPUnit\Framework\TestCase;
+use Pop\Mime\Message;
 
 class RequestTest extends TestCase
 {
@@ -282,6 +283,85 @@ class RequestTest extends TestCase
         $_SERVER['DOCUMENT_ROOT']  = substr($cwd, 0, strrpos($cwd, DIRECTORY_SEPARATOR));
         $request = new Request($uri);
         $this->assertEquals('', $request->getRequestUri());
+    }
+
+    public function testContentTypeHeader()
+    {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['HTTP_CONTENT_TYPE']   = 'application/json';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'POST';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo" : "bar"}';
+
+        $request = new Request();
+        $this->assertEquals('bar', $request->getParsedData('foo'));
+    }
+
+    public function testParsedDataPut()
+    {
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['CONTENT_TYPE']        = 'application/json';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo" : "bar"}';
+
+        $request = new Request();
+        $this->assertEquals('bar', $request->getPut('foo'));
+    }
+
+    public function testParsedDataPatch()
+    {
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['CONTENT_TYPE']        = 'application/json';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PATCH';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo" : "bar"}';
+
+        $request = new Request();
+        $this->assertEquals('bar', $request->getPatch('foo'));
+    }
+
+    public function testParsedDataDelete()
+    {
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['CONTENT_TYPE']        = 'application/json';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'DELETE';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo" : "bar"}';
+
+        $request = new Request();
+        $this->assertEquals('bar', $request->getDelete('foo'));
+    }
+
+    public function testUrlFormParsedDataPut()
+    {
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['CONTENT_TYPE']        = 'application/x-www-form-urlencoded';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = http_build_query(['foo' => 'bar']);
+
+        $request = new Request();
+        $this->assertEquals('bar', $request->getPut('foo'));
+    }
+
+    public function testMultipartFormParsedDataPut()
+    {
+        $formContents = Message::createForm(['foo' => 'bar']);
+        $header       = $formContents->getHeader('Content-Type');
+        $formContents->removeHeader('Content-Type');
+
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['CONTENT_TYPE']        = 'multipart/form-data; boundary=' . $header->getParameter('boundary');
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = $formContents->render(false);
+
+        $request = new Request();
+        $this->assertEquals('bar', $request->getPut('foo'));
     }
 
     public function testGetMagicMethod()
