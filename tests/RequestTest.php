@@ -30,7 +30,7 @@ class RequestTest extends TestCase
             'foo' => 'bar'
         ];
 
-        $request = new Request(null, '/home');
+        $request = new Request(null, '/home', ['strip_tags', 'htmlentities']);
         $this->assertEquals('/page', $request->getRequestUri());
         $this->assertEquals('/home/page', $request->getFullRequestUri());
         $this->assertEquals('/home', $request->getBasePath());
@@ -55,6 +55,7 @@ class RequestTest extends TestCase
         $this->assertFalse($request->isPatch());
         $this->assertFalse($request->isSecure());
         $this->assertFalse($request->hasFiles());
+        $this->assertTrue($request->hasFilters());
     }
 
     public function testGetHostFromServerName()

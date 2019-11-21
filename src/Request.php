@@ -25,7 +25,7 @@ use Pop\Filter\FilterableTrait;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    3.5.0
  */
-class Request
+class Request extends AbstractHttp
 {
 
     use FilterableTrait;
@@ -47,18 +47,6 @@ class Request
      * @var string
      */
     protected $basePath = null;
-
-    /**
-     * Headers
-     * @var array
-     */
-    protected $headers = [];
-
-    /**
-     * Raw data
-     * @var string
-     */
-    protected $rawData = null;
 
     /**
      * Parsed data
@@ -590,34 +578,13 @@ class Request
     }
 
     /**
-     * Get a value from the request headers
-     *
-     * @param  string $key
-     * @return string
-     */
-    public function getHeader($key)
-    {
-        return (isset($this->headers[$key])) ? $this->headers[$key] : null;
-    }
-
-    /**
-     * Get the request headers
-     *
-     * @return array
-     */
-    public function getHeaders()
-    {
-        return $this->headers;
-    }
-
-    /**
      * Get the raw data
      *
      * @return string
      */
     public function getRawData()
     {
-        return $this->rawData;
+        return $this->body->getContent();
     }
 
     /**
@@ -743,7 +710,7 @@ class Request
                 return $this->parsedData;
                 break;
             case 'raw':
-                return $this->rawData;
+                return $this->body->getContent();
                 break;
             default:
                 return null;
@@ -758,6 +725,8 @@ class Request
     protected function parseData()
     {
         $contentType = null;
+        $rawData     = null;
+
         if (isset($_SERVER['CONTENT_TYPE'])) {
             $contentType = $_SERVER['CONTENT_TYPE'];
         } else if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
@@ -765,22 +734,22 @@ class Request
         }
 
         if (strtoupper($this->getMethod()) == 'GET') {
-            $this->rawData = (isset($_SERVER['QUERY_STRING'])) ? rawurldecode($_SERVER['QUERY_STRING']) : null;
+            $rawData = (isset($_SERVER['QUERY_STRING'])) ? rawurldecode($_SERVER['QUERY_STRING']) : null;
         } else {
             // $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
-            $this->rawData = (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) ?
+            $rawData = (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) ?
                 $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input');
         }
 
         // If the content-type is JSON
         if (isset($contentType) && (stripos($contentType, 'json') !== false) &&
             (strtoupper($this->getMethod()) != 'GET')) {
-            $this->parsedData = json_decode($this->rawData, true);
+            $this->parsedData = json_decode($rawData, true);
         // Else, if the content-type is XML
         } else if (isset($contentType) && (stripos($contentType, 'xml') !== false) &&
             (strtoupper($this->getMethod()) != 'GET')) {
             $matches = [];
-            preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $this->rawData, $matches);
+            preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
 
             foreach ($matches[0] as $match) {
                 $strip = str_replace(
@@ -788,10 +757,10 @@ class Request
                     ['', '', '&lt;', '&gt;'],
                     $match
                 );
-                $this->rawData = str_replace($match, $strip, $this->rawData);
+                $rawData = str_replace($match, $strip, $rawData);
             }
 
-            $this->parsedData = json_decode(json_encode((array)simplexml_load_string($this->rawData)), true);
+            $this->parsedData = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
         // Else, default regular data parsing
         } else {
             switch (strtoupper($this->getMethod())) {
@@ -802,12 +771,12 @@ class Request
                     $this->parsedData = $this->post;
                     break;
                 default:
-                    if ((null !== $contentType) && !empty($this->rawData)) {
+                    if ((null !== $contentType) && !empty($rawData)) {
                         if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
-                            parse_str($this->rawData, $this->parsedData);
+                            parse_str($rawData, $this->parsedData);
                         } else if (stripos($contentType, 'multipart/form-data') !== false) {
-                            $formContent = (strpos($this->rawData, 'Content-Type:') === false) ?
-                                'Content-Type: ' . $contentType . "\r\n\r\n" . $this->rawData : $this->rawData;
+                            $formContent = (strpos($rawData, 'Content-Type:') === false) ?
+                                'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
                             $this->parsedData = \Pop\Mime\Message::parseForm($formContent);
                         }
                     }
@@ -839,6 +808,8 @@ class Request
                 $this->delete = $this->parsedData;
                 break;
         }
+
+        $this->body = new \Pop\Mime\Part\Body($rawData);
     }
 
 }
