@@ -584,7 +584,7 @@ class Request extends AbstractHttp
      */
     public function getRawData()
     {
-        return $this->body->getContent();
+        return (null !== $this->body) ? $this->body->getContent() : null;
     }
 
     /**
@@ -710,7 +710,7 @@ class Request extends AbstractHttp
                 return $this->parsedData;
                 break;
             case 'raw':
-                return $this->body->getContent();
+                return $this->getRawData();
                 break;
             default:
                 return null;
