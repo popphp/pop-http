@@ -178,21 +178,21 @@ interface ClientInterface
     public function removeField($name);
 
     /**
-     * Set all request headers
+     * Add request headers
      *
      * @param  array $headers
      * @return ClientInterface
      */
-    public function setRequestHeaders(array $headers);
+    public function addRequestHeaders(array $headers);
 
     /**
-     * Set request header
+     * Add request header
      *
      * @param  string $name
      * @param  string $value
      * @return ClientInterface
      */
-    public function setRequestHeader($name, $value);
+    public function addRequestHeader($name, $value);
 
     /**
      * Has request headers
@@ -260,21 +260,21 @@ interface ClientInterface
     public function isMultipartForm();
 
     /**
-     * Set all response headers
+     * Add response headers
      *
      * @param  array $headers
      * @return ClientInterface
      */
-    public function setResponseHeaders(array $headers);
+    public function addResponseHeaders(array $headers);
 
     /**
-     * Set response header
+     * Add response header
      *
      * @param  string $name
      * @param  string $value
      * @return ClientInterface
      */
-    public function setResponseHeader($name, $value);
+    public function addResponseHeader($name, $value);
 
     /**
      * Has response headers

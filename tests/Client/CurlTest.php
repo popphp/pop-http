@@ -82,10 +82,10 @@ class CurlTest extends TestCase
     {
         $client = new Curl('https://www.popphp.org/version');
         $client->setRequest(new Request());
-        $client->setRequestHeaders([
+        $client->addRequestHeaders([
             'Content-Type' => 'text/plain'
         ]);
-        $client->setRequestHeader('Content-Length', 123);
+        $client->addRequestHeader('Content-Length', 123);
         $client->request()->setBody('Hello World!');
         $this->assertTrue($client->hasRequest());
         $this->assertInstanceOf('Pop\Http\Client\Request', $client->request());
@@ -100,10 +100,10 @@ class CurlTest extends TestCase
     {
         $client = new Curl('https://www.popphp.org/version');
         $client->setResponse(new Response());
-        $client->setResponseHeaders([
+        $client->addResponseHeaders([
             'Content-Type' => 'text/plain'
         ]);
-        $client->setResponseHeader('Content-Length', 123);
+        $client->addResponseHeader('Content-Length', 123);
         $client->response()->setCode(200);
         $client->response()->setBody('Hello World!');
         $this->assertTrue($client->hasResponse());
