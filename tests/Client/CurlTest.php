@@ -12,13 +12,13 @@ class CurlTest extends TestCase
 
     public function testConstructor()
     {
-        $client = new Curl('https://www.popphp.org/version', 'POST', [
+        $client = new Curl('http://localhost/', 'POST', [
             CURLOPT_POST => true
         ]);
         $client->setField('foo', 'bar');
         $this->assertInstanceOf('Pop\Http\Client\Curl', $client);
         $this->assertEquals('POST', $client->getMethod());
-        $this->assertEquals('https://www.popphp.org/version', $client->getUrl());
+        $this->assertEquals('http://localhost/', $client->getUrl());
         $this->assertEquals('bar', $client->getField('foo'));
         $this->assertEquals('bar', $client->getFields()['foo']);
         $client->removeField('foo');
@@ -39,28 +39,28 @@ class CurlTest extends TestCase
 
     public function testCustomRequest()
     {
-        $client = new Curl('https://www.popphp.org/version', 'PUT');
+        $client = new Curl('http://localhost/', 'PUT');
         $this->assertTrue($client->hasOption(CURLOPT_CUSTOMREQUEST));
         $this->assertEquals('PUT', $client->getOption(CURLOPT_CUSTOMREQUEST));
     }
 
     public function testSetReturnHeader()
     {
-        $client = new Curl('https://www.popphp.org/version');
+        $client = new Curl('http://localhost/');
         $client->setReturnHeader();
         $this->assertTrue($client->isReturnHeader());
     }
 
     public function testSetReturnTransfer()
     {
-        $client = new Curl('https://www.popphp.org/version');
+        $client = new Curl('http://localhost/');
         $client->setReturnTransfer();
         $this->assertTrue($client->isReturnTransfer());
     }
 
     public function testSendGetQuery()
     {
-        $client = new Curl('https://www.popphp.org/version');
+        $client = new Curl('http://localhost/');
         $client->setFields([
             'var' => '123',
             'foo' => 'bar'
@@ -75,12 +75,12 @@ class CurlTest extends TestCase
     public function testSetMethodException()
     {
         $this->expectException('Pop\Http\Client\Exception');
-        $client = new Curl('https://www.popphp.org/version', 'BAD');
+        $client = new Curl('http://localhost/', 'BAD');
     }
 
     public function testClientRequest()
     {
-        $client = new Curl('https://www.popphp.org/version');
+        $client = new Curl('http://localhost/');
         $client->setRequest(new Request());
         $client->addRequestHeaders([
             'Content-Type' => 'text/plain'
@@ -98,7 +98,7 @@ class CurlTest extends TestCase
 
     public function testClientResponse()
     {
-        $client = new Curl('https://www.popphp.org/version');
+        $client = new Curl('http://localhost/');
         $client->setResponse(new Response());
         $client->addResponseHeaders([
             'Content-Type' => 'text/plain'
@@ -118,16 +118,30 @@ class CurlTest extends TestCase
 
     public function testQuery()
     {
-        $client = new Curl('https://www.popphp.org/version', 'GET');
+        $client = new Curl('http://localhost/', 'GET');
         $client->setRequest(new Request());
         $client->setFields(['username' => 'admin']);
         $this->assertEquals('username=admin', $client->request()->getQuery());
         $this->assertTrue($client->request()->hasQuery());
     }
 
+    public function testCreateAsJson()
+    {
+        $client = new Curl('http://localhost/', 'POST');
+        $client->setRequest(new Request());
+        $client->setFields(['username' => 'admin']);
+        $client->createAsJson();
+        $client->open();
+        $this->assertTrue($client->isJson());
+        $this->assertEquals('application/json', $client->request()->getFormType());
+        $this->assertTrue($client->hasRequestHeader('Content-Type'));
+        $this->assertTrue($client->hasRequestHeader('Content-Length'));
+        $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue());
+    }
+
     public function testCreateUrlForm()
     {
-        $client = new Curl('https://www.popphp.org/version', 'POST');
+        $client = new Curl('http://localhost/', 'POST');
         $client->setRequest(new Request());
         $client->setFields(['username' => 'admin']);
         $client->createUrlEncodedForm();
@@ -137,12 +151,11 @@ class CurlTest extends TestCase
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
         $this->assertEquals('application/x-www-form-urlencoded', $client->getRequestHeader('Content-Type')->getValue());
-
     }
 
     public function testCreateMultipartForm()
     {
-        $client = new Curl('https://www.popphp.org/version', 'POST');
+        $client = new Curl('http://localhost/', 'POST');
         $client->setRequest(new Request());
         $client->setFields(['username' => 'admin']);
         $client->createMultipartForm();

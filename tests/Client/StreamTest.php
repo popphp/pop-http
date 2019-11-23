@@ -11,7 +11,7 @@ class StreamTest extends TestCase
 
     public function testConstructor()
     {
-        $client = new Stream('https://www.popphp.org/version');
+        $client = new Stream('http://localhost/');
         $this->assertInstanceOf('Pop\Http\Client\Stream', $client);
         $this->assertEquals('GET', $client->getContextOption('http')['method']);
         $this->assertEquals('r', $client->getMode());
@@ -27,7 +27,7 @@ class StreamTest extends TestCase
 
     public function testGetWithFields()
     {
-        $client = new Stream('https://www.popphp.org/version');
+        $client = new Stream('http://localhost/');
         $client->setField('foo', 'bar');
         $client->open();
 
@@ -36,7 +36,7 @@ class StreamTest extends TestCase
 
     public function testPostWithFields()
     {
-        $client = new Stream('https://www.popphp.org/version', 'POST');
+        $client = new Stream('http://localhost/', 'POST');
         $client->setField('foo', 'bar');
         $client->send();
 
@@ -45,14 +45,14 @@ class StreamTest extends TestCase
 
     public function testAddContextOption()
     {
-        $client = new Stream('https://www.popphp.org/version');
+        $client = new Stream('http://localhost/');
         $client->addContextOption('foo', ['bar' => 'baz']);
         $this->assertTrue(isset($client->getContextOption('foo')['bar']));
     }
 
     public function testSetContextOptions()
     {
-        $client = new Stream('https://www.popphp.org/version');
+        $client = new Stream('http://localhost/');
         $client->setContextOptions([
             'http' => [
                 'header' => 'Content-Type: text/plain'
@@ -63,7 +63,7 @@ class StreamTest extends TestCase
 
     public function testAddContextParam()
     {
-        $client = new Stream('https://www.popphp.org/version');
+        $client = new Stream('http://localhost/');
         $client->setContextParams(['foo' => 'bar']);
         $this->assertTrue($client->hasContextParam('foo'));
         $this->assertEquals('bar', $client->getContextParam('foo'));
@@ -76,9 +76,23 @@ class StreamTest extends TestCase
         $client->throwError('Error: Some Error');
     }
 
+    public function testCreateAsJson()
+    {
+        $client = new Stream('http://localhost/', 'POST');
+        $client->setRequest(new Request());
+        $client->setFields(['username' => 'admin']);
+        $client->createAsJson();
+        $client->open();
+        $this->assertTrue($client->isJson());
+        $this->assertEquals('application/json', $client->request()->getFormType());
+        $this->assertTrue($client->hasRequestHeader('Content-Type'));
+        $this->assertTrue($client->hasRequestHeader('Content-Length'));
+        $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue());
+    }
+
     public function testCreateUrlForm()
     {
-        $client = new Stream('https://www.popphp.org/version', 'POST');
+        $client = new Stream('http://localhost/', 'POST');
         $client->setRequest(new Request());
         $client->setFields(['username' => 'admin']);
         $client->addContextOption('http', ['header' => 'Content-Type: text/plain']);
@@ -88,12 +102,11 @@ class StreamTest extends TestCase
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
         $this->assertEquals('application/x-www-form-urlencoded', $client->getRequestHeader('Content-Type')->getValue());
-
     }
 
     public function testCreateMultipartForm()
     {
-        $client = new Stream('https://www.popphp.org/version', 'POST');
+        $client = new Stream('http://localhost/', 'POST');
         $client->setRequest(new Request());
         $client->setFields(['username' => 'admin']);
         $client->createMultipartForm();

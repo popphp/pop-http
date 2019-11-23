@@ -199,6 +199,27 @@ class Request extends AbstractHttp
     }
 
     /**
+     * Create request as JSON
+     *
+     * @return Request|AbstractHttp
+     */
+    public function createAsJson()
+    {
+        $this->formType = 'application/json';
+        return $this;
+    }
+
+    /**
+     * Check if request is JSON
+     *
+     * @return boolean
+     */
+    public function isJson()
+    {
+        return ($this->formType == 'application/json');
+    }
+
+    /**
      * Create request as a URL-encoded form
      *
      * @return Request|AbstractHttp

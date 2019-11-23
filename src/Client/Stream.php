@@ -308,19 +308,25 @@ class Stream extends AbstractClient
                     $url .= '?' . $this->request->getQuery();
                 // Else, prepare request data for transmission
                 } else {
-                    // If request if a URL-encoded form
-                    if ($this->request->isUrlEncodedForm()) {
+                    // If request is JSON
+                    if ($this->request->isJson()) {
+                        $content = json_encode($this->request->getFields(), JSON_PRETTY_PRINT);
+                        $this->request->addHeader('Content-Type', 'application/json')
+                            ->addHeader('Content-Length', mb_strlen($content));
+                        $this->contextOptions['http']['content'] = $content;
+                    // If request is a URL-encoded form
+                    } else if ($this->request->isUrlEncodedForm()) {
                         $this->request->addHeader('Content-Type', 'application/x-www-form-urlencoded')
                             ->addHeader('Content-Length', $this->request->getQueryLength());
                         $this->contextOptions['http']['content'] = $this->request->getQuery();
-                    // Else, if request if a multipart form
+                    // Else, if request is a multipart form
                     } else if ($this->request->isMultipartForm()) {
                         $formMessage = Message::createForm($this->request->getFields());
                         $header      = $formMessage->getHeader('Content-Type');
                         $content     = $formMessage->render(false);
                         $formMessage->removeHeader('Content-Type');
                         $this->request->addHeader($header)
-                            ->addHeader('Content-Length', strlen($content));
+                            ->addHeader('Content-Length', mb_strlen($content));
                         $this->contextOptions['http']['content'] = $content;
                     // Else, basic request with data
                     } else {

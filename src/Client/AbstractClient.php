@@ -366,6 +366,27 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Create request as JSON
+     *
+     * @return AbstractClient
+     */
+    public function createAsJson()
+    {
+        $this->request->createAsJson();
+        return $this;
+    }
+
+    /**
+     * Check if request is JSON
+     *
+     * @return boolean
+     */
+    public function isJson()
+    {
+        return $this->request->isJson();
+    }
+
+    /**
      * Create request as a URL-encoded form
      *
      * @return AbstractClient
