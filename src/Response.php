@@ -101,7 +101,11 @@ class Response extends Response\AbstractResponse
 
         header("HTTP/{$this->version} {$this->code} {$this->message}");
         foreach ($this->headers as $name => $value) {
-            header($name . ": " . $value);
+            if ($value instanceof \Pop\Mime\Part\Header) {
+                header((string)$value);
+            } else {
+                header($name . ": " . $value);
+            }
         }
     }
 
