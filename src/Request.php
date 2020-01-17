@@ -133,7 +133,7 @@ class Request extends AbstractHttp
 
         // Get any possible request headers
         if (function_exists('getallheaders')) {
-            $this->headers = getallheaders();
+            $this->addHeaders(getallheaders());
         } else {
             foreach ($_SERVER as $key => $value) {
                 if (substr($key, 0, 5) == 'HTTP_') {
@@ -145,7 +145,7 @@ class Request extends AbstractHttp
                         }
                         $key = implode('-', $ary);
                     }
-                    $this->headers[$key] = $value;
+                    $this->addHeader($key, $value);
                 }
             }
         }
