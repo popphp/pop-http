@@ -99,6 +99,21 @@ abstract class AbstractHttp implements HttpInterface
     }
 
     /**
+     * Get all headers
+     *
+     * @return array
+     */
+    public function getHeadersAsArray()
+    {
+        $headers = [];
+
+        foreach ($this->headers as $name => $header) {
+            $headers[$name] = $header->getValue();
+        }
+        return $headers;
+    }
+
+    /**
      * Determine if there are headers
      *
      * @return boolean

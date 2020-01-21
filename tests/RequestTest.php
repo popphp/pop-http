@@ -259,6 +259,14 @@ class RequestTest extends TestCase
         $this->assertNull($request->getHeader('Content-Type'));
     }
 
+    public function testGetHeadersAsArray()
+    {
+        $request = new Request();
+        $headers = $request->getHeadersAsArray();
+        $this->assertTrue(is_array($headers));
+        $this->assertEquals('localhost', $headers['Host']);
+    }
+
     public function testSetBasePath()
     {
         $request = new Request();
