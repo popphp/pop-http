@@ -47,9 +47,14 @@ class Upload
     const UPLOAD_ERR_DIR_NOT_WRITABLE = 12;
 
     /**
+     * File security error
+     */
+    const UPLOAD_ERR_FILE_NOT_SECURE = 13;
+
+    /**
      * Unexpected error
      */
-    const UPLOAD_ERR_UNEXPECTED = 13;
+    const UPLOAD_ERR_UNEXPECTED = 14;
 
     /**
      * Error messageed
@@ -68,7 +73,8 @@ class Upload
         10 => 'The uploaded file is not allowed',
         11 => 'The specified upload directory does not exist',
         12 => 'The specified upload directory is not writable',
-        13 => 'Unexpected error'
+        13 => 'The uploaded file was not uploaded securely',
+        14 => 'Unexpected error'
     ];
 
     /**
@@ -523,11 +529,12 @@ class Upload
     /**
      * Upload file to the upload dir, returns the newly uploaded file
      *
-     * @param  array  $file
-     * @param  string $to
+     * @param  array   $file
+     * @param  string  $to
+     * @param  boolean $secure
      * @return mixed
      */
-    public function upload($file, $to = null)
+    public function upload($file, $to = null, $secure = true)
     {
         if ($this->test($file)) {
             if (null === $to) {
@@ -540,12 +547,22 @@ class Upload
             $this->uploadedFile = $to;
             $to = $this->uploadDir . DIRECTORY_SEPARATOR . $to;
 
+            $isUploaded = is_uploaded_file($file['tmp_name']);
+
             // Move the uploaded file, creating a file object with it.
-            if (move_uploaded_file($file['tmp_name'], $to)) {
-                return $this->uploadedFile;
-            } else {
-                $this->error = self::UPLOAD_ERR_UNEXPECTED;
+            if (($secure) && !($isUploaded)) {
+                $this->error = self::UPLOAD_ERR_FILE_NOT_SECURE;
                 return false;
+            } else {
+                $result = ((!$secure) && !($isUploaded)) ?
+                    rename($file['tmp_name'], $to) : move_uploaded_file($file['tmp_name'], $to);
+
+                if ($result) {
+                    return $this->uploadedFile;
+                } else {
+                    $this->error = self::UPLOAD_ERR_UNEXPECTED;
+                    return false;
+                }
             }
         } else {
             return false;
