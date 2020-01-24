@@ -781,7 +781,10 @@ class Request extends AbstractHttp
         if (strtoupper($this->getMethod()) == 'GET') {
             $rawData = (isset($_SERVER['QUERY_STRING'])) ? rawurldecode($_SERVER['QUERY_STRING']) : null;
         } else {
-            // Stream raw data
+            /**
+             * $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
+             */
+            // Stream raw data to file
             if (null !== $streamToFile) {
                 // Stream raw data to system temp folder with auto-generated filename
                 if ($streamToFile === true) {
@@ -792,14 +795,22 @@ class Request extends AbstractHttp
                 // Else, stream raw data to user-specified direction with auto-generated filename
                 } else if (is_dir($streamToFile) && is_writable($streamToFile)) {
                     $filename = 'pop-http-' . uniqid();
-                    $rawData = $streamToFile .
+                    $rawData  = $streamToFile .
                         ((substr($streamToFile, -1) == DIRECTORY_SEPARATOR) ? $filename : DIRECTORY_SEPARATOR . $filename);
                 } else {
                     throw new Exception('Error: Unable to stream the raw data to an acceptable location.');
                 }
+
                 if (!empty($rawData)) {
-                    file_put_contents($rawData, file_get_contents('php://input'));
+                    file_put_contents(
+                        $rawData,
+                        (isset($_SERVER['X_POP_HTTP_RAW_DATA']) ?
+                            $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input'))
+                    );
+
                     clearstatcache();
+
+                    // Clear out if no raw data was stored
                     if (filesize($rawData) == 0) {
                         unlink($rawData);
                         $rawData = null;
@@ -807,20 +818,18 @@ class Request extends AbstractHttp
                 }
             // Else, store raw data in memory
             } else {
-                // $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
                 $rawData = (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) ?
                     $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input');
             }
-
         }
 
         // If the content-type is JSON
         if (isset($contentType) && (stripos($contentType, 'json') !== false) &&
-            (strtoupper($this->getMethod()) != 'GET')) {
+            (strtoupper($this->getMethod()) != 'GET') && (null === $streamToFile)) {
             $this->parsedData = json_decode($rawData, true);
         // Else, if the content-type is XML
         } else if (isset($contentType) && (stripos($contentType, 'xml') !== false) &&
-            (strtoupper($this->getMethod()) != 'GET')) {
+            (strtoupper($this->getMethod()) != 'GET') && (null === $streamToFile)) {
             $matches = [];
             preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
 
@@ -844,7 +853,7 @@ class Request extends AbstractHttp
                     $this->parsedData = $this->post;
                     break;
                 default:
-                    if ((null !== $contentType) && !empty($rawData)) {
+                    if ((null !== $contentType) && (null === $streamToFile) && !empty($rawData)) {
                         if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
                             parse_str($rawData, $this->parsedData);
                         } else if (stripos($contentType, 'multipart/form-data') !== false) {

@@ -374,6 +374,108 @@ class RequestTest extends TestCase
         $this->assertEquals('bar', $request->getPut('foo'));
     }
 
+    public function testStreamToFile1()
+    {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = 'Some file contents';
+
+        $request = new Request(null, null, null, __DIR__ . '/tmp/my-data');
+
+        $this->assertFileExists(__DIR__ . '/tmp/my-data');
+        $this->assertEquals(realpath(__DIR__ . '/tmp/my-data'), $request->getRawData());
+        $this->assertEquals('Some file contents', file_get_contents(__DIR__ . '/tmp/my-data'));
+
+        $request->clearRawDataFile();
+        $this->assertFileNotExists(__DIR__ . '/tmp/my-data');
+    }
+
+    public function testStreamToFile2()
+    {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = 'Some file contents';
+
+        $request = new Request(null, null, null, __DIR__ . '/tmp');
+
+        $this->assertTrue($request->hasRawData());
+        $this->assertTrue($request->hasRawDataFile());
+        $this->assertFileExists($request->getRawData());
+
+        $rawDataFile = $request->getRawData();
+        $this->assertEquals('Some file contents', file_get_contents($rawDataFile));
+
+        $request->clearRawDataFile();
+        $this->assertFileNotExists($rawDataFile);
+    }
+
+    public function testStreamToFile3()
+    {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = 'Some file contents';
+
+        $request = new Request(null, null, null, true);
+
+        $this->assertTrue($request->hasRawData());
+        $this->assertTrue($request->hasRawDataFile());
+        $this->assertFileExists($request->getRawData());
+
+        $rawDataFile = $request->getRawData();
+        $this->assertEquals('Some file contents', file_get_contents($rawDataFile));
+
+        $request->clearRawDataFile();
+        $this->assertFileNotExists($rawDataFile);
+    }
+
+    public function testStreamToFile4()
+    {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = null;
+
+        $request = new Request(null, null, null, true);
+
+        $this->assertFalse($request->hasRawData());
+        $this->assertFalse($request->hasRawDataFile());
+    }
+
+    public function testStreamToFileException()
+    {
+        $this->expectException('Pop\Http\Exception');
+
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = 'Some file contents';
+
+        $request = new Request(null, null, null, '/bad/dir');
+    }
+
     public function testFilter()
     {
         $_SERVER['HTTP_HOST']  = 'localhost';
