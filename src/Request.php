@@ -55,6 +55,12 @@ class Request extends AbstractHttp
     protected $parsedData = null;
 
     /**
+     * Raw data streamed file location
+     * @var string
+     */
+    protected $rawData = null;
+
+    /**
      * GET array
      */
     protected $get    = [];
@@ -107,8 +113,9 @@ class Request extends AbstractHttp
      * @param  string $uri
      * @param  string $basePath
      * @param  mixed  $filters
+     * @param  mixed  $streamToFile
      */
-    public function __construct($uri = null, $basePath = null, $filters = null)
+    public function __construct($uri = null, $basePath = null, $filters = null, $streamToFile = null)
     {
         $this->setRequestUri($uri, $basePath);
 
@@ -128,7 +135,7 @@ class Request extends AbstractHttp
         }
 
         if (isset($_SERVER['REQUEST_METHOD'])) {
-            $this->parseData();
+            $this->parseData($streamToFile);
         }
 
         // Get any possible request headers
@@ -578,13 +585,50 @@ class Request extends AbstractHttp
     }
 
     /**
-     * Get the raw data
+     * Check if the request has raw data
+     *
+     * @return boolean
+     */
+    public function hasRawData()
+    {
+        return (((null !== $this->rawData) && file_exists($this->rawData)) || (null !== $this->body));
+    }
+
+    /**
+     * Check if the raw data was streamed to a file
+     *
+     * @return boolean
+     */
+    public function hasRawDataFile()
+    {
+        return ((null !== $this->rawData) && file_exists($this->rawData));
+    }
+
+    /**
+     * Clear the raw data file
+     *
+     * @return Request
+     */
+    public function clearRawDataFile()
+    {
+        if (file_exists($this->rawData) && is_writable($this->rawData)) {
+            unlink ($this->rawData);
+        }
+        return $this;
+    }
+
+    /**
+     * Get the raw data (either a file location, or a stream of data from the body)
      *
      * @return string
      */
     public function getRawData()
     {
-        return (null !== $this->body) ? $this->body->getContent() : null;
+        if ($this->hasRawDataFile()) {
+            return $this->rawData;
+        } else {
+            return (null !== $this->body) ? $this->body->getContent() : null;
+        }
     }
 
     /**
@@ -720,9 +764,10 @@ class Request extends AbstractHttp
     /**
      * Parse any data that came with the request
      *
+     * @param  mixed $streamToFile
      * @return void
      */
-    protected function parseData()
+    protected function parseData($streamToFile = null)
     {
         $contentType = null;
         $rawData     = null;
@@ -736,9 +781,37 @@ class Request extends AbstractHttp
         if (strtoupper($this->getMethod()) == 'GET') {
             $rawData = (isset($_SERVER['QUERY_STRING'])) ? rawurldecode($_SERVER['QUERY_STRING']) : null;
         } else {
-            // $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
-            $rawData = (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) ?
-                $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input');
+            // Stream raw data
+            if (null !== $streamToFile) {
+                // Stream raw data to system temp folder with auto-generated filename
+                if ($streamToFile === true) {
+                    $rawData = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pop-http-' . uniqid();
+                // Else, stream raw data to user-specified file location
+                } else if (!is_dir($streamToFile) && is_dir(dirname($streamToFile)) && is_writable(dirname($streamToFile))) {
+                    $rawData = $streamToFile;
+                // Else, stream raw data to user-specified direction with auto-generated filename
+                } else if (is_dir($streamToFile) && is_writable($streamToFile)) {
+                    $filename = 'pop-http-' . uniqid();
+                    $rawData = $streamToFile .
+                        ((substr($streamToFile, -1) == DIRECTORY_SEPARATOR) ? $filename : DIRECTORY_SEPARATOR . $filename);
+                } else {
+                    throw new Exception('Error: Unable to stream the raw data to an acceptable location.');
+                }
+                if (!empty($rawData)) {
+                    file_put_contents($rawData, file_get_contents('php://input'));
+                    clearstatcache();
+                    if (filesize($rawData) == 0) {
+                        unlink($rawData);
+                        $rawData = null;
+                    }
+                }
+            // Else, store raw data in memory
+            } else {
+                // $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
+                $rawData = (isset($_SERVER['X_POP_HTTP_RAW_DATA'])) ?
+                    $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input');
+            }
+
         }
 
         // If the content-type is JSON
@@ -809,7 +882,11 @@ class Request extends AbstractHttp
                 break;
         }
 
-        $this->body = new \Pop\Mime\Part\Body($rawData);
+        if (null !== $streamToFile) {
+            $this->rawData = $rawData;
+        } else {
+            $this->body = new \Pop\Mime\Part\Body($rawData);
+        }
     }
 
 }
