@@ -827,7 +827,7 @@ class Request extends AbstractHttp
         // Parse custom JSON or XML data
         if ((strtoupper($this->getMethod()) != 'GET') && (null !== $contentType) && (null === $streamToFile) &&
             ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false))) {
-            $this->parsedData = Parser::parseByContentType($rawData, $contentType);
+            $this->parsedData = self::parseByContentType($rawData, $contentType);
         // Else, default regular data parsing
         } else {
             switch (strtoupper($this->getMethod())) {
@@ -842,7 +842,7 @@ class Request extends AbstractHttp
                 // All other custom cases
                 default:
                     if ((null !== $contentType) && (null === $streamToFile) && !empty($rawData)) {
-                        $this->parsedData = Parser::parseByContentType($rawData, $contentType);
+                        $this->parsedData = self::parseByContentType($rawData, $contentType);
                     }
             }
         }

@@ -112,45 +112,6 @@ class Parser
     }
 
     /**
-     * Parse a response the response string based on content type
-     *
-     * @param  string $rawResponse
-     * @param  string $contentType
-     * @return mixed
-     */
-    public static function parseByContentType($rawResponse, $contentType)
-    {
-        $parsedResponse = null;
-        $contentType    = strtolower($contentType);
-
-        if (strpos($contentType, 'json') !== false) {
-            $parsedResponse = json_decode($rawResponse, true);
-        } else if (strpos($contentType, 'xml') !== false) {
-            $matches = [];
-            preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawResponse, $matches);
-
-            foreach ($matches[0] as $match) {
-                $strip = str_replace(
-                    ['<![CDATA[', ']]>', '<', '>'],
-                    ['', '', '&lt;', '&gt;'],
-                    $match
-                );
-                $rawResponse = str_replace($match, $strip, $rawResponse);
-            }
-
-            $parsedResponse = json_decode(json_encode((array)simplexml_load_string($rawResponse)), true);
-        } else if (strpos($contentType, 'application/x-www-form-urlencoded') !== false) {
-            parse_str($rawResponse, $parsedResponse);
-        } else if (strpos($contentType, 'multipart/form-data') !== false) {
-            $formContent = (strpos($rawResponse, 'Content-Type:') === false) ?
-                'Content-Type: ' . $contentType . "\r\n\r\n" . $rawResponse : $rawResponse;
-            $parsedResponse = \Pop\Mime\Message::parseForm($formContent);
-        }
-
-        return $parsedResponse;
-    }
-
-    /**
      * Encode the body data
      *
      * @param  string $body

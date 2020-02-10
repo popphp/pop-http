@@ -13,8 +13,6 @@
  */
 namespace Pop\Http\Client;
 
-use Pop\Http\Response\Parser;
-
 /**
  * Abstract HTTP client class
  *
@@ -234,7 +232,7 @@ abstract class AbstractClient implements ClientInterface
         if (($this->hasResponse()) && ($this->getResponse()->hasBody()) && ($this->getResponse()->hasHeader('Content-Type'))) {
             $rawResponse    = $this->getResponse()->getBody()->getContent();
             $contentType    = $this->getResponse()->getHeader('Content-Type')->getValue();
-            $parsedResponse = Parser::parseByContentType($rawResponse, $contentType);
+            $parsedResponse = Response::parseByContentType($rawResponse, $contentType);
         }
 
         return $parsedResponse;

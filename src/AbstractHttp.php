@@ -166,6 +166,45 @@ abstract class AbstractHttp implements HttpInterface
         return (null !== $this->body);
     }
 
+
+    /**
+     * Parse a request or response string based on content type
+     *
+     * @param  string $rawData
+     * @param  string $contentType
+     * @return mixed
+     */
+    public static function parseByContentType($rawData, $contentType)
+    {
+        $parsedResult = null;
+        $contentType    = strtolower($contentType);
+
+        if (strpos($contentType, 'json') !== false) {
+            $parsedResult = json_decode($rawData, true);
+        } else if (strpos($contentType, 'xml') !== false) {
+            $matches = [];
+            preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
+
+            foreach ($matches[0] as $match) {
+                $strip = str_replace(
+                    ['<![CDATA[', ']]>', '<', '>'],
+                    ['', '', '&lt;', '&gt;'],
+                    $match
+                );
+                $rawData = str_replace($match, $strip, $rawData);
+            }
+
+            $parsedResult = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
+        } else if (strpos($contentType, 'application/x-www-form-urlencoded') !== false) {
+            parse_str($rawData, $parsedResult);
+        } else if (strpos($contentType, 'multipart/form-data') !== false) {
+            $formContent = (strpos($rawData, 'Content-Type:') === false) ?
+                'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
+            $parsedResult = \Pop\Mime\Message::parseForm($formContent);
+        }
+
+        return $parsedResult;
+    }
     /**
      * Magic method to get either the headers or body
      *
