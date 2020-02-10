@@ -14,6 +14,7 @@
 namespace Pop\Http;
 
 use Pop\Filter\FilterableTrait;
+use Pop\Http\Response\Parser;
 
 /**
  * HTTP request class
@@ -823,44 +824,25 @@ class Request extends AbstractHttp
             }
         }
 
-        // If the content-type is JSON
-        if (isset($contentType) && (stripos($contentType, 'json') !== false) &&
-            (strtoupper($this->getMethod()) != 'GET') && (null === $streamToFile)) {
-            $this->parsedData = json_decode($rawData, true);
-        // Else, if the content-type is XML
-        } else if (isset($contentType) && (stripos($contentType, 'xml') !== false) &&
-            (strtoupper($this->getMethod()) != 'GET') && (null === $streamToFile)) {
-            $matches = [];
-            preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
-
-            foreach ($matches[0] as $match) {
-                $strip = str_replace(
-                    ['<![CDATA[', ']]>', '<', '>'],
-                    ['', '', '&lt;', '&gt;'],
-                    $match
-                );
-                $rawData = str_replace($match, $strip, $rawData);
-            }
-
-            $this->parsedData = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
+        // Parse custom JSON or XML data
+        if ((strtoupper($this->getMethod()) != 'GET') && (null !== $contentType) && (null === $streamToFile) &&
+            ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false))) {
+            $this->parsedData = Parser::parseByContentType($rawData, $contentType);
         // Else, default regular data parsing
         } else {
             switch (strtoupper($this->getMethod())) {
+                // Regular query string
                 case 'GET':
                     $this->parsedData = $this->get;
                     break;
+                // Regular post via application/x-www-form-urlencoded or multipart/form-data
                 case 'POST':
                     $this->parsedData = $this->post;
                     break;
+                // All other custom cases
                 default:
                     if ((null !== $contentType) && (null === $streamToFile) && !empty($rawData)) {
-                        if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
-                            parse_str($rawData, $this->parsedData);
-                        } else if (stripos($contentType, 'multipart/form-data') !== false) {
-                            $formContent = (strpos($rawData, 'Content-Type:') === false) ?
-                                'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
-                            $this->parsedData = \Pop\Mime\Message::parseForm($formContent);
-                        }
+                        $this->parsedData = Parser::parseByContentType($rawData, $contentType);
                     }
             }
         }
