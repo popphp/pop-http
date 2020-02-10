@@ -372,7 +372,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function createAsJson()
     {
-        $this->request->createAsJson();
+        $this->getRequest()->createAsJson();
         return $this;
     }
 
@@ -383,7 +383,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function isJson()
     {
-        return $this->request->isJson();
+        return $this->getRequest()->isJson();
     }
 
     /**
@@ -393,7 +393,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function createUrlEncodedForm()
     {
-        $this->request->createUrlEncodedForm();
+        $this->getRequest()->createUrlEncodedForm();
         return $this;
     }
 
@@ -404,7 +404,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function isUrlEncodedForm()
     {
-        return $this->request->isUrlEncodedForm();
+        return $this->getRequest()->isUrlEncodedForm();
     }
 
     /**
@@ -414,7 +414,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function createMultipartForm()
     {
-        $this->request->createMultipartForm();
+        $this->getRequest()->createMultipartForm();
         return $this;
     }
 
@@ -425,7 +425,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function isMultipartForm()
     {
-        return $this->request->isMultipartForm();
+        return $this->getRequest()->isMultipartForm();
     }
 
     /**

@@ -312,7 +312,7 @@ class Stream extends AbstractClient
                     if ($this->request->isJson()) {
                         $content = json_encode($this->request->getFields(), JSON_PRETTY_PRINT);
                         $this->request->addHeader('Content-Type', 'application/json')
-                            ->addHeader('Content-Length', mb_strlen($content));
+                            ->addHeader('Content-Length', strlen($content));
                         $this->contextOptions['http']['content'] = $content;
                     // If request is a URL-encoded form
                     } else if ($this->request->isUrlEncodedForm()) {
@@ -326,7 +326,7 @@ class Stream extends AbstractClient
                         $content     = $formMessage->render(false);
                         $formMessage->removeHeader('Content-Type');
                         $this->request->addHeader($header)
-                            ->addHeader('Content-Length', mb_strlen($content));
+                            ->addHeader('Content-Length', strlen($content));
                         $this->contextOptions['http']['content'] = $content;
                     // Else, basic request with data
                     } else {

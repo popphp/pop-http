@@ -190,7 +190,7 @@ class Request extends AbstractHttp
      * @param  boolean $mb
      * @return int
      */
-    public function getQueryLength($mb = true)
+    public function getQueryLength($mb = false)
     {
         if ((null === $this->query) && ($this->hasFields())) {
             $this->prepareQuery();
