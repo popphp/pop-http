@@ -825,8 +825,11 @@ class Request extends AbstractHttp
         }
 
         // Parse custom JSON or XML data
-        if ((strtoupper($this->getMethod()) != 'GET') && (null !== $contentType) && (null === $streamToFile) &&
+        if ((strtoupper($this->getMethod()) != 'GET') && (null !== $contentType) &&
             ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false))) {
+            if ((null !== $streamToFile) && file_exists($rawData)) {
+                $rawData = file_get_contents($rawData);
+            }
             $this->parsedData = self::parseByContentType($rawData, $contentType);
         // Else, default regular data parsing
         } else {
@@ -841,7 +844,10 @@ class Request extends AbstractHttp
                     break;
                 // All other custom cases
                 default:
-                    if ((null !== $contentType) && (null === $streamToFile) && !empty($rawData)) {
+                    if (null !== $contentType) {
+                        if ((null !== $streamToFile) && file_exists($rawData)) {
+                            $rawData = file_get_contents($rawData);
+                        }
                         $this->parsedData = self::parseByContentType($rawData, $contentType);
                     }
             }
