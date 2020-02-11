@@ -379,6 +379,9 @@ class RequestTest extends TestCase
         if (isset($_SERVER['CONTENT_TYPE'])) {
             unset($_SERVER['CONTENT_TYPE']);
         }
+        if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+            unset($_SERVER['HTTP_CONTENT_TYPE']);
+        }
 
         $_SERVER['HTTP_HOST']           = 'localhost';
         $_SERVER['SERVER_PORT']         = 8000;
@@ -399,6 +402,9 @@ class RequestTest extends TestCase
     {
         if (isset($_SERVER['CONTENT_TYPE'])) {
             unset($_SERVER['CONTENT_TYPE']);
+        }
+        if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+            unset($_SERVER['HTTP_CONTENT_TYPE']);
         }
 
         $_SERVER['HTTP_HOST']           = 'localhost';
