@@ -13,7 +13,7 @@
  */
 namespace Pop\Http\Client;
 
-use Pop\Http\Response\AbstractResponse;
+use Pop\Http\AbstractResponse;
 
 /**
  * HTTP client response class
@@ -23,7 +23,7 @@ use Pop\Http\Response\AbstractResponse;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2020 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.5.0
+ * @version    4.0.0
  */
 class Response extends AbstractResponse
 {

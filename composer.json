@@ -24,7 +24,7 @@
     ],
     "require": {
         "php": ">=7.1.0",
-        "popphp/pop-filter": "^3.0.0",
+        "popphp/pop-filter": "^3.1.0",
         "popphp/pop-mime": "^1.0.0"
     },
     "require-dev": {
@@ -42,7 +42,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "3.5.x-dev"
+            "dev-master": "4.0.x-dev"
         }
     }
 }

@@ -11,21 +11,17 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Response;
-
-use Pop\Http\AbstractHttp;
-use Pop\Mime\Part\Body;
-use Pop\Mime\Part\Header;
+namespace Pop\Http;
 
 /**
- * HTTP client response class
+ * Abstract HTTP request class
  *
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2020 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.5.0
+ * @version    4.0.0
  */
 abstract class AbstractResponse extends AbstractHttp
 {
@@ -108,7 +104,7 @@ abstract class AbstractResponse extends AbstractHttp
     ];
 
     /**
-     * HTTP version from response
+     * HTTP version for response, i.e. 1.0, 1.1, 2.0, 3.0, etc.
      * @var string
      */
     protected $version = 1.1;
@@ -124,12 +120,6 @@ abstract class AbstractResponse extends AbstractHttp
      * @var string
      */
     protected $message = null;
-
-    /**
-     * Raw response string
-     * @var string
-     */
-    protected $response = null;
 
     /**
      * Constructor
@@ -169,21 +159,19 @@ abstract class AbstractResponse extends AbstractHttp
     /**
      * Set the response version
      *
-     * @param  float $version
+     * @param  float|string $version
      * @return AbstractResponse
      */
-    public function setVersion($version = 1.1)
+    public function setVersion($version)
     {
-        if (($version == 1.0) || ($version == 1.1)) {
-            $this->version = $version;
-        }
+        $this->version = $version;
         return $this;
     }
 
     /**
      * Get the response HTTP version
      *
-     * @return string
+     * @return float|string
      */
     public function getVersion()
     {
@@ -241,27 +229,6 @@ abstract class AbstractResponse extends AbstractHttp
         return $this->message;
     }
 
-    /**
-     * Set the raw response string
-     *
-     * @param  string $response
-     * @return AbstractResponse
-     */
-    public function setResponse($response)
-    {
-        $this->response = $response;
-        return $this;
-    }
-
-    /**
-     * Get the raw response
-     *
-     * @return string
-     */
-    public function getResponse()
-    {
-        return $this->response;
-    }
 
     /**
      * Determine if the response is a success
@@ -316,52 +283,6 @@ abstract class AbstractResponse extends AbstractHttp
     {
         $type = floor($this->code / 100);
         return ($type == 5);
-    }
-
-    /**
-     * Decode the body
-     *
-     * @param  string $body
-     * @return Body
-     */
-    public function decodeBody($body = null)
-    {
-        if (null !== $body) {
-            $this->setBody($body);
-        }
-        if (($this->hasHeader('Transfer-Encoding')) &&
-            (strtolower($this->getHeader('Transfer-Encoding')->getValue()) == 'chunked')) {
-            $this->body->setContent(Parser::decodeChunkedBody($this->body->getContent()));
-        }
-        $contentEncoding = ($this->hasHeader('Content-Encoding')) ? $this->getHeader('Content-Encoding')->getValue() : null;
-        $this->body->setContent(Parser::decodeBody($this->body->getContent(), $contentEncoding));
-
-        return $this->body;
-    }
-
-    /**
-     * Parse response headers
-     *
-     * @param  string|array $responseHeader
-     * @return void
-     */
-    public function parseResponseHeaders($responseHeader)
-    {
-        if (null !== $responseHeader) {
-            $headers = (is_string($responseHeader)) ?
-                array_map('trim', explode("\n", $responseHeader)) : (array)$responseHeader;
-            foreach ($headers as $header) {
-                if (strpos($header, 'HTTP') !== false) {
-                    $this->version = substr($header, 0, strpos($header, ' '));
-                    $this->version = substr($this->version, (strpos($this->version, '/') + 1));
-                    preg_match('/\d\d\d/', trim($header), $match);
-                    $this->code    = $match[0];
-                    $this->message = trim(str_replace('HTTP/' . $this->version . ' ' . $this->code . ' ', '', $header));
-                } else if (strpos($header, ':') !== false) {
-                    $this->addHeader(Header::parse($header));
-                }
-            }
-        }
     }
 
 }

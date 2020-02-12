@@ -13,7 +13,7 @@
  */
 namespace Pop\Http\Client;
 
-use Pop\Http\AbstractHttp;
+use Pop\Http\AbstractRequest;
 use Pop\Mime\Part;
 
 /**
@@ -24,9 +24,9 @@ use Pop\Mime\Part;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2020 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.5.0
+ * @version    4.0.0
  */
-class Request extends AbstractHttp
+class Request extends AbstractRequest
 {
 
     /**
@@ -201,7 +201,7 @@ class Request extends AbstractHttp
     /**
      * Create request as JSON
      *
-     * @return Request|AbstractHttp
+     * @return Request
      */
     public function createAsJson()
     {
@@ -222,7 +222,7 @@ class Request extends AbstractHttp
     /**
      * Create request as a URL-encoded form
      *
-     * @return Request|AbstractHttp
+     * @return Request
      */
     public function createUrlEncodedForm()
     {
@@ -243,7 +243,7 @@ class Request extends AbstractHttp
     /**
      * Create request as a multipart form
      *
-     * @return Request|AbstractHttp
+     * @return Request
      */
     public function createMultipartForm()
     {

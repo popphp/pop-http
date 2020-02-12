@@ -24,7 +24,7 @@ use Pop\Mime\Part\Body;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2020 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.5.0
+ * @version    4.0.0
  */
 interface HttpInterface
 {
@@ -55,11 +55,35 @@ interface HttpInterface
     public function getHeader($name);
 
     /**
+     * Get header value
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getHeaderValue($name);
+
+    /**
      * Get all headers
      *
      * @return array
      */
     public function getHeaders();
+
+    /**
+     * Get all header values as associative array
+     *
+     * @return array
+     */
+    public function getHeadersAsArray();
+
+    /**
+     * Get all header values formatted string
+     *
+     * @param  string $status
+     * @param  string $eol
+     * @return string
+     */
+    public function getHeadersAsString($status = null, $eol = "\r\n");
 
     /**
      * Determine if there are headers
@@ -77,12 +101,27 @@ interface HttpInterface
     public function hasHeader($name);
 
     /**
+     * Remove a header
+     *
+     * @param  string $name
+     * @return HttpInterface
+     */
+    public function removeHeader($name);
+
+    /**
+     * Remove all headers
+     *
+     * @return HttpInterface
+     */
+    public function removeHeaders();
+
+    /**
      * Set the body
      *
      * @param  string|Body $body
      * @return HttpInterface
      */
-    public function setBody($body = null);
+    public function setBody($body);
 
     /**
      * Get the body
@@ -92,10 +131,39 @@ interface HttpInterface
     public function getBody();
 
     /**
+     * Get body content
+     *
+     * @return mixed
+     */
+    public function getBodyContent();
+
+    /**
      * Has a body
      *
      * @return boolean
      */
     public function hasBody();
+
+    /**
+     * Has body content
+     *
+     * @return boolean
+     */
+    public function hasBodyContent();
+
+    /**
+     * Decode the body content
+     *
+     * @param  string $body
+     * @return Body
+     */
+    public function decodeBodyContent($body = null);
+
+    /**
+     * Remove the body
+     *
+     * @return HttpInterface
+     */
+    public function removeBody();
 
 }
