@@ -258,10 +258,10 @@ abstract class AbstractHttp implements HttpInterface
         }
         if (($this->hasHeader('Transfer-Encoding')) &&
             (strtolower($this->getHeader('Transfer-Encoding')->getValue()) == 'chunked')) {
-            $this->body->setContent(Parser::decodeChunkedBody($this->body->getContent()));
+            $this->body->setContent(Parser::decodeChunkedData($this->body->getContent()));
         }
         $contentEncoding = ($this->hasHeader('Content-Encoding')) ? $this->getHeader('Content-Encoding')->getValue() : null;
-        $this->body->setContent(Parser::decodeBody($this->body->getContent(), $contentEncoding));
+        $this->body->setContent(Parser::decodeData($this->body->getContent(), $contentEncoding));
 
         return $this->body;
     }

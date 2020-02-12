@@ -31,33 +31,6 @@ class Response extends AbstractResponse
 {
 
     /**
-     * Decode the body
-     *
-     * @param  string $body
-     * @return Body
-     */
-    public function decodeBody($body = null)
-    {
-        if (null !== $body) {
-            $this->setBody($body);
-        }
-
-        $bodyContent = $this->body->getContent();
-
-        if (($this->hasHeader('Transfer-Encoding')) &&
-            (strtolower($this->getHeaderValue('Transfer-Encoding')) == 'chunked')) {
-            $bodyContent = Parser::decodeChunkedData($this->body->getContent());
-        }
-        if ($this->hasHeader('Content-Encoding')) {
-            $bodyContent = Parser::decodeData($bodyContent, strtoupper($this->getHeaderValue('Content-Encoding')));
-        }
-
-        $this->body->setContent($bodyContent);
-
-        return $this->body;
-    }
-
-    /**
      * Prepare response body
      *
      * @param  boolean $length
@@ -89,7 +62,7 @@ class Response extends AbstractResponse
      */
     public function getHeadersAsString($status = null, $eol = "\r\n")
     {
-        $httpStatus = ($status === true) ? "HTTP/{$this->version} {$this->code} {$this->message}" : null;
+        $httpStatus = ($status === true) ? "HTTP/{$this->version} {$this->code} {$this->message}" : $status;
         return parent::getHeadersAsString($httpStatus, $eol);
     }
 
