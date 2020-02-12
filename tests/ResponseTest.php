@@ -2,7 +2,7 @@
 
 namespace Pop\Http\Test;
 
-use Pop\Http\Response;
+use Pop\Http\Server\Response;
 use PHPUnit\Framework\TestCase;
 
 class ResponseTest extends TestCase
@@ -12,19 +12,19 @@ class ResponseTest extends TestCase
     {
         $response = new Response();
         $response->addHeader('Content-Type', 'text/plain');
-        $this->assertInstanceOf('Pop\Http\Response', $response);
+        $this->assertInstanceOf('Pop\Http\Server\Response', $response);
         $this->assertEquals('text/plain', $response->getHeader('Content-Type')->getValue());
     }
 
     public function testConstructorBadHeaderCodeException()
     {
-        $this->expectException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Server\Exception');
         $response = new Response(['code' => 700]);
     }
 
     public function testGetMessageCodeBadCodeException()
     {
-        $this->expectException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Server\Exception');
         $message = Response::getMessageFromCode(700);
     }
 
@@ -70,7 +70,7 @@ class ResponseTest extends TestCase
 
     public function testParseStringException()
     {
-        $this->expectException('Pop\Http\Response\Exception');
+        $this->expectException('Pop\Http\Server\Exception');
         $response = Response\Parser::parseFromString('BAD HTTP REQUEST');
     }
 
@@ -152,7 +152,7 @@ BODY;
 
     public function testRedirectHeadersSentException()
     {
-        $this->expectException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Server\Exception');
         Response::redirect('http://www.popphp.org/version');
     }
 
@@ -185,7 +185,7 @@ BODY;
      */
     public function testRedirectBadCodeException()
     {
-        $this->expectException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Server\Exception');
         Response::redirect('http://www.popphp.org/version', 700);
     }
 

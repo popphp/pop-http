@@ -33,7 +33,6 @@ class CurlTest extends TestCase
         ]);
         $this->assertEquals(123, $client->getField('var'));
         $client->send();
-        $this->assertNotEmpty($client->response()->getResponse());
         $this->assertNotEmpty($client->resource());
     }
 

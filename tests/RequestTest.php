@@ -3,7 +3,7 @@
 namespace Pop\Http\Test;
 
 use Pop\Filter\Filter;
-use Pop\Http\Request;
+use Pop\Http\Server\Request;
 use PHPUnit\Framework\TestCase;
 use Pop\Mime\Message;
 
@@ -13,7 +13,7 @@ class RequestTest extends TestCase
     public function testConstructor()
     {
         $request = new Request();
-        $this->assertInstanceOf('Pop\Http\Request', $request);
+        $this->assertInstanceOf('Pop\Http\Server\Request', $request);
     }
 
     public function testParseData()
@@ -468,7 +468,7 @@ class RequestTest extends TestCase
 
     public function testStreamToFileException()
     {
-        $this->expectException('Pop\Http\Exception');
+        $this->expectException('Pop\Http\Server\Exception');
 
         if (isset($_SERVER['CONTENT_TYPE'])) {
             unset($_SERVER['CONTENT_TYPE']);
