@@ -157,6 +157,9 @@ class Request extends AbstractRequest
      */
     public function prepareQuery()
     {
+        if ($this->hasFilters()) {
+            $this->fields = $this->filter($this->fields);
+        }
         $this->query = http_build_query($this->fields);
         return $this->query;
     }

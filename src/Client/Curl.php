@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Http\Parser;
 use Pop\Mime\Message;
 
 /**
@@ -289,16 +290,15 @@ class Curl extends AbstractClient
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true)) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
             if ($this->options[CURLOPT_HEADER]) {
-                $this->response->parseResponseHeaders(substr($response, 0, $headerSize));
+                $this->response->addHeaders(Parser::parseHeaders(substr($response, 0, $headerSize)));
                 $this->response->setBody(substr($response, $headerSize));
             } else {
                 $this->response->setBody($response);
             }
-            $this->response->setResponse($response);
         }
 
         if ($this->response->hasHeader('Content-Encoding')) {
-            $this->response->decodeBody();
+            $this->response->decodeBodyContent();
         }
     }
 

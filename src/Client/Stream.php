@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Http\Parser;
 use Pop\Mime\Message;
 
 /**
@@ -387,21 +388,18 @@ class Stream extends AbstractClient
 
         if ($this->resource !== false) {
             $meta      = stream_get_meta_data($this->resource);
-            $rawHeader = implode("\r\n", $meta['wrapper_data']) . "\r\n\r\n";
             $headers   = $meta['wrapper_data'];
             $body      = stream_get_contents($this->resource);
         } else if (null !== $this->httpResponseHeaders) {
-            $rawHeader = implode("\r\n", $this->httpResponseHeaders) . "\r\n\r\n";
             $headers   = $this->httpResponseHeaders;
         }
 
         // Parse response headers
-        $this->response->parseResponseHeaders($headers);
+        $this->response->addHeaders(Parser::parseHeaders($headers));
         $this->response->setBody($body);
-        $this->response->setResponse($rawHeader . $body);
 
         if ($this->response->hasHeader('Content-Encoding')) {
-            $this->response->decodeBody();
+            $this->response->decodeBodyContent();
         }
     }
 
