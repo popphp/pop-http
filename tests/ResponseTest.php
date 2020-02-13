@@ -3,6 +3,7 @@
 namespace Pop\Http\Test;
 
 use Pop\Http\Server\Response;
+use Pop\Http\Parser;
 use PHPUnit\Framework\TestCase;
 
 class ResponseTest extends TestCase
@@ -18,7 +19,7 @@ class ResponseTest extends TestCase
 
     public function testConstructorBadHeaderCodeException()
     {
-        $this->expectException('Pop\Http\Server\Exception');
+        $this->expectException('Pop\Http\Exception');
         $response = new Response(['code' => 700]);
     }
 
@@ -30,7 +31,7 @@ class ResponseTest extends TestCase
 
     public function testParse()
     {
-        $response = Response\Parser::parseFromUri('https://www.popphp.org/');
+        $response = Parser::parseResponseFromUri('https://www.popphp.org/');
         $this->assertEquals(200, $response->getCode());
         $this->assertEquals(1.1, $response->getVersion());
         $this->assertTrue($response->isSuccess());
@@ -44,7 +45,7 @@ class ResponseTest extends TestCase
 
     public function testParseString1()
     {
-        $response = Response\Parser::parseFromString(file_get_contents(__DIR__ . '/tmp/response.txt'));
+        $response = Parser::parseResponseFromString(file_get_contents(__DIR__ . '/tmp/response.txt'));
         $this->assertEquals(200, $response->getCode());
         $this->assertContains('<html', $response->getBody()->getContent());
         $this->assertEquals('text/html', $response->getHeader('Content-Type')->getValue());
@@ -54,42 +55,20 @@ class ResponseTest extends TestCase
 
     public function testParseString2()
     {
-        $response = Response\Parser::parseFromString(str_replace("\n", "\r\n", file_get_contents(__DIR__ . '/tmp/response.txt')));
+        $response = Parser::parseResponseFromString(str_replace("\n", "\r\n", file_get_contents(__DIR__ . '/tmp/response-encoded.txt')));
         $this->assertEquals(200, $response->getCode());
-        $this->assertContains('<html', $response->getBody()->getContent());
-        $this->assertEquals('text/html', $response->getHeader('Content-Type')->getValue());
-        $this->assertEquals('text/html', $response->getHeaders()['Content-Type']->getValue());
-        $this->assertContains('ETag: "84f-509414fcd0819"', $response->getHeadersAsString());
-    }
-
-    public function testParseString3()
-    {
-        $response = Response\Parser::parseFromString(str_replace("\n", "\r\n", file_get_contents(__DIR__ . '/tmp/response-encoded.txt')));
-        $this->assertEquals(200, $response->getCode());
-    }
-
-    public function testParseStringException()
-    {
-        $this->expectException('Pop\Http\Server\Exception');
-        $response = Response\Parser::parseFromString('BAD HTTP REQUEST');
     }
 
     public function testEncodeBodyWithGzip()
     {
-        $body = Response\Parser::encodeBody('Hello World');
-        $this->assertEquals('Hello World', Response\Parser::decodeBody($body));
+        $body = Parser::encodeData('Hello World');
+        $this->assertEquals('Hello World', Parser::decodeData($body));
     }
 
     public function testEncodeBodyWithDeflate()
     {
-        $body = Response\Parser::encodeBody('Hello World', 'deflate');
-        $this->assertEquals('Hello World', Response\Parser::decodeBody($body, 'deflate'));
-    }
-
-    public function testEncodeBodyNoEncode()
-    {
-        $body = Response\Parser::encodeBody('Hello World', 'none');
-        $this->assertEquals('Hello World', Response\Parser::decodeBody($body, 'none'));
+        $body = Parser::encodeData('Hello World', Parser::DEFLATE);
+        $this->assertEquals('Hello World', Parser::decodeData($body, Parser::DEFLATE));
     }
 
     public function testDecodeChunkedBody1()
@@ -104,7 +83,7 @@ e\r\n
 0\r\n
 \r\n
 BODY;
-        $this->assertContains('Wik', Response\Parser::decodeChunkedBody($body));
+        $this->assertContains('Wik', Parser::decodeChunkedData($body));
     }
 
     public function testDecodeChunkedBody2()
@@ -126,7 +105,7 @@ BODY;
             'Transfer-Encoding' => 'chunked'
         ]);
 
-        $this->assertContains('Wik', $response->decodeBody()->getContent());
+        $this->assertContains('Wik', $response->decodeBodyContent()->getContent());
     }
 
     public function testDecodeChunkedBody3()
@@ -147,7 +126,7 @@ BODY;
             'Transfer-Encoding' => 'chunked'
         ]);
 
-        $this->assertContains('Wik', $response->decodeBody($body)->getContent());
+        $this->assertContains('Wik', $response->decodeBodyContent($body)->getContent());
     }
 
     public function testRedirectHeadersSentException()
@@ -191,7 +170,7 @@ BODY;
 
     public function testToString()
     {
-        $response = new Response(['headers' => ['Content-Type' => 'text/plain', 'Content-Encoding' => 'deflate']]);
+        $response = new Response(['headers' => ['Content-Type' => 'text/plain']]);
         $response->setBody('Hello World');
         $r = (string)$response;
         $this->assertContains('HTTP/1.1', $r);

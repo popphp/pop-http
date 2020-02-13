@@ -535,6 +535,16 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Has the raw data
+     *
+     * @return boolean
+     */
+    public function hasRawData()
+    {
+        return $this->requestData->hasRawData();
+    }
+
+    /**
      * Get request URI object
      *
      * @return Uri

@@ -364,6 +364,10 @@ class Data extends AbstractRequest
             $this->queryData = ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false)) ?
                 Parser::parseDataByContentType($this->queryData, $contentType, strtoupper($encoding)) :
                 Parser::parseDataByContentType($this->queryData, 'application/x-www-form-urlencoded', strtoupper($encoding));
+
+            if (empty($this->rawData)) {
+                $this->rawData = $_SERVER['QUERY_STRING'];
+            }
         }
 
         // Process raw data
@@ -372,10 +376,10 @@ class Data extends AbstractRequest
         }
 
         // If the query string had a processed custom data string
-        if ((strtoupper($_SERVER['REQUEST_METHOD']) == 'GET') && ($this->get != $this->queryData)) {
+        if ((strtoupper($_SERVER['REQUEST_METHOD']) == 'GET') && ($this->get != $this->queryData) && !empty($this->queryData)) {
             $this->get = $this->queryData;
         // If the request was POST and had processed custom data
-        } else if ((strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') && ($this->post != $this->parsedData)) {
+        } else if ((strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') && ($this->post != $this->parsedData) && !empty($this->parsedData)) {
             $this->post = $this->parsedData;
         }
 
@@ -459,6 +463,19 @@ class Data extends AbstractRequest
                 $this->streamToFileLocation = null;
             }
         }
+    }
+
+    /**
+     * Clear stream to file
+     *
+     * @return Data
+     */
+    public function clearStreamToFile()
+    {
+        if (file_exists($this->streamToFileLocation) && is_writable($this->streamToFileLocation)) {
+            unlink($this->streamToFileLocation);
+        }
+        return $this;
     }
 
     /**

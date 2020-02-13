@@ -133,7 +133,7 @@ class Response extends AbstractResponse
     public function __toString()
     {
         $body = $this->prepareBody();
-        return $this->getHeadersAsString() . "\r\n" . $body;
+        return $this->getHeadersAsString(true) . "\r\n" . $body;
     }
 
     /**

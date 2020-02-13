@@ -2,7 +2,7 @@
 
 namespace Pop\Http\Test;
 
-use Pop\Http\Upload;
+use Pop\Http\Server\Upload;
 use PHPUnit\Framework\TestCase;
 
 class UploadTest extends TestCase
@@ -12,7 +12,7 @@ class UploadTest extends TestCase
     {
         $upload = new Upload(__DIR__ . '/tmp', 10000, ['php'], ['txt']);
         $upload->overwrite(true);
-        $this->assertInstanceOf('Pop\Http\Upload', $upload);
+        $this->assertInstanceOf('Pop\Http\Server\Upload', $upload);
         $this->assertEquals(10000, $upload->getMaxSize());
         $this->assertEquals('php', $upload->getDisallowedTypes()[0]);
         $this->assertEquals('txt', $upload->getAllowedTypes()[0]);
@@ -27,7 +27,7 @@ class UploadTest extends TestCase
     public function testCreate()
     {
         $upload = Upload::create(__DIR__ . '/tmp', 10000, ['php'], ['txt']);
-        $this->assertInstanceOf('Pop\Http\Upload', $upload);
+        $this->assertInstanceOf('Pop\Http\Server\Upload', $upload);
     }
 
     public function testSetUploadDirException()
