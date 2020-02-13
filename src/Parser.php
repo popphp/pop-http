@@ -165,10 +165,8 @@ class Parser
      */
     public static function parseResponseFromString($responseString)
     {
-        $eol = (strpos($responseString, "\r") !== false) ? "\r\n\r\n" : "\n\n";
-
-        $headerString  = substr($responseString, 0, strpos($responseString, $eol));
-        $bodyString    = substr($responseString, (strpos($responseString, $eol) + strlen($eol)));
+        $headerString  = substr($responseString, 0, strpos($responseString, "\r\n\r\n"));
+        $bodyString    = substr($responseString, (strpos($responseString, "\r\n\r\n") + 4));
         $parsedHeaders = self::parseHeaders($headerString);
 
         // If the body content is encoded, decode the body content

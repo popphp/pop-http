@@ -45,7 +45,7 @@ class ResponseTest extends TestCase
 
     public function testParseString1()
     {
-        $response = Parser::parseResponseFromString(file_get_contents(__DIR__ . '/tmp/response.txt'));
+        $response = Parser::parseResponseFromString(str_replace("\n", "\r\n", file_get_contents(__DIR__ . '/tmp/response.txt')));
         $this->assertEquals(200, $response->getCode());
         $this->assertContains('<html', $response->getBody()->getContent());
         $this->assertEquals('text/html', $response->getHeader('Content-Type')->getValue());
