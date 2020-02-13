@@ -181,9 +181,6 @@ class Request extends AbstractRequest
      */
     public function getQuery()
     {
-        if ((null === $this->query) && ($this->hasFields())) {
-            $this->prepareQuery();
-        }
         return $this->query;
     }
 
@@ -195,9 +192,6 @@ class Request extends AbstractRequest
      */
     public function getQueryLength($mb = false)
     {
-        if ((null === $this->query) && ($this->hasFields())) {
-            $this->prepareQuery();
-        }
         return ($mb) ? mb_strlen($this->query) : strlen($this->query);
     }
 

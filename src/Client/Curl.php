@@ -45,15 +45,17 @@ class Curl extends AbstractClient
      * @param  array  $opts
      * @throws Exception
      */
-    public function __construct($url, $method = 'GET', array $opts = null)
+    public function __construct($url = null, $method = 'GET', array $opts = null)
     {
         if (!function_exists('curl_init')) {
             throw new Exception('Error: cURL is not available.');
         }
+
         $this->resource = curl_init();
 
-        $this->setUrl($url);
-        $this->setMethod($method);
+        parent::__construct($url, $method);
+
+
         $this->setOption(CURLOPT_HEADER, true);
         $this->setOption(CURLOPT_RETURNTRANSFER, true);
 

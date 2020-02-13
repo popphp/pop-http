@@ -11,7 +11,7 @@ class StreamTest extends TestCase
 
     public function testConstructor()
     {
-        $client = new Stream('http://localhost/');
+        $client = new Stream('http://localhost/', 'GET', 'r', ['http' => ['user_agent' => 'Mozilla']], ['foo' => 'bar']);
         $this->assertInstanceOf('Pop\Http\Client\Stream', $client);
         $this->assertEquals('GET', $client->getContextOption('http')['method']);
         $this->assertEquals('r', $client->getMode());
@@ -21,8 +21,15 @@ class StreamTest extends TestCase
         $this->assertTrue(is_array($client->getContextOptions()));
         $this->assertTrue(is_array($client->getContextParams()));
         $this->assertTrue($client->hasContextOption('http'));
+        $this->assertTrue($client->hasContextParam('foo'));
         $client->disconnect();
         $this->assertFalse($client->hasResource());
+    }
+    public function testCreateContext()
+    {
+        $client = new Stream(null, null);
+        $client->createContext();
+        $this->assertTrue(is_resource($client->getContext()));
     }
 
     public function testGetWithFields()

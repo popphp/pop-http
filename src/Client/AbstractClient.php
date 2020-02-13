@@ -59,6 +59,24 @@ abstract class AbstractClient implements ClientInterface
     protected $response = null;
 
     /**
+     * Constructor
+     *
+     * Instantiate the client object
+     *
+     * @param  string $url
+     * @param  string $method
+     */
+    public function __construct($url = null, $method = 'GET')
+    {
+        if (!empty($url)) {
+            $this->setUrl($url);
+        }
+        if (!empty($method)) {
+            $this->setMethod($method);
+        }
+    }
+
+    /**
      * Set the URL
      *
      * @param  string $url

@@ -417,6 +417,13 @@ class Data extends AbstractRequest
                 $this->delete = $this->parsedData;
                 break;
         }
+
+        if (null !== $contentType) {
+            $this->addHeader('Content-Type', $contentType);
+        }
+        if (null !== $encoding) {
+            $this->addHeader('Content-Encoding', $encoding);
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace Pop\Http\Test;
+namespace Pop\Http\Test\Server;
 
 use Pop\Filter\Filter;
 use Pop\Http\Server\Request;
@@ -31,6 +31,7 @@ class RequestTest extends TestCase
         ];
 
         $request = new Request(null, '/home', ['strip_tags', 'htmlentities']);
+        $this->assertInstanceOf('Pop\Http\Server\Request\Uri', $request->getRequestUriObject());
         $this->assertEquals('/page', $request->getRequestUri());
         $this->assertEquals('/home/page', $request->getFullRequestUri());
         $this->assertEquals('/home', $request->getBasePath());
@@ -39,11 +40,14 @@ class RequestTest extends TestCase
         $this->assertEquals('var=123&foo=bar', $request->getRawData());
         $this->assertEquals(2, count($request->getParsedData()));
         $this->assertEquals('bar', $request->getParsedData('foo'));
+        $this->assertEquals('bar', $request->getQueryData('foo'));
+        $this->assertEquals(2, count($request->getQueryData()));
         $this->assertEquals(2, count($request->getQuery()));
         $this->assertEquals(1, count($request->getSegments()));
         $this->assertEquals('page', $request->getSegment(0));
         $this->assertEquals('http', $request->getScheme());
         $this->assertEquals('localhost', $request->getHost());
+        $this->assertEquals('GET', $request->getMethod());
         $this->assertTrue($request->isGet());
         $this->assertFalse($request->isHead());
         $this->assertFalse($request->isPost());
@@ -56,6 +60,8 @@ class RequestTest extends TestCase
         $this->assertFalse($request->isSecure());
         $this->assertFalse($request->hasFiles());
         $this->assertTrue($request->hasFilters());
+        $this->assertTrue($request->hasQueryData());
+        $this->assertTrue($request->hasParsedData());
     }
 
     public function testGetHostFromServerName()
@@ -87,6 +93,7 @@ class RequestTest extends TestCase
 
         $request = new Request(null, '/home');
         $this->assertEquals('bar', $request->getParsedData()['foo']);
+        $this->assertEquals('POST', $request->getMethod());
     }
 
     public function testParseXmlData()
@@ -402,14 +409,14 @@ class RequestTest extends TestCase
         $_SERVER['REQUEST_METHOD']      = 'PUT';
         $_SERVER['X_POP_HTTP_RAW_DATA'] = 'Some file contents';
 
-        $request = new Request(null, null, null, __DIR__ . '/tmp/my-data');
+        $request = new Request(null, null, null, __DIR__ . '/../tmp/my-data');
 
-        $this->assertFileExists(__DIR__ . '/tmp/my-data');
-        $this->assertEquals(realpath(__DIR__ . '/tmp/my-data'), $request->getRequestDataObject()->getStreamToFileLocation());
-        $this->assertEquals('Some file contents', file_get_contents(__DIR__ . '/tmp/my-data'));
+        $this->assertFileExists(__DIR__ . '/../tmp/my-data');
+        $this->assertEquals(__DIR__ . '/../tmp/my-data', $request->getRequestDataObject()->getStreamToFileLocation());
+        $this->assertEquals('Some file contents', file_get_contents(__DIR__ . '/../tmp/my-data'));
 
         $request->getRequestDataObject()->clearStreamToFile();
-        $this->assertFileNotExists(__DIR__ . '/tmp/my-data');
+        $this->assertFileNotExists(__DIR__ . '/../tmp/my-data');
     }
 
     public function testStreamToFile2()
@@ -426,7 +433,7 @@ class RequestTest extends TestCase
         $_SERVER['REQUEST_METHOD']      = 'PUT';
         $_SERVER['X_POP_HTTP_RAW_DATA'] = 'Some file contents';
 
-        $request = new Request(null, null, null, __DIR__ . '/tmp');
+        $request = new Request(null, null, null, __DIR__ . '/../tmp');
 
         $this->assertTrue($request->hasRawData());
         $this->assertTrue($request->getRequestDataObject()->isStreamToFile());
@@ -444,6 +451,9 @@ class RequestTest extends TestCase
         if (isset($_SERVER['CONTENT_TYPE'])) {
             unset($_SERVER['CONTENT_TYPE']);
         }
+        if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+            unset($_SERVER['HTTP_CONTENT_TYPE']);
+        }
 
         $_SERVER['HTTP_HOST']           = 'localhost';
         $_SERVER['SERVER_PORT']         = 8000;
@@ -459,6 +469,36 @@ class RequestTest extends TestCase
         $streamFile = $request->getRequestDataObject()->getStreamToFileLocation();
         $this->assertEquals('Some file contents', file_get_contents($streamFile));
 
+        $request->getRequestDataObject()->clearStreamToFile();
+        $this->assertFileNotExists($streamFile);
+    }
+
+    public function testStreamToFile4()
+    {
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+        if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+            unset($_SERVER['HTTP_CONTENT_TYPE']);
+        }
+
+        $_SERVER['HTTP_HOST']           = 'localhost';
+        $_SERVER['SERVER_PORT']         = 8000;
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['HTTP_CONTENT_TYPE']   = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = json_encode(['foo' => 'bar']);
+
+        $request = new Request(null, null, null,  __DIR__ . '/../tmp/my-data');
+
+        $this->assertTrue($request->hasRawData());
+        $this->assertTrue($request->getRequestDataObject()->isStreamToFile());
+        $this->assertFileExists($request->getRequestDataObject()->getStreamToFileLocation());
+
+        $request->getRequestDataObject()->processStreamToFile();
+
+        $this->assertEquals('bar', $request->getParsedData('foo'));
+
+        $streamFile = $request->getRequestDataObject()->getStreamToFileLocation();
         $request->getRequestDataObject()->clearStreamToFile();
         $this->assertFileNotExists($streamFile);
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Pop\Http\Test;
+namespace Pop\Http\Test\Server;
 
 use Pop\Http\Server\Upload;
 use PHPUnit\Framework\TestCase;
@@ -10,15 +10,15 @@ class UploadTest extends TestCase
 
     public function testConstructor()
     {
-        $upload = new Upload(__DIR__ . '/tmp', 10000, ['php'], ['txt']);
+        $upload = new Upload(__DIR__ . '/../tmp', 10000, ['php'], ['txt']);
         $upload->overwrite(true);
         $this->assertInstanceOf('Pop\Http\Server\Upload', $upload);
         $this->assertEquals(10000, $upload->getMaxSize());
         $this->assertEquals('php', $upload->getDisallowedTypes()[0]);
         $this->assertEquals('txt', $upload->getAllowedTypes()[0]);
-        $this->assertEquals(__DIR__ . '/tmp', $upload->getUploadDir());
+        $this->assertEquals(__DIR__ . '/../tmp', $upload->getUploadDir());
         $this->assertNull($upload->getUploadedFile());
-        $this->assertEquals(realpath(__DIR__ . '/tmp') . '/', $upload->getUploadedFullPath());
+        $this->assertEquals(__DIR__ . '/../tmp/', $upload->getUploadedFullPath());
         $this->assertTrue($upload->isOverwrite());
         $this->assertTrue($upload->isSuccess());
         $this->assertFalse($upload->isError());
@@ -26,7 +26,7 @@ class UploadTest extends TestCase
 
     public function testCreate()
     {
-        $upload = Upload::create(__DIR__ . '/tmp', 10000, ['php'], ['txt']);
+        $upload = Upload::create(__DIR__ . '/../tmp', 10000, ['php'], ['txt']);
         $this->assertInstanceOf('Pop\Http\Server\Upload', $upload);
     }
 
@@ -39,7 +39,7 @@ class UploadTest extends TestCase
 
     public function testUseDefaults()
     {
-        $upload = new Upload(__DIR__ . '/tmp');
+        $upload = new Upload(__DIR__ . '/../tmp');
         $upload->setDefaults();
         $this->assertEquals(14, count($upload->getDisallowedTypes()));
         $this->assertEquals(50, count($upload->getAllowedTypes()));
@@ -53,9 +53,9 @@ class UploadTest extends TestCase
 
     public function testCheckFilename()
     {
-        $upload = new Upload(__DIR__ . '/tmp');
+        $upload = new Upload(__DIR__ . '/../tmp');
         $this->assertEquals('response_1.txt', $upload->checkFilename('response.txt'));
-        $this->assertEquals('response_1.txt', Upload::checkDuplicate(__DIR__ . '/tmp', 'response.txt'));
+        $this->assertEquals('response_1.txt', Upload::checkDuplicate(__DIR__ . '/../tmp', 'response.txt'));
     }
 
     public function testTest()
@@ -67,7 +67,7 @@ class UploadTest extends TestCase
             'tmp_name' => 'jskn892342',
             'error'    => 0
         ];
-        $upload = new Upload(__DIR__ . '/tmp');
+        $upload = new Upload(__DIR__ . '/../tmp');
         $this->assertTrue($upload->test($file));
     }
 
@@ -80,7 +80,7 @@ class UploadTest extends TestCase
             'tmp_name' => 'jskn892342',
             'error'    => 0
         ];
-        $upload = new Upload(__DIR__ . '/tmp', 10000);
+        $upload = new Upload(__DIR__ . '/../tmp', 10000);
         $this->assertFalse($upload->test($file));
         $this->assertEquals(Upload::UPLOAD_ERR_USER_SIZE, $upload->getErrorCode());
     }
@@ -94,7 +94,7 @@ class UploadTest extends TestCase
             'tmp_name' => 'jskn892342',
             'error'    => 0
         ];
-        $upload = new Upload(__DIR__ . '/tmp');
+        $upload = new Upload(__DIR__ . '/../tmp');
         $upload->setDefaults();
         $this->assertFalse($upload->test($file));
         $this->assertEquals(Upload::UPLOAD_ERR_NOT_ALLOWED, $upload->getErrorCode());

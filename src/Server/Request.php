@@ -514,6 +514,16 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Has query data
+     *
+     * @return boolean
+     */
+    public function hasQueryData()
+    {
+        return $this->requestData->hasQueryData();
+    }
+
+    /**
      * Get a value from parsed data, or the whole array
      *
      * @param  string $key
@@ -522,6 +532,16 @@ class Request extends AbstractRequest
     public function getParsedData($key = null)
     {
         return $this->requestData->getParsedData($key);
+    }
+
+    /**
+     * Has parsed data
+     *
+     * @return boolean
+     */
+    public function hasParsedData()
+    {
+        return $this->requestData->hasParsedData();
     }
 
     /**
@@ -535,7 +555,7 @@ class Request extends AbstractRequest
     }
 
     /**
-     * Has the raw data
+     * Has raw data
      *
      * @return boolean
      */

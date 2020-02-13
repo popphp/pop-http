@@ -70,11 +70,12 @@ class Stream extends AbstractClient
      * @param  array  $options
      * @param  array  $params
      */
-    public function __construct($url, $method = 'GET', $mode = 'r', array $options = [], array $params = [])
+    public function __construct($url = null, $method = 'GET', $mode = 'r', array $options = [], array $params = [])
     {
-        $this->setUrl($url);
-        $this->setMethod($method);
+        parent::__construct($url, $method);
+
         $this->setMode($mode);
+
         if (count($options) > 0) {
             $this->setContextOptions($options);
         }
