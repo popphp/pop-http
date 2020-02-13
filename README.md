@@ -27,7 +27,7 @@ BASIC USAGE
 Let's use a GET request with the URL '/hello/world?var=123'
 
 ```php
-$request = new Pop\Http\Request();
+$request = new Pop\Http\Server\Request();
 
 // /hello/world
 $uri = $request->getRequestUri();
@@ -49,7 +49,7 @@ if ($request->getSegment(1) == 'world') { } // Returns true
 Let's use a POST request with the URL '/users/edit'
 
 ```php
-$request = new Pop\Http\Request();
+$request = new Pop\Http\Server\Request();
 
 // /users/edit
 $uri = $request->getRequestUri();
@@ -66,7 +66,7 @@ In this example, the application exists in a folder '/home'
 and the full URL is '/home/hello/world'
 
 ```php
-$request = new Pop\Http\Request(null, '/home');
+$request = new Pop\Http\Server\Request(null, '/home');
 
 // /home
 $basePath = $request->getBasePath();
@@ -88,7 +88,7 @@ $config = [
     ]
 ];
 
-$response = new Pop\Http\Response($config);
+$response = new Pop\Http\Server\Response($config);
 $response->setBody('This is a plain text file.');
 
 $response->send();
@@ -104,13 +104,13 @@ The above script will output something like this when requested:
 ### Simple response redirect
 
 ```php
-Pop\Http\Response::redirect('http://www.newlocation.com/');
+Pop\Http\Server\Response::redirect('http://www.newlocation.com/');
 ```
 
 ### Parsing a response
 
 ```php
-$response = Pop\Http\Response\Parser::parseFromUri('http://www.mydomain.com/');
+$response = Pop\Http\Parser::parseResponseFromUri('http://www.mydomain.com/');
 
 if ($response->isSuccess()) { } // Returns true
 if ($response->isError())   { } // Returns false
@@ -144,10 +144,10 @@ $client->setFields([
 $client->send();
 
 // 200
-echo $client->getCode();
+echo $client->getResponseCode();
 
 // Display the body of the returned response
-echo $client->getBody();
+echo $client->getResponseBody();
 ```
 
 ### Using the Stream client
@@ -164,20 +164,20 @@ $client->setFields([
 $client->send();
 
 // 200
-echo $client->getCode();
+echo $client->getResponseCode();
 
 // Display the body of the returned response
-echo $client->getBody();
+echo $client->getResponseBody();
 ```
 ### File uploads
 
 ##### Basic file upload
 
 ```php
-use Pop\Http\Upload;
+use Pop\Http\Server\Upload;
 
 $upload = new Upload('/path/to/uploads');
-$upload->useDefaults();
+$upload->setDefaults();
 
 $upload->upload($_FILES['file_upload']);
 
