@@ -393,8 +393,9 @@ class Data extends AbstractRequest
 
         // If request data has filters, filter parsed input data
         if ($this->hasFilters()) {
-            $this->parsedData = $this->filter($this->parsedData);
-
+            if (!empty($this->parsedData)) {
+                $this->parsedData = $this->filter($this->parsedData);
+            }
             if (!empty($this->post)) {
                 $this->post = $this->filter($this->post);
             }
