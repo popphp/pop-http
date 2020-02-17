@@ -396,7 +396,11 @@ class Stream extends AbstractClient
         }
 
         // Parse response headers
-        $this->response->addHeaders(Parser::parseHeaders($headers)['headers']);
+        $parsedHeaders = Parser::parseHeaders($headers);
+        $this->response->setVersion($parsedHeaders['version']);
+        $this->response->setCode($parsedHeaders['code']);
+        $this->response->setMessage($parsedHeaders['message']);
+        $this->response->addHeaders($parsedHeaders['headers']);
         $this->response->setBody($body);
 
         if ($this->response->hasHeader('Content-Encoding')) {

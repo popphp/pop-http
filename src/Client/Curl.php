@@ -292,7 +292,11 @@ class Curl extends AbstractClient
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true)) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
             if ($this->options[CURLOPT_HEADER]) {
-                $this->response->addHeaders(Parser::parseHeaders(substr($response, 0, $headerSize))['headers']);
+                $parsedHeaders = Parser::parseHeaders(substr($response, 0, $headerSize));
+                $this->response->setVersion($parsedHeaders['version']);
+                $this->response->setCode($parsedHeaders['code']);
+                $this->response->setMessage($parsedHeaders['message']);
+                $this->response->addHeaders($parsedHeaders['headers']);
                 $this->response->setBody(substr($response, $headerSize));
             } else {
                 $this->response->setBody($response);
