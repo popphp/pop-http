@@ -306,7 +306,7 @@ class Stream extends AbstractClient
             // Set query data if there is any
             if ($this->request->hasFields()) {
                 // Append GET query string to URL
-                if ($this->method == 'GET') {
+                if (($this->method == 'GET') && (!$this->request->isJson())) {
                     $url .= '?' . $this->request->getQuery();
                 // Else, prepare request data for transmission
                 } else {
