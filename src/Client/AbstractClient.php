@@ -252,7 +252,7 @@ abstract class AbstractClient implements ClientInterface
         if (($this->hasResponse()) && ($this->getResponse()->hasBody()) && ($this->getResponse()->hasHeader('Content-Type'))) {
             $rawResponse     = $this->getResponse()->getBody()->getContent();
             $contentType     = $this->getResponse()->getHeader('Content-Type')->getValue();
-            $contentEncoding = $this->getResponse()->getHeader('Content-Type')->getValue();
+            $contentEncoding = ($this->getResponse()->hasHeader('Content-Encoding')) ? $this->getResponse()->getHeader('Content-Encoding')->getValue() : null;
             $parsedResponse  = Parser::parseDataByContentType($rawResponse, $contentType, $contentEncoding);
         }
 
