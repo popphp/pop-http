@@ -224,20 +224,19 @@ class Curl extends AbstractClient
             // Set query data if there is any
             if ($this->request->hasFields()) {
                 // Append GET query string to URL
-                if (($this->method == 'GET') && (!$this->request->isJson())) {
+                if (($this->method == 'GET') && ((!$this->request->hasHeader('Content-Type')) ||
+                        ($this->request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
                     $url .= '?' . $this->request->getQuery();
                 // Else, prepare request data for transmission
                 } else {
                     // If request is JSON
-                    if ($this->request->isJson()) {
+                    if ($this->request->getHeaderValue('Content-Type') == 'application/json') {
                         $content = json_encode($this->request->getFields(), JSON_PRETTY_PRINT);
-                        $this->request->addHeader('Content-Type', 'application/json')
-                            ->addHeader('Content-Length', strlen($content));
+                        $this->request->addHeader('Content-Length', strlen($content));
                         $this->setOption(CURLOPT_POSTFIELDS, $content);
                     // If request is a URL-encoded form
-                    } else if ($this->request->isUrlEncodedForm()) {
-                        $this->request->addHeader('Content-Type', 'application/x-www-form-urlencoded')
-                            ->addHeader('Content-Length', $this->request->getQueryLength());
+                    } else if ($this->request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded') {
+                        $this->request->addHeader('Content-Length', $this->request->getQueryLength());
                         $this->setOption(CURLOPT_POSTFIELDS, $this->request->getQuery());
                     // Else, if request is a multipart form
                     } else if ($this->request->isMultipartForm()) {

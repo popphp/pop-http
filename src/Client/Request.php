@@ -203,6 +203,12 @@ class Request extends AbstractRequest
     public function createAsJson()
     {
         $this->formType = 'application/json';
+
+        if ($this->hasHeader('Content-Type')) {
+            $this->removeHeader('Content-Type');
+        }
+        $this->addHeader('Content-Type', $this->formType);
+
         return $this;
     }
 
@@ -224,6 +230,12 @@ class Request extends AbstractRequest
     public function createUrlEncodedForm()
     {
         $this->formType = 'application/x-www-form-urlencoded';
+
+        if ($this->hasHeader('Content-Type')) {
+            $this->removeHeader('Content-Type');
+        }
+        $this->addHeader('Content-Type', $this->formType);
+
         return $this;
     }
 
