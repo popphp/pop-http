@@ -252,6 +252,10 @@ class Curl extends AbstractClient
                         $this->setOption(CURLOPT_POSTFIELDS, $this->request->getFields());
                     }
                 }
+            // Else, if there is raw body content
+            } else if ($this->request->hasBody()) {
+                $this->request->addHeader('Content-Length', strlen($this->request->getBodyContent()));
+                $this->setOption(CURLOPT_POSTFIELDS, $this->request->getBodyContent());
             }
 
             if ($this->request->hasHeaders()) {

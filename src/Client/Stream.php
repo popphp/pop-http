@@ -334,6 +334,10 @@ class Stream extends AbstractClient
                         $this->contextOptions['http']['content'] = $this->request->getQuery();
                     }
                 }
+            // Else, if there is raw body content
+            } else if ($this->request->hasBody()) {
+                $this->request->addHeader('Content-Length', strlen($this->request->getBodyContent()));
+                $this->contextOptions['http']['content'] = $this->request->getBodyContent();
             }
 
             if ($this->request->hasHeaders()) {
