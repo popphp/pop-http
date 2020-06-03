@@ -51,14 +51,18 @@ abstract class AbstractRequest extends AbstractHttp
     /**
      * Filter values
      *
-     * @param  array $values
+     * @param  mixed $values
      * @return array
      */
-    public function filter(array $values)
+    public function filter($values)
     {
         foreach ($this->filters as $filter) {
-            foreach ($values as $key => $value) {
-                $values[$key] = $filter->filter($value, $key);
+            if (is_array($values)) {
+                foreach ($values as $key => $value) {
+                    $values[$key] = $filter->filter($value, $key);
+                }
+            } else {
+                $values = $filter->filter($values);
             }
         }
 
