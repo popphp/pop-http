@@ -52,7 +52,7 @@ abstract class AbstractRequest extends AbstractHttp
      * Filter values
      *
      * @param  mixed $values
-     * @return array
+     * @return mixed
      */
     public function filter($values)
     {
