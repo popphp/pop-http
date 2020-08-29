@@ -58,6 +58,13 @@ class UploadTest extends TestCase
         $this->assertEquals('response_1.txt', Upload::checkDuplicate(__DIR__ . '/../tmp', 'response.txt'));
     }
 
+    public function testDoesFileExist()
+    {
+        $upload = new Upload(__DIR__ . '/../tmp');
+        $this->assertTrue($upload->fileExists('response.txt'));
+        $this->assertTrue(Upload::doesFileExists(__DIR__ . '/../tmp', 'response.txt'));
+    }
+
     public function testTest()
     {
         $file = [

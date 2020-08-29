@@ -157,7 +157,7 @@ class Upload
     }
 
     /**
-     * Set default file upload settings
+     * Check for a duplicate filename in the upload directory, and return a modified filename if it exists already
      *
      * @param  string $dir
      * @param  string $file
@@ -166,6 +166,18 @@ class Upload
     public static function checkDuplicate($dir, $file)
     {
         return (new static($dir))->checkFilename($file);
+    }
+
+    /**
+     * Check if the file exists already in the upload directory
+     *
+     * @param  string $dir
+     * @param  string $file
+     * @return boolean
+     */
+    public static function doesFileExists($dir, $file)
+    {
+        return (new static($dir))->fileExists($file);
     }
 
     /**
@@ -465,6 +477,17 @@ class Upload
     }
 
     /**
+     * Check if filename exists in the upload directory
+     *
+     * @param  string $file
+     * @return boolean
+     */
+    public function fileExists($file)
+    {
+        return (file_exists($this->uploadDir . DIRECTORY_SEPARATOR . $file));
+    }
+
+    /**
      * Check filename for duplicates, returning a new filename appended with _#
      *
      * @param  string $file
@@ -476,10 +499,9 @@ class Upload
         $parts        = pathinfo($file);
         $origFilename = $parts['filename'];
         $ext          = (isset($parts['extension']) && ($parts['extension'] != '')) ? '.' . $parts['extension'] : null;
+        $i            = 1;
 
-        $i = 1;
-
-        while (file_exists($this->uploadDir . DIRECTORY_SEPARATOR . $newFilename)) {
+        while ($this->fileExists($newFilename)) {
             $newFilename = $origFilename . '_' . $i . $ext;
             $i++;
         }
