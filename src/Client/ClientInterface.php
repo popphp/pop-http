@@ -178,6 +178,13 @@ interface ClientInterface
     public function removeField($name);
 
     /**
+     * Remove all fields
+     *
+     * @return ClientInterface
+     */
+    public function removeFields();
+
+    /**
      * Add request headers
      *
      * @param  array $headers

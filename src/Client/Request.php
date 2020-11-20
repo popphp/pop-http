@@ -151,6 +151,19 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Remove all fields
+     *
+     * @return Request
+     */
+    public function removeFields()
+    {
+        $this->fields = [];
+        $this->query  = null;
+
+        return $this;
+    }
+
+    /**
      * Prepare the HTTP query
      *
      * @return string

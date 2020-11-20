@@ -328,6 +328,17 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Remove all fields
+     *
+     * @return AbstractClient
+     */
+    public function removeFields()
+    {
+        $this->getRequest()->removeFields();
+        return $this;
+    }
+
+    /**
      * Add request headers
      *
      * @param  array $headers
