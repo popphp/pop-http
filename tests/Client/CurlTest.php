@@ -25,8 +25,8 @@ class CurlTest extends TestCase
         $this->assertNull($client->getField('foo'));
         $this->assertNull($client->getResponseHeader('header'));
         $this->assertTrue($client->hasResource());
-        $this->assertTrue(is_resource($client->getResource()));
-        $this->assertTrue(is_resource($client->curl()));
+        $this->assertNotNull($client->getResource());
+        $this->assertNotNull($client->curl());
         $this->assertTrue($client->getOption(CURLOPT_POST));
         $client->setFields([
             'var' => 123
