@@ -330,6 +330,7 @@ class Curl extends AbstractClient
     {
         if ($this->hasResource()) {
             curl_close($this->resource);
+            $this->resource = null;
         }
     }
 

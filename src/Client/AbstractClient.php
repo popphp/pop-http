@@ -137,7 +137,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function hasResource()
     {
-        return is_resource($this->resource);
+        return (null !== $this->resource);
     }
 
     /**
