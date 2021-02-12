@@ -226,7 +226,7 @@ class RequestTest extends TestCase
     public function testGetServer()
     {
         $request = new Request();
-        $this->assertContains('phpunit', $request->getServer('PHP_SELF'));
+        $this->assertStringContainsString('phpunit', $request->getServer('PHP_SELF'));
         $this->assertGreaterThan(1, count($request->getServer()));
     }
 
@@ -416,7 +416,7 @@ class RequestTest extends TestCase
         $this->assertEquals('Some file contents', file_get_contents(__DIR__ . '/../tmp/my-data'));
 
         $request->getRequestDataObject()->clearStreamToFile();
-        $this->assertFileNotExists(__DIR__ . '/../tmp/my-data');
+        $this->assertFileDoesNotExist(__DIR__ . '/../tmp/my-data');
     }
 
     public function testStreamToFile2()
@@ -443,7 +443,7 @@ class RequestTest extends TestCase
         $this->assertEquals('Some file contents', file_get_contents($streamFile));
 
         $request->getRequestDataObject()->clearStreamToFile();
-        $this->assertFileNotExists($streamFile);
+        $this->assertFileDoesNotExist($streamFile);
     }
 
     public function testStreamToFile3()
@@ -470,7 +470,7 @@ class RequestTest extends TestCase
         $this->assertEquals('Some file contents', file_get_contents($streamFile));
 
         $request->getRequestDataObject()->clearStreamToFile();
-        $this->assertFileNotExists($streamFile);
+        $this->assertFileDoesNotExist($streamFile);
     }
 
     public function testStreamToFile4()
@@ -500,7 +500,7 @@ class RequestTest extends TestCase
 
         $streamFile = $request->getRequestDataObject()->getStreamToFileLocation();
         $request->getRequestDataObject()->clearStreamToFile();
-        $this->assertFileNotExists($streamFile);
+        $this->assertFileDoesNotExist($streamFile);
     }
 
     public function testStreamToFileException()

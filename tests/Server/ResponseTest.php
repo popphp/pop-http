@@ -47,10 +47,10 @@ class ResponseTest extends TestCase
     {
         $response = Parser::parseResponseFromString(str_replace("\n", "\r\n", file_get_contents(__DIR__ . '/../tmp/response.txt')));
         $this->assertEquals(200, $response->getCode());
-        $this->assertContains('<html', $response->getBody()->getContent());
+        $this->assertStringContainsString('<html', $response->getBody()->getContent());
         $this->assertEquals('text/html', $response->getHeader('Content-Type')->getValue());
         $this->assertEquals('text/html', $response->getHeaders()['Content-Type']->getValue());
-        $this->assertContains('ETag: "84f-509414fcd0819"', $response->getHeadersAsString());
+        $this->assertStringContainsString('ETag: "84f-509414fcd0819"', $response->getHeadersAsString());
     }
 
     public function testParseString2()
@@ -83,7 +83,7 @@ e\r\n
 0\r\n
 \r\n
 BODY;
-        $this->assertContains('Wik', Parser::decodeChunkedData($body));
+        $this->assertStringContainsString('Wik', Parser::decodeChunkedData($body));
     }
 
     public function testDecodeChunkedBody2()
@@ -105,7 +105,7 @@ BODY;
             'Transfer-Encoding' => 'chunked'
         ]);
 
-        $this->assertContains('Wik', $response->decodeBodyContent()->getContent());
+        $this->assertStringContainsString('Wik', $response->decodeBodyContent()->getContent());
     }
 
     public function testDecodeChunkedBody3()
@@ -126,7 +126,7 @@ BODY;
             'Transfer-Encoding' => 'chunked'
         ]);
 
-        $this->assertContains('Wik', $response->decodeBodyContent($body)->getContent());
+        $this->assertStringContainsString('Wik', $response->decodeBodyContent($body)->getContent());
     }
 
     public function testRedirectHeadersSentException()
@@ -173,8 +173,8 @@ BODY;
         $response = new Response(['headers' => ['Content-Type' => 'text/plain']]);
         $response->setBody('Hello World');
         $r = (string)$response;
-        $this->assertContains('HTTP/1.1', $r);
-        $this->assertContains('200 OK', $r);
+        $this->assertStringContainsString('HTTP/1.1', $r);
+        $this->assertStringContainsString('200 OK', $r);
     }
 
     /**

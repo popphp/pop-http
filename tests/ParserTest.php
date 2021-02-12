@@ -67,7 +67,7 @@ e\r\n
 0\r\n
 \r\n
 BODY;
-        $this->assertContains('Wik', Parser::decodeData($body, null, true));
+        $this->assertStringContainsString('Wik', Parser::decodeData($body, null, true));
     }
 
 }

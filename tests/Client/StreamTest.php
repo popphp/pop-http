@@ -122,7 +122,7 @@ class StreamTest extends TestCase
         $this->assertTrue($client->isMultipartForm());
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
-        $this->assertContains('multipart/form-data', $client->getRequestHeader('Content-Type')->getValue());
+        $this->assertStringContainsString('multipart/form-data', $client->getRequestHeader('Content-Type')->getValue());
     }
 
 }
