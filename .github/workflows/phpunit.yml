@@ -7,11 +7,16 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
 
+  build:
     runs-on: ubuntu-latest
-    container:
-      image: php:7.4-apache
+
+    services:
+      httpd:
+        image: httpd
+        ports:
+          - 80:80
+
     steps:
     - uses: actions/checkout@v2
 
