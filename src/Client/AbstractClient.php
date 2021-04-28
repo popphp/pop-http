@@ -89,6 +89,18 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
+     * Append to the URL
+     *
+     * @param  string $url
+     * @return AbstractClient
+     */
+    public function appendToUrl($url)
+    {
+        $this->url .= $url;
+        return $this;
+    }
+
+    /**
      * Get the URL
      *
      * @return string

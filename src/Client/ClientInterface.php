@@ -35,6 +35,14 @@ interface ClientInterface
     public function setUrl($url);
 
     /**
+     * Append to the URL
+     *
+     * @param  string $url
+     * @return ClientInterface
+     */
+    public function appendToUrl($url);
+
+    /**
      * Get the URL
      *
      * @return string

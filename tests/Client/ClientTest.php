@@ -9,6 +9,18 @@ use PHPUnit\Framework\TestCase;
 class ClientTest extends TestCase
 {
 
+    public function testSetAndGetUrl()
+    {
+        $client = new Stream();
+        $client->setUrl('http://localhost');
+
+        $this->assertEquals('http://localhost', $client->getUrl());
+
+        $client->appendToUrl('/page');
+
+        $this->assertEquals('http://localhost/page', $client->getUrl());
+    }
+
     public function testGetParsedResponse()
     {
         $response = new Response([
