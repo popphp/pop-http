@@ -56,13 +56,19 @@ abstract class AbstractRequest extends AbstractHttp
      */
     public function filter($values)
     {
+        $disabledFunctions = array_filter(array_map('trim', explode(',', ini_get('disable_functions'))));
+
         foreach ($this->filters as $filter) {
             if (is_array($values)) {
                 foreach ($values as $key => $value) {
-                    $values[$key] = $filter->filter($value, $key);
+                    if (!in_array($value, $disabledFunctions)) {
+                        $values[$key] = $filter->filter($value, $key);
+                    }
                 }
             } else {
-                $values = $filter->filter($values);
+                if (!in_array($values, $disabledFunctions)) {
+                    $values = $filter->filter($values);
+                }
             }
         }
 
