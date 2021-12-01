@@ -39,4 +39,20 @@ class ClientTest extends TestCase
         $this->assertEquals('bar', $parsedResponse['foo']);
     }
 
+    public function testFields()
+    {
+        $client = new Stream();
+        $client->setField('foo', 'bar');
+        $client->setField('var', '123');
+        $this->assertTrue($client->hasFields());
+        $this->assertTrue($client->hasField('foo'));
+        $this->assertTrue($client->hasField('var'));
+        $this->assertEquals('bar', $client->getField('foo'));
+        $this->assertEquals('123', $client->getField('var'));
+        $client->removeField('var');
+        $this->assertFalse($client->hasField('var'));
+        $client->removeFields();
+        $this->assertFalse($client->hasField('foo'));
+    }
+
 }

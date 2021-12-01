@@ -318,13 +318,34 @@ abstract class AbstractClient implements ClientInterface
     }
 
     /**
-     * Get all field
+     * Get all fields
      *
      * @return array
      */
     public function getFields()
     {
         return $this->getRequest()->getFields();
+    }
+
+    /**
+     * Has fields
+     *
+     * @return boolean
+     */
+    public function hasFields()
+    {
+        return $this->getRequest()->hasFields();
+    }
+
+    /**
+     * Has field
+     *
+     * @param  string $name
+     * @return boolean
+     */
+    public function hasField($name)
+    {
+        return $this->getRequest()->hasField($name);
     }
 
     /**
@@ -446,6 +467,27 @@ abstract class AbstractClient implements ClientInterface
     public function isJson()
     {
         return $this->getRequest()->isJson();
+    }
+
+    /**
+     * Create request as XML
+     *
+     * @return AbstractClient
+     */
+    public function createAsXml()
+    {
+        $this->getRequest()->createAsXml();
+        return $this;
+    }
+
+    /**
+     * Check if request is XML
+     *
+     * @return boolean
+     */
+    public function isXml()
+    {
+        return $this->getRequest()->isXml();
     }
 
     /**

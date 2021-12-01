@@ -236,6 +236,33 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Create request as XML
+     *
+     * @return Request
+     */
+    public function createAsXml()
+    {
+        $this->formType = 'application/xml';
+
+        if ($this->hasHeader('Content-Type')) {
+            $this->removeHeader('Content-Type');
+        }
+        $this->addHeader('Content-Type', $this->formType);
+
+        return $this;
+    }
+
+    /**
+     * Check if request is XML
+     *
+     * @return boolean
+     */
+    public function isXml()
+    {
+        return ($this->formType == 'application/xml');
+    }
+
+    /**
      * Create request as a URL-encoded form
      *
      * @return Request

@@ -97,6 +97,44 @@ class StreamTest extends TestCase
         $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue());
     }
 
+    public function testCreateAsJson2()
+    {
+        $data = [
+            'foo' => 'bar',
+            'var' => 123
+        ];
+        $client = new Stream('http://localhost/', 'POST');
+        $client->setRequest(new Request());
+        $client->createAsJson();
+        $client->getRequest()->setBody(json_encode($data, JSON_PRETTY_PRINT));
+        $client->open();
+        $this->assertTrue($client->isJson());
+        $this->assertEquals('application/json', $client->request()->getFormType());
+        $this->assertTrue($client->hasRequestHeader('Content-Type'));
+        $this->assertTrue($client->hasRequestHeader('Content-Length'));
+        $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue());
+    }
+
+    public function testCreateAsXml()
+    {
+        $xml = <<<XML
+<?xml version="1.0" encoding="utf-8"?>
+<data>
+    <foo>bar</foo>
+    <var>123</var>
+</data>
+XML;
+        $client = new Stream('http://localhost/', 'POST');
+        $client->createAsXml();
+        $client->getRequest()->setBody($xml);
+        $client->open();
+        $this->assertTrue($client->isXml());
+        $this->assertEquals('application/xml', $client->request()->getFormType());
+        $this->assertTrue($client->hasRequestHeader('Content-Type'));
+        $this->assertTrue($client->hasRequestHeader('Content-Length'));
+        $this->assertEquals('application/xml', $client->getRequestHeader('Content-Type')->getValue());
+    }
+
     public function testCreateUrlForm()
     {
         $client = new Stream('http://localhost/', 'POST');

@@ -246,6 +246,35 @@ interface ClientInterface
      */
     public function getRequestBody();
 
+
+    /**
+     * Create request as JSON
+     *
+     * @return ClientInterface
+     */
+    public function createAsJson();
+
+    /**
+     * Check if request is JSON
+     *
+     * @return boolean
+     */
+    public function isJson();
+
+    /**
+     * Create request as XML
+     *
+     * @return ClientInterface
+     */
+    public function createAsXml();
+
+    /**
+     * Check if request is XML
+     *
+     * @return boolean
+     */
+    public function isXml();
+
     /**
      * Create request as a URL-encoded form
      *
