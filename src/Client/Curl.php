@@ -310,6 +310,19 @@ class Curl extends AbstractClient
             $this->response->decodeBodyContent();
         }
     }
+    /**
+     * Method to reset the client object
+     *
+     * @return CUrl
+     */
+    public function reset()
+    {
+        $this->request  = new Request();
+        $this->response = new Response();
+        $this->options  = [];
+
+        return $this;
+    }
 
     /**
      * Return the cURL version

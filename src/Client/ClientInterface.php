@@ -387,4 +387,11 @@ interface ClientInterface
      */
     public function send();
 
+    /**
+     * Method to reset the client object
+     *
+     * @return ClientInterface
+     */
+    public function reset();
+
 }

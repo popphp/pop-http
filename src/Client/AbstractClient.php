@@ -645,4 +645,11 @@ abstract class AbstractClient implements ClientInterface
      */
     abstract public function send();
 
+    /**
+     * Method to reset the client object
+     *
+     * @return AbstractClient
+     */
+    abstract public function reset();
+
 }

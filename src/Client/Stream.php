@@ -412,6 +412,23 @@ class Stream extends AbstractClient
     }
 
     /**
+     * Method to reset the client object
+     *
+     * @return Stream
+     */
+    public function reset()
+    {
+        $this->request             = new Request();
+        $this->response            = new Response();
+        $this->context             = null;
+        $this->contextOptions      = [];
+        $this->contextParams       = [];
+        $this->httpResponseHeaders = null;
+
+        return $this;
+    }
+
+    /**
      * Close the stream
      *
      * @return void
