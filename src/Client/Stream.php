@@ -309,6 +309,9 @@ class Stream extends AbstractClient
                 if (($this->method == 'GET') && ((!$this->request->hasHeader('Content-Type')) ||
                         ($this->request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
                     $url .= '?' . $this->request->getQuery();
+                    if (!$this->request->hasHeader('Content-Type')) {
+                        $this->request->addHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    }
                 // Else, prepare request data for transmission
                 } else {
                     // If request is JSON
@@ -332,6 +335,9 @@ class Stream extends AbstractClient
                     // Else, basic request with data
                     } else {
                         $this->contextOptions['http']['content'] = $this->request->getQuery();
+                        if (!$this->request->hasHeader('Content-Type')) {
+                            $this->request->addHeader('Content-Type', 'application/x-www-form-urlencoded');
+                        }
                     }
                 }
             // Else, if there is raw body content
