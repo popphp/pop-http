@@ -331,7 +331,7 @@ class Data extends AbstractRequest
             $contentType      = $this->getHeaderValue('Content-Type');
             $contentEncoding  = $this->getHeaderValue('Content-Encoding');
             $this->rawData    = file_get_contents($this->streamToFileLocation);
-            $this->parsedData = Parser::parseDataByContentType($this->rawData, $contentType, strtoupper($contentEncoding));
+            $this->parsedData = Parser::parseDataByContentType($this->rawData, $contentType, $contentEncoding);
         }
 
         return $this;
@@ -361,9 +361,9 @@ class Data extends AbstractRequest
         // Process query string
         if (isset($_SERVER['QUERY_STRING'])) {
             $this->queryData = rawurldecode($_SERVER['QUERY_STRING']);
-            $this->queryData = ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false)) ?
-                Parser::parseDataByContentType($this->queryData, $contentType, strtoupper($encoding)) :
-                Parser::parseDataByContentType($this->queryData, 'application/x-www-form-urlencoded', strtoupper($encoding));
+            $this->queryData = ((null !== $contentType) && ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false))) ?
+                Parser::parseDataByContentType($this->queryData, $contentType, $encoding) :
+                Parser::parseDataByContentType($this->queryData, 'application/x-www-form-urlencoded', $encoding);
 
             if (empty($this->rawData)) {
                 $this->rawData = $_SERVER['QUERY_STRING'];
@@ -372,7 +372,7 @@ class Data extends AbstractRequest
 
         // Process raw data
         if ((null !== $contentType) && (null !== $this->rawData)) {
-            $this->parsedData = Parser::parseDataByContentType($this->rawData, $contentType, strtoupper($encoding));
+            $this->parsedData = Parser::parseDataByContentType($this->rawData, $contentType, $encoding);
         }
 
         // If the query string had a processed custom data string

@@ -96,13 +96,19 @@ class Parser
     public static function parseDataByContentType($rawData, $contentType = null, $encoding = null, $chunked = false)
     {
         $parsedResult = false;
-        $contentType  = strtolower($contentType);
+
+        if (null !== $contentType) {
+            $contentType = strtolower($contentType);
+        }
+        if (null !== $encoding) {
+            $encoding = strtoupper($encoding);
+        }
 
         // JSON data
-        if (strpos($contentType, 'json') !== false) {
+        if ((null !== $contentType) && (strpos($contentType, 'json') !== false)) {
             $parsedResult = json_decode(self::decodeData($rawData, $encoding, $chunked), true);
         // XML data
-        } else if (strpos($contentType, 'xml') !== false) {
+        } else if ((null !== $contentType) && (strpos($contentType, 'xml') !== false)) {
             $rawData = self::decodeData($rawData, $encoding, $chunked);
             $matches = [];
             preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
@@ -118,10 +124,10 @@ class Parser
 
             $parsedResult = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
         // URL-encoded form data
-        } else if (strpos($contentType, 'application/x-www-form-urlencoded') !== false) {
+        } else if ((null !== $contentType) && (strpos($contentType, 'application/x-www-form-urlencoded') !== false)) {
             parse_str(self::decodeData($rawData, $encoding, $chunked), $parsedResult);
         // Multipart form data
-        } else if (strpos($contentType, 'multipart/form-data') !== false) {
+        } else if ((null !== $contentType) && (strpos($contentType, 'multipart/form-data') !== false)) {
             $formContent  = (strpos($rawData, 'Content-Type:') === false) ?
                 'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
             $parsedResult = Message::parseForm($formContent);
