@@ -15,6 +15,7 @@ namespace Pop\Http\Server;
 
 use Pop\Http\AbstractResponse;
 use Pop\Http\Parser;
+use Pop\Http\Client;
 use Pop\Mime\Part\Body;
 
 /**
@@ -170,6 +171,36 @@ class Response extends AbstractResponse
     public static function redirectAndExit($url, $code = '302', $version = '1.1')
     {
         static::redirect($url, $code, $version);
+        exit();
+    }
+
+    /**
+     * Forward a client response as the server response
+     *
+     * @param  Client\Response $clientResponse
+     * @return void
+     */
+    public static function forward(Client\Response $clientResponse)
+    {
+        $serverResponse = new static([
+            'version' => $clientResponse->getVersion(),
+            'code'    => $clientResponse->getCode(),
+            'message' => $clientResponse->getMessage(),
+            'headers' => $clientResponse->getHeaders(),
+            'body'    => $clientResponse->getBody()
+        ]);
+        $serverResponse->send();
+    }
+
+    /**
+     * Forward a client response as the server response and exit
+     *
+     * @param  Client\Response $clientResponse
+     * @return void
+     */
+    public static function forwardAndExit(Client\Response $clientResponse)
+    {
+        static::forward($clientResponse);
         exit();
     }
 

@@ -2,6 +2,7 @@
 
 namespace Pop\Http\Test\Server;
 
+use Pop\Http\Client\Stream;
 use Pop\Http\Server\Response;
 use Pop\Http\Parser;
 use PHPUnit\Framework\TestCase;
@@ -157,6 +158,23 @@ BODY;
         Response::redirect('http://www.popphp.org/version');
         $result = ob_get_clean();
         $this->assertEquals('', $result);
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testForward()
+    {
+        $client = new Stream('http://localhost/', 'GET', 'r', ['http' => ['user_agent' => 'Mozilla']], ['foo' => 'bar']);
+        $client->send();
+
+        $clientResponse = $client->getResponse();
+        $this->assertInstanceOf('Pop\Http\Client\Response', $clientResponse);
+
+        ob_start();
+        Response::forward($clientResponse);
+        $result = ob_get_clean();
+        $this->assertNotEmpty($result);
     }
 
     /**
