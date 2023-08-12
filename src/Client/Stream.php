@@ -291,14 +291,17 @@ class Stream extends AbstractClient
     /**
      * Create and open stream resource
      *
+     * @param boolean $clear
      * @return Stream
      */
-    public function open()
+    public function open($clear = true)
     {
         $url                  = $this->url;
         $http_response_header = null;
 
-        if (isset($this->contextOptions['http']['header'])) {
+        // Clear headers for a fresh request based on the headers in the request object,
+        // else fall back to pre-defined headers in the stream context
+        if (($clear) && isset($this->contextOptions['http']['header'])) {
             $this->contextOptions['http']['header'] = null;
         }
 
@@ -382,15 +385,16 @@ class Stream extends AbstractClient
     /**
      * Method to send the request and get the response
      *
+     * @param  boolean $clear
      * @return void
      */
-    public function send()
+    public function send($clear = true)
     {
         $rawHeader = null;
         $headers   = [];
         $body      = null;
 
-        $this->open();
+        $this->open($clear);
 
         if (null === $this->response) {
             $this->response = new Response();

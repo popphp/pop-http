@@ -152,7 +152,7 @@ class Parser
     public static function parseResponseFromUri($uri, $method = 'GET', $mode = 'r', array $options = [], array $params = [])
     {
         $client = new Stream($uri, $method, $mode, $options, $params);
-        $client->send();
+        $client->send(false);
 
         return new Http\Server\Response([
             'code'    => $client->response()->getCode(),
