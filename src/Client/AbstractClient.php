@@ -59,6 +59,12 @@ abstract class AbstractClient implements ClientInterface
     protected $response = null;
 
     /**
+     * Client auth object
+     * @var Auth
+     */
+    protected $auth = null;
+
+    /**
      * Constructor
      *
      * Instantiate the client object
@@ -74,6 +80,48 @@ abstract class AbstractClient implements ClientInterface
         if (!empty($method)) {
             $this->setMethod($method);
         }
+    }
+
+    /**
+     * Set the auth object
+     *
+     * @param  Auth $auth
+     * @return AbstractClient
+     */
+    public function setAuth(Auth $auth)
+    {
+        $this->auth = $auth;
+        return $this;
+    }
+
+    /**
+     * Get the auth object
+     *
+     * @return Auth
+     */
+    public function getAuth()
+    {
+        return $this->auth;
+    }
+
+    /**
+     * Has auth object
+     *
+     * @return boolean
+     */
+    public function hasAuth()
+    {
+        return (null !== $this->auth);
+    }
+
+    /**
+     * Get the URL
+     *
+     * @return string
+     */
+    public function getUrl()
+    {
+        return $this->url;
     }
 
     /**
@@ -98,16 +146,6 @@ abstract class AbstractClient implements ClientInterface
     {
         $this->url .= $url;
         return $this;
-    }
-
-    /**
-     * Get the URL
-     *
-     * @return string
-     */
-    public function getUrl()
-    {
-        return $this->url;
     }
 
     /**
