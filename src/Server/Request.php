@@ -14,6 +14,7 @@
 namespace Pop\Http\Server;
 
 use Pop\Http\AbstractRequest;
+use Pop\Http\Auth;
 use Pop\Http\Server\Request\Data;
 use Pop\Http\Server\Request\Uri;
 use Pop\Mime\Part\Body;
@@ -26,7 +27,7 @@ use Pop\Mime\Part\Body;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.1.0
+ * @version    4.2.0
  */
 class Request extends AbstractRequest
 {
@@ -60,6 +61,12 @@ class Request extends AbstractRequest
      * @var array
      */
     protected $env = [];
+
+    /**
+     * HTTP auth object
+     * @var Auth
+     */
+    protected $auth = null;
 
     /**
      * Constructor
@@ -98,6 +105,10 @@ class Request extends AbstractRequest
             }
         }
 
+        if ($this->hasHeader('Authorization')) {
+            $this->setAuth(Auth::parse($this->getHeader('Authorization')));
+        }
+
         $this->requestUri  = new Uri($uri, $basePath);
         $this->requestData = new Data(
             $this->getHeaderValue('Content-Type'), $this->getHeaderValue('Content-Encoding'), $filters, $streamToFile
@@ -106,6 +117,38 @@ class Request extends AbstractRequest
         if ($this->requestData->hasRawData()) {
             $this->body = new Body($this->requestData->getRawData());
         }
+    }
+
+    /**
+     * Set the auth object
+     *
+     * @param  Auth $auth
+     * @return Request
+     */
+    public function setAuth(Auth $auth)
+    {
+        $this->auth = $auth;
+        return $this;
+    }
+
+    /**
+     * Get the auth object
+     *
+     * @return Auth
+     */
+    public function getAuth()
+    {
+        return $this->auth;
+    }
+
+    /**
+     * Has auth object
+     *
+     * @return boolean
+     */
+    public function hasAuth()
+    {
+        return (null !== $this->auth);
     }
 
     /**

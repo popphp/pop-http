@@ -2,6 +2,7 @@
 
 namespace Pop\Http\Test\Client;
 
+use Pop\Http\Auth;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Stream;
 use PHPUnit\Framework\TestCase;
@@ -88,13 +89,14 @@ class StreamTest extends TestCase
         $client = new Stream('http://localhost/', 'POST');
         $client->setRequest(new Request());
         $client->setFields(['username' => 'admin']);
+        $client->setAuth(Auth::createBasic('username', 'password'));
         $client->createAsJson();
         $client->open();
         $this->assertTrue($client->isJson());
         $this->assertEquals('application/json', $client->request()->getFormType());
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
-        $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue());
+        $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue(0));
     }
 
     public function testCreateAsJson2()
@@ -112,7 +114,7 @@ class StreamTest extends TestCase
         $this->assertEquals('application/json', $client->request()->getFormType());
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
-        $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue());
+        $this->assertEquals('application/json', $client->getRequestHeader('Content-Type')->getValue(0));
     }
 
     public function testCreateAsXml()
@@ -132,7 +134,7 @@ XML;
         $this->assertEquals('application/xml', $client->request()->getFormType());
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
-        $this->assertEquals('application/xml', $client->getRequestHeader('Content-Type')->getValue());
+        $this->assertEquals('application/xml', $client->getRequestHeader('Content-Type')->getValue(0));
     }
 
     public function testCreateUrlForm()
@@ -146,7 +148,7 @@ XML;
         $this->assertTrue($client->isUrlEncodedForm());
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
-        $this->assertEquals('application/x-www-form-urlencoded', $client->getRequestHeader('Content-Type')->getValue());
+        $this->assertEquals('application/x-www-form-urlencoded', $client->getRequestHeader('Content-Type')->getValue(0));
     }
 
     public function testCreateMultipartForm()
@@ -160,7 +162,19 @@ XML;
         $this->assertTrue($client->isMultipartForm());
         $this->assertTrue($client->hasRequestHeader('Content-Type'));
         $this->assertTrue($client->hasRequestHeader('Content-Length'));
-        $this->assertStringContainsString('multipart/form-data', $client->getRequestHeader('Content-Type')->getValue());
+        $this->assertStringContainsString('multipart/form-data', $client->getRequestHeader('Content-Type')->getValue(0));
+    }
+
+    public function testReset()
+    {
+        $client = new Stream('http://localhost/', 'POST');
+        $client->setRequest(new Request());
+        $client->setFields(['username' => 'admin']);
+        $client->createMultipartForm();
+
+        $client->reset();
+
+        $this->assertNull($client->getContext());
     }
 
 }

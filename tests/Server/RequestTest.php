@@ -383,7 +383,7 @@ class RequestTest extends TestCase
         $formContents->removeHeader('Content-Type');
 
         $_SERVER['HTTP_HOST']           = 'localhost';
-        $_SERVER['CONTENT_TYPE']        = 'multipart/form-data; boundary=' . $header->getParameter('boundary');
+        $_SERVER['CONTENT_TYPE']        = 'multipart/form-data; boundary=' . $header->getValue(0)->getParameter('boundary');
         $_SERVER['SERVER_PORT']         = 8000;
         $_SERVER['REQUEST_METHOD']      = 'PUT';
         $_SERVER['X_POP_HTTP_RAW_DATA'] = $formContents->render(false);

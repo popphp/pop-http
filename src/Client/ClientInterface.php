@@ -13,6 +13,8 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Http\Auth;
+
 /**
  * HTTP client interface
  *
@@ -21,10 +23,32 @@ namespace Pop\Http\Client;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.1.0
+ * @version    4.2.0
  */
 interface ClientInterface
 {
+
+    /**
+     * Set the auth object
+     *
+     * @param  Auth $auth
+     * @return ClientInterface
+     */
+    public function setAuth(Auth $auth);
+
+    /**
+     * Get the auth object
+     *
+     * @return Auth
+     */
+    public function getAuth();
+
+    /**
+     * Has auth object
+     *
+     * @return boolean
+     */
+    public function hasAuth();
 
     /**
      * Set the URL

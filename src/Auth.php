@@ -11,19 +11,19 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Client;
+namespace Pop\Http;
 
 use Pop\Mime\Part\Header;
 
 /**
- * HTTP client auth class
+ * HTTP auth class
  *
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.1.0
+ * @version    4.2.0
  */
 class Auth
 {
@@ -116,7 +116,7 @@ class Auth
     }
 
     /**
-     * Create jey auth
+     * Create key auth
      *
      * @param  string $token
      * @param  string $header
@@ -126,6 +126,51 @@ class Auth
     public static function createKey($token, $header = 'Authorization', $scheme = null)
     {
         return new static($header, $scheme, $token);
+    }
+
+    /**
+     * Parse header
+     *
+     * @param  mixed  $header
+     * @param  string $scheme
+     * @return Auth
+     */
+    public static function parse($header, $scheme = null)
+    {
+        $auth = new static();
+
+        if (!($header instanceof Header)) {
+            $header = Header::parse($header);
+        }
+
+        $auth->setHeader($header->getName());
+
+        if (count($header->getValues()) == 1) {
+            $value = $header->getValue(0);
+        } else {
+            $value = $header->getValuesAsStrings('; ');
+        }
+
+        if (substr($value, 0, 5) == 'Basic') {
+            $auth->setScheme('Basic');
+            $creds = base64_decode(trim(substr($value, 5)));
+            if (($creds !== false) && (strpos($creds, ':') !== false)) {
+                [$username, $password] = explode(':', $creds);
+                $auth->setUsername($username)
+                    ->setPassword($password);
+            }
+        } else if (substr($value, 0, 6) == 'Bearer') {
+            $auth->setScheme('Bearer');
+            $auth->setToken(trim(substr($value, 6)));
+        } else {
+            if ((null !== $scheme) && (substr($value, 0, strlen($scheme)) == $scheme)) {
+                $value = substr($value, strlen($scheme));
+                $auth->setScheme($scheme);
+            }
+            $auth->setToken($value);
+        }
+
+        return $auth;
     }
 
     /**
@@ -167,7 +212,7 @@ class Auth
     /**
      * Set the $username
      *
-     * @param  string username
+     * @param  string $username
      * @return Auth
      */
     public function setUsername($username)
@@ -279,6 +324,16 @@ class Auth
     }
 
     /**
+     * Has auth header
+     *
+     * @return boolean
+     */
+    public function hasAuthHeader()
+    {
+        return (null !== $this->authHeader);
+    }
+
+    /**
      * Determine if the auth is basic
      *
      * @return boolean
@@ -299,18 +354,28 @@ class Auth
     }
 
     /**
+     * Get auth header value object
+     *
+     * @return Header
+     */
+    public function getAuthHeader()
+    {
+        return $this->authHeader;
+    }
+
+    /**
      * Get auth header value as an array
      *
      * @param  boolean $assoc
      * @return array
      */
-    public function getAuthHeader($assoc = true)
+    public function getAuthHeaderAsArray($assoc = true)
     {
         $this->createAuthHeader();
 
         return ($assoc) ?
-            [$this->authHeader->getName() => $this->authHeader->getValue()]:
-            [$this->authHeader->getName(), $this->authHeader->getValue()];
+            [$this->authHeader->getName() => $this->authHeader->getValue(0)]:
+            [$this->authHeader->getName(), $this->authHeader->getValue(0)];
     }
 
     /**
@@ -339,7 +404,7 @@ class Auth
      * Create auth header
      *
      * @throws Exception
-     * @return Auth
+     * @return Header
      */
     public function createAuthHeader()
     {
@@ -349,17 +414,23 @@ class Auth
             throw new Exception('Error: The token is not set');
         }
 
+        $value = new Header\Value();
+
         if ($this->isBasic()) {
+            $value->setScheme('Basic ');
+            $value->setValue(base64_encode($this->username . ':' . $this->password));
             $value = 'Basic ' . base64_encode($this->username . ':' . $this->password);
         } else if ($this->isBearer()) {
-            $value = 'Bearer ' . $this->token;
+            $value->setScheme('Bearer ');
+            $value->setValue($this->token);
         } else {
-            $value = $this->scheme . $this->token;
+            $value->setScheme($this->scheme);
+            $value->setValue($this->token);
         }
 
         $this->authHeader = new Header($this->header, $value);
 
-        return $this;
+        return $this->authHeader;
     }
 
     /**

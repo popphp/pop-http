@@ -2,6 +2,7 @@
 
 namespace Pop\Http\Test\Client;
 
+use Pop\Http\Auth;
 use Pop\Http\Client\Stream;
 use Pop\Http\Client\Response;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,14 @@ class ClientTest extends TestCase
         $client->appendToUrl('/page');
 
         $this->assertEquals('http://localhost/page', $client->getUrl());
+    }
+
+    public function testSetAndGetAuth()
+    {
+        $client = new Stream('http://localhost');
+        $client->setAuth(Auth::createBearer('sdchsjdklh23lkhsldkfcmsdf'));
+        $this->assertTrue($client->hasAuth());
+        $this->assertInstanceOf('Pop\Http\Auth', $client->getAuth());
     }
 
     public function testGetParsedResponse()

@@ -16,7 +16,6 @@ namespace Pop\Http\Server;
 use Pop\Http\AbstractResponse;
 use Pop\Http\Parser;
 use Pop\Http\Client;
-use Pop\Mime\Part\Body;
 
 /**
  * HTTP response class
@@ -26,7 +25,7 @@ use Pop\Mime\Part\Body;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.1.0
+ * @version    4.2.0
  */
 class Response extends AbstractResponse
 {
@@ -42,8 +41,8 @@ class Response extends AbstractResponse
     {
         $body = $this->body->render();
 
-        if ($this->hasHeader('Content-Encoding')) {
-            $body = Parser::encodeData($body, strtoupper($this->getHeader('Content-Encoding')->getValue()));
+        if ($this->hasHeader('Content-Encoding') && (count($this->getHeader('Content-Encoding')->getValues()) == 1)) {
+            $body = Parser::encodeData($body, strtoupper($this->getHeader('Content-Encoding')->getValue(0)));
             if ($length) {
                 $this->addHeader('Content-Length', (($mb) ? mb_strlen($body) : strlen($body)));
             }

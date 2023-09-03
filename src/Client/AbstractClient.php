@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Http\Auth;
 use Pop\Http\Parser;
 
 /**
@@ -23,7 +24,7 @@ use Pop\Http\Parser;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.1.0
+ * @version    4.2.0
  */
 abstract class AbstractClient implements ClientInterface
 {
@@ -59,7 +60,7 @@ abstract class AbstractClient implements ClientInterface
     protected $response = null;
 
     /**
-     * Client auth object
+     * HTTP auth object
      * @var Auth
      */
     protected $auth = null;
@@ -299,10 +300,12 @@ abstract class AbstractClient implements ClientInterface
     {
         $parsedResponse = null;
 
-        if (($this->hasResponse()) && ($this->getResponse()->hasBody()) && ($this->getResponse()->hasHeader('Content-Type'))) {
+        if (($this->hasResponse()) && ($this->getResponse()->hasBody()) && ($this->getResponse()->hasHeader('Content-Type')) &&
+            (count($this->getResponse()->getHeader('Content-Type')->getValues()) == 1)) {
             $rawResponse     = $this->getResponse()->getBody()->getContent();
-            $contentType     = $this->getResponse()->getHeader('Content-Type')->getValue();
-            $contentEncoding = ($this->getResponse()->hasHeader('Content-Encoding')) ? $this->getResponse()->getHeader('Content-Encoding')->getValue() : null;
+            $contentType     = $this->getResponse()->getHeader('Content-Type')->getValue(0);
+            $contentEncoding = ($this->getResponse()->hasHeader('Content-Encoding') && (count($this->getResponse()->getHeader('Content-Encoding')->getValues()) == 1)) ?
+                $this->getResponse()->getHeader('Content-Encoding')->getValue(0) : null;
             $parsedResponse  = Parser::parseDataByContentType($rawResponse, $contentType, $contentEncoding);
         }
 

@@ -24,7 +24,7 @@ use Pop\Mime\Message;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.1.0
+ * @version    4.2.0
  */
 class Curl extends AbstractClient
 {
@@ -219,6 +219,11 @@ class Curl extends AbstractClient
     public function open()
     {
         $url = $this->url;
+
+        // Set auth header if there is one
+        if (null !== $this->auth) {
+            $this->getRequest()->addHeader($this->auth->createAuthHeader());
+        }
 
         if (null !== $this->request) {
             // Set query data if there is any

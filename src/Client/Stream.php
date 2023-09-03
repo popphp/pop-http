@@ -24,7 +24,7 @@ use Pop\Mime\Message;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.1.0
+ * @version    4.2.0
  */
 class Stream extends AbstractClient
 {
@@ -303,6 +303,11 @@ class Stream extends AbstractClient
         // else fall back to pre-defined headers in the stream context
         if (($clear) && isset($this->contextOptions['http']['header'])) {
             $this->contextOptions['http']['header'] = null;
+        }
+
+        // Set auth header if there is one
+        if (null !== $this->auth) {
+            $this->getRequest()->addHeader($this->auth->createAuthHeader());
         }
 
         if (null !== $this->request) {
