@@ -169,6 +169,66 @@ echo $client->getResponseCode();
 // Display the body of the returned response
 echo $client->getResponseBody();
 ```
+
+### Auth Header
+
+The `Pop\Http\Auth` class can assist with creating an authorization header for outbound HTTP client requests,
+or parsing an authorization header from an inbound request.
+
+##### Client Example, Using Basic Auth 
+
+```php
+$client = new Pop\Http\Client\Stream('http://www.mydomain.com/auth', 'POST');
+$client->setAuth(Pop\Http\Auth::createBasic('username', 'password'));
+$client->send();
+
+// 200, if the credentials are valid
+echo $client->getResponseCode();
+```
+
+##### Client Example, Using Bearer Token
+
+```php
+$client = new Pop\Http\Client\Curl('http://www.mydomain.com/auth', 'POST');
+$client->setAuth(Pop\Http\Auth::createBearer('AUTH_TOKEN'));
+$client->send();
+
+// 200, if the credentials are valid
+echo $client->getResponseCode();
+```
+
+##### Client Example, Using API Key with Custom Header
+
+```php
+$client = new Pop\Http\Client\Stream('http://www.mydomain.com/auth', 'POST');
+$client->setAuth(Pop\Http\Auth::createKey('API_KEY', 'X-Api-Key'));
+$client->send();
+
+// 200, if the credentials are valid
+echo $client->getResponseCode();
+```
+
+##### Server Example
+
+```php
+$request = new Http\Server\Request();
+$auth    = Http\Auth::parse($request->getHeader('Authorization'));
+
+print_r($auth);
+```
+
+```text
+Pop\Http\Auth Object
+(
+    [header:protected] => Authorization
+    [scheme:protected] => Bearer
+    [token:protected] => AUTH_TOKEN
+    [username:protected] => 
+    [password:protected] => 
+    [authHeader:protected] => 
+)
+```
+
 ### File uploads
 
 ##### Basic file upload
