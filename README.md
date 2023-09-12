@@ -202,7 +202,7 @@ echo $client->getResponseCode();
 ##### Client Example, Using API Key with Custom Header
 
 ```php
-// Automatically creates the auth header with the custom header name and the correct API key value
+// Automatically creates the auth header with the custom header name and API key value
 $client = new Pop\Http\Client\Stream('http://www.mydomain.com/auth', 'POST');
 $client->setAuth(Pop\Http\Auth::createKey('API_KEY', 'X-Api-Key'));
 $client->send();
