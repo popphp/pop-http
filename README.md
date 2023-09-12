@@ -178,6 +178,7 @@ or parsing an authorization header from an inbound request.
 ##### Client Example, Using Basic Auth 
 
 ```php
+// Automatically creates the base64 encoded basic auth header
 $client = new Pop\Http\Client\Stream('http://www.mydomain.com/auth', 'POST');
 $client->setAuth(Pop\Http\Auth::createBasic('username', 'password'));
 $client->send();
@@ -189,6 +190,7 @@ echo $client->getResponseCode();
 ##### Client Example, Using Bearer Token
 
 ```php
+// Automatically creates the auth header with the correct bearer token
 $client = new Pop\Http\Client\Curl('http://www.mydomain.com/auth', 'POST');
 $client->setAuth(Pop\Http\Auth::createBearer('AUTH_TOKEN'));
 $client->send();
@@ -200,6 +202,7 @@ echo $client->getResponseCode();
 ##### Client Example, Using API Key with Custom Header
 
 ```php
+// Automatically creates the auth header with the custom header name and the correct API key value
 $client = new Pop\Http\Client\Stream('http://www.mydomain.com/auth', 'POST');
 $client->setAuth(Pop\Http\Auth::createKey('API_KEY', 'X-Api-Key'));
 $client->send();
