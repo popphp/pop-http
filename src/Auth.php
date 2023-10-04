@@ -408,9 +408,9 @@ class Auth
      */
     public function createAuthHeader()
     {
-        if (($this->isBasic()) && (empty($this->username) || empty($this->password))) {
+        if (($this->isBasic()) && ((null === $this->username) || (null ===  $this->password))) {
             throw new Exception('Error: The username and password values must be set for basic authorization');
-        } else if (!($this->isBasic()) && empty($this->token)) {
+        } else if (!($this->isBasic()) && (null === $this->token)) {
             throw new Exception('Error: The token is not set');
         }
 
