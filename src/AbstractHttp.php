@@ -113,19 +113,19 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Get all header values as associative array
      *
+     * @param  boolean $asStrings
      * @return array
      */
-    public function getHeadersAsArray()
+    public function getHeadersAsArray($asStrings = true)
     {
         $headers = [];
 
         foreach ($this->headers as $name => $header) {
             if (count($header->getValues()) == 1) {
-                $headers[$name] = $header->getValue(0);
+                $headers[$name] = ($asStrings) ? $header->getValueAsString(0) : $header->getValue(0);
             } else {
-                $headers[$name] = $header->getValuesAsStrings();
+                $headers[$name] = ($asStrings) ? $header->getValuesAsStrings() : $header->getValues();
             }
-
         }
         return $headers;
     }
