@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -22,9 +22,9 @@ use Pop\Http\Parser;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 abstract class AbstractClient implements ClientInterface
 {
@@ -112,7 +112,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function hasAuth()
     {
-        return (null !== $this->auth);
+        return ($this->auth !== null);
     }
 
     /**
@@ -188,7 +188,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function hasResource()
     {
-        return (null !== $this->resource);
+        return ($this->resource !== null);
     }
 
     /**
@@ -230,7 +230,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function hasRequest()
     {
-        return (null !== $this->request);
+        return ($this->request !== null);
     }
 
     /**
@@ -240,7 +240,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function getRequest()
     {
-        if (null === $this->request) {
+        if ($this->request === null) {
             $this->request = new Request();
         }
         return $this->request;
@@ -275,7 +275,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function hasResponse()
     {
-        return (null !== $this->response);
+        return ($this->response !== null);
     }
 
     /**
@@ -285,7 +285,7 @@ abstract class AbstractClient implements ClientInterface
      */
     public function getResponse()
     {
-        if (null === $this->response) {
+        if ($this->response === null) {
             $this->response = new Response();
         }
         return $this->response;

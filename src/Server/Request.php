@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -25,9 +25,9 @@ use Pop\Mime\Part\Body;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Request extends AbstractRequest
 {
@@ -148,7 +148,7 @@ class Request extends AbstractRequest
      */
     public function hasAuth()
     {
-        return (null !== $this->auth);
+        return ($this->auth !== null);
     }
 
     /**
@@ -329,7 +329,7 @@ class Request extends AbstractRequest
             $hostname = $this->server['SERVER_NAME'];
         }
 
-        if ((strpos($hostname, ':') === false) && (null !== $port)) {
+        if ((strpos($hostname, ':') === false) && ($port !== null)) {
             $hostname .= ':' . $port;
         }
 
@@ -365,7 +365,7 @@ class Request extends AbstractRequest
      */
     public function getCookie($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->cookie;
         } else {
             return (isset($this->cookie[$key])) ? $this->cookie[$key] : null;
@@ -380,7 +380,7 @@ class Request extends AbstractRequest
      */
     public function getServer($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->server;
         } else {
             return (isset($this->server[$key])) ? $this->server[$key] : null;
@@ -395,7 +395,7 @@ class Request extends AbstractRequest
      */
     public function getEnv($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->env;
         } else {
             return (isset($this->env[$key])) ? $this->env[$key] : null;

@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -22,9 +22,9 @@ use Pop\Mime\Part\Body;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 abstract class AbstractHttp implements HttpInterface
 {
@@ -141,7 +141,7 @@ abstract class AbstractHttp implements HttpInterface
     {
         $headers = '';
 
-        if (null !== $status) {
+        if ($status !== null) {
             $headers = $status . $eol;
         }
 
@@ -228,7 +228,7 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function getBodyContent()
     {
-        return (null !== $this->body) ? $this->body->getContent() : null;
+        return ($this->body !== null) ? $this->body->getContent() : null;
     }
 
     /**
@@ -238,7 +238,7 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function hasBody()
     {
-        return (null !== $this->body);
+        return ($this->body !== null);
     }
 
     /**
@@ -248,7 +248,7 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function hasBodyContent()
     {
-        return ((null !== $this->body) && $this->body->hasContent());
+        return (($this->body !== null) && $this->body->hasContent());
     }
 
     /**
@@ -259,7 +259,7 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function decodeBodyContent($body = null)
     {
-        if (null !== $body) {
+        if ($body !== null) {
             $this->setBody($body);
         }
         if (($this->hasHeader('Transfer-Encoding')) && (count($this->getHeader('Transfer-Encoding')->getValues()) == 1) &&

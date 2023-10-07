@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -24,9 +24,9 @@ use Pop\Mime\Part\Header;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Parser
 {
@@ -97,18 +97,18 @@ class Parser
     {
         $parsedResult = false;
 
-        if (null !== $contentType) {
+        if ($contentType !== null) {
             $contentType = strtolower($contentType);
         }
-        if (null !== $encoding) {
+        if ($encoding !== null) {
             $encoding = strtoupper($encoding);
         }
 
         // JSON data
-        if ((null !== $contentType) && (strpos($contentType, 'json') !== false)) {
+        if (($contentType !== null) && (strpos($contentType, 'json') !== false)) {
             $parsedResult = json_decode(self::decodeData($rawData, $encoding, $chunked), true);
         // XML data
-        } else if ((null !== $contentType) && (strpos($contentType, 'xml') !== false)) {
+        } else if (($contentType !== null) && (strpos($contentType, 'xml') !== false)) {
             $rawData = self::decodeData($rawData, $encoding, $chunked);
             $matches = [];
             preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
@@ -124,15 +124,15 @@ class Parser
 
             $parsedResult = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
         // URL-encoded form data
-        } else if ((null !== $contentType) && (strpos($contentType, 'application/x-www-form-urlencoded') !== false)) {
+        } else if (($contentType !== null) && (strpos($contentType, 'application/x-www-form-urlencoded') !== false)) {
             parse_str(self::decodeData($rawData, $encoding, $chunked), $parsedResult);
         // Multipart form data
-        } else if ((null !== $contentType) && (strpos($contentType, 'multipart/form-data') !== false)) {
+        } else if (($contentType !== null) && (strpos($contentType, 'multipart/form-data') !== false)) {
             $formContent  = (strpos($rawData, 'Content-Type:') === false) ?
                 'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
             $parsedResult = Message::parseForm($formContent);
         // Fallback to just the encoding
-        } else if (null !== $encoding) {
+        } else if ($encoding !== null) {
             $parsedResult = self::decodeData($rawData, $encoding, $chunked);
         }
 

@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -22,9 +22,9 @@ use Pop\Mime\Message;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Stream extends AbstractClient
 {
@@ -306,11 +306,11 @@ class Stream extends AbstractClient
         }
 
         // Set auth header if there is one
-        if (null !== $this->auth) {
+        if ($this->auth !== null) {
             $this->getRequest()->addHeader($this->auth->createAuthHeader());
         }
 
-        if (null !== $this->request) {
+        if ($this->request !== null) {
             // Set query data if there is any
             if ($this->request->hasFields()) {
                 // Append GET query string to URL
@@ -379,7 +379,7 @@ class Stream extends AbstractClient
             $this->createContext();
         }
 
-        $this->resource = (null !== $this->context) ?
+        $this->resource = ($this->context !== null) ?
             @fopen($url, $this->mode, false, $this->context) : @fopen($url, $this->mode);
 
         $this->httpResponseHeaders = $http_response_header;
@@ -401,7 +401,7 @@ class Stream extends AbstractClient
 
         $this->open($clear);
 
-        if (null === $this->response) {
+        if ($this->response === null) {
             $this->response = new Response();
         }
 
@@ -409,7 +409,7 @@ class Stream extends AbstractClient
             $meta      = stream_get_meta_data($this->resource);
             $headers   = $meta['wrapper_data'];
             $body      = stream_get_contents($this->resource);
-        } else if (null !== $this->httpResponseHeaders) {
+        } else if ($this->httpResponseHeaders !== null) {
             $headers   = $this->httpResponseHeaders;
         }
 

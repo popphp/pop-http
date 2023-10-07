@@ -19,6 +19,13 @@ Install `pop-http` using Composer.
 
     composer require popphp/pop-http
 
+Or, require it in your composer.json file
+
+    "require": {
+        "popphp/pop-http" : "5.0.*"
+    }
+
+
 BASIC USAGE
 -----------
 

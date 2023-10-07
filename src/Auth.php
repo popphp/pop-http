@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -21,9 +21,9 @@ use Pop\Mime\Part\Header;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Auth
 {
@@ -78,16 +78,16 @@ class Auth
     public function __construct($header = 'Authorization', $scheme = null, $token = null, $username = null, $password = null)
     {
         $this->setHeader($header);
-        if (null !== $scheme) {
+        if ($scheme !== null) {
             $this->setScheme($scheme);
         }
-        if (null !== $token) {
+        if ($token !== null) {
             $this->setToken($token);
         }
-        if (null !== $username) {
+        if ($username !== null) {
             $this->setUsername($username);
         }
-        if (null !== $password) {
+        if ($password !== null) {
             $this->setPassword($password);
         }
     }
@@ -163,7 +163,7 @@ class Auth
             $auth->setScheme('Bearer');
             $auth->setToken(trim(substr($value, 6)));
         } else {
-            if ((null !== $scheme) && (substr($value, 0, strlen($scheme)) == $scheme)) {
+            if (($scheme !== null) && (substr($value, 0, strlen($scheme)) == $scheme)) {
                 $value = substr($value, strlen($scheme));
                 $auth->setScheme($scheme);
             }
@@ -290,7 +290,7 @@ class Auth
      */
     public function hasScheme()
     {
-        return (null !== $this->scheme);
+        return ($this->scheme !== null);
     }
 
     /**
@@ -300,7 +300,7 @@ class Auth
      */
     public function hasToken()
     {
-        return (null !== $this->token);
+        return ($this->token !== null);
     }
 
     /**
@@ -310,7 +310,7 @@ class Auth
      */
     public function hasUsername()
     {
-        return (null !== $this->username);
+        return ($this->username !== null);
     }
 
     /**
@@ -320,7 +320,7 @@ class Auth
      */
     public function hasPassword()
     {
-        return (null !== $this->password);
+        return ($this->password !== null);
     }
 
     /**
@@ -330,7 +330,7 @@ class Auth
      */
     public function hasAuthHeader()
     {
-        return (null !== $this->authHeader);
+        return ($this->authHeader !== null);
     }
 
     /**
@@ -388,7 +388,7 @@ class Auth
     {
         $this->createAuthHeader();
 
-        if (null === $this->authHeader) {
+        if ($this->authHeader === null) {
             throw new Exception('Error: The auth header object is not set.');
         }
 
@@ -408,9 +408,9 @@ class Auth
      */
     public function createAuthHeader()
     {
-        if (($this->isBasic()) && ((null === $this->username) || (null ===  $this->password))) {
+        if (($this->isBasic()) && (($this->username === null) || ($this->password === null))) {
             throw new Exception('Error: The username and password values must be set for basic authorization');
-        } else if (!($this->isBasic()) && (null === $this->token)) {
+        } else if (!($this->isBasic()) && ($this->token === null)) {
             throw new Exception('Error: The token is not set');
         }
 

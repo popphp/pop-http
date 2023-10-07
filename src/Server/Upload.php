@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Http\Server;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Upload
 {
@@ -134,10 +134,10 @@ class Upload
         $this->setUploadDir($dir);
         $this->setMaxSize($maxSize);
 
-        if ((null !== $disallowedTypes) && (count($disallowedTypes) > 0)) {
+        if (($disallowedTypes !== null) && (count($disallowedTypes) > 0)) {
             $this->setDisallowedTypes($disallowedTypes);
         }
-        if ((null !== $allowedTypes) && (count($allowedTypes) > 0)) {
+        if (($allowedTypes !== null) && (count($allowedTypes) > 0)) {
             $this->setAllowedTypes($allowedTypes);
         }
     }
@@ -534,7 +534,7 @@ class Upload
                     if (($this->maxSize > 0) && ($fileSize > $this->maxSize)) {
                         $this->error = self::UPLOAD_ERR_USER_SIZE;
                         return false;
-                    } else if ((null !== $ext) && (!$this->isAllowed($ext))) {
+                    } else if (($ext !== null) && (!$this->isAllowed($ext))) {
                         $this->error = self::UPLOAD_ERR_NOT_ALLOWED;
                         return false;
                     } else if ($this->error == 0) {
@@ -559,7 +559,7 @@ class Upload
     public function upload($file, $to = null, $secure = true)
     {
         if ($this->test($file)) {
-            if (null === $to) {
+            if ($to === null) {
                 $to = $file['name'];
             }
             if (!$this->overwrite) {

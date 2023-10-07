@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -22,9 +22,9 @@ use Pop\Mime\Message;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Curl extends AbstractClient
 {
@@ -59,7 +59,7 @@ class Curl extends AbstractClient
         $this->setOption(CURLOPT_HEADER, true);
         $this->setOption(CURLOPT_RETURNTRANSFER, true);
 
-        if (null !== $opts) {
+        if ($opts !== null) {
             $this->setOptions($opts);
         }
     }
@@ -208,7 +208,7 @@ class Curl extends AbstractClient
      */
     public function getInfo($opt = null)
     {
-        return (null !== $opt) ? curl_getinfo($this->resource, $opt) : curl_getinfo($this->resource);
+        return ($opt !== null) ? curl_getinfo($this->resource, $opt) : curl_getinfo($this->resource);
     }
 
     /**
@@ -221,11 +221,11 @@ class Curl extends AbstractClient
         $url = $this->url;
 
         // Set auth header if there is one
-        if (null !== $this->auth) {
+        if ($this->auth !== null) {
             $this->getRequest()->addHeader($this->auth->createAuthHeader());
         }
 
-        if (null !== $this->request) {
+        if ($this->request !== null) {
             // Set query data if there is any
             if ($this->request->hasFields()) {
                 // Append GET query string to URL
@@ -298,7 +298,7 @@ class Curl extends AbstractClient
             $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
         }
 
-        if (null === $this->response) {
+        if ($this->response === null) {
             $this->response = new Response();
         }
 

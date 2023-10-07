@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Http\Server\Request;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Uri
 {
@@ -132,7 +132,7 @@ class Uri
      */
     public function setRequestUri($uri = null, $basePath = null)
     {
-        if ((null === $uri) && isset($_SERVER['REQUEST_URI'])) {
+        if (($uri === null) && isset($_SERVER['REQUEST_URI'])) {
             $uri = $_SERVER['REQUEST_URI'];
         }
 
@@ -160,7 +160,7 @@ class Uri
             }
         }
 
-        $this->basePath = (null === $basePath) ? str_replace($docRoot, '', $dir) : $basePath;
+        $this->basePath = ($basePath === null) ? str_replace($docRoot, '', $dir) : $basePath;
 
         if (strpos($this->requestUri, '?') !== false) {
             $this->requestUri = substr($this->requestUri, 0, strpos($this->requestUri, '?'));

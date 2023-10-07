@@ -6,13 +6,15 @@ on:
   pull_request:
     branches: [ master ]
 
-jobs:
+env:
+  XDEBUG_MODE: debug,coverage
 
+jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: [ '7.4', '8.0' ]
+        php-versions: [ '8.1', '8.2' ]
 
     services:
       httpd:

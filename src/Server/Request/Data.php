@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -22,9 +22,9 @@ use Pop\Http\Parser;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.2.0
+ * @version    5.0.0
  */
 class Data extends AbstractRequest
 {
@@ -136,7 +136,7 @@ class Data extends AbstractRequest
      */
     public function getQuery($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->get;
         } else {
             return (isset($this->get[$key])) ? $this->get[$key] : null;
@@ -151,7 +151,7 @@ class Data extends AbstractRequest
      */
     public function getPost($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->post;
         } else {
             return (isset($this->post[$key])) ? $this->post[$key] : null;
@@ -166,7 +166,7 @@ class Data extends AbstractRequest
      */
     public function getFiles($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->files;
         } else {
             return (isset($this->files[$key])) ? $this->files[$key] : null;
@@ -181,7 +181,7 @@ class Data extends AbstractRequest
      */
     public function getPut($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->put;
         } else {
             return (isset($this->put[$key])) ? $this->put[$key] : null;
@@ -196,7 +196,7 @@ class Data extends AbstractRequest
      */
     public function getPatch($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->patch;
         } else {
             return (isset($this->patch[$key])) ? $this->patch[$key] : null;
@@ -211,7 +211,7 @@ class Data extends AbstractRequest
      */
     public function getDelete($key = null)
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->delete;
         } else {
             return (isset($this->delete[$key])) ? $this->delete[$key] : null;
@@ -228,8 +228,8 @@ class Data extends AbstractRequest
     {
         $result = null;
 
-        if ((null !== $this->queryData) && is_array($this->queryData)) {
-            if (null === $key) {
+        if (($this->queryData !== null) && is_array($this->queryData)) {
+            if ($key === null) {
                 $result = $this->queryData;
             } else {
                 $result = (isset($this->queryData[$key])) ? $this->queryData[$key] : null;
@@ -249,8 +249,8 @@ class Data extends AbstractRequest
     {
         $result = null;
 
-        if ((null !== $this->parsedData) && is_array($this->parsedData)) {
-            if (null === $key) {
+        if (($this->parsedData !== null) && is_array($this->parsedData)) {
+            if ($key === null) {
                 $result = $this->parsedData;
             } else {
                 $result = (isset($this->parsedData[$key])) ? $this->parsedData[$key] : null;
@@ -348,7 +348,7 @@ class Data extends AbstractRequest
     public function processData($contentType = null, $encoding = null, $streamToFile = null)
     {
         // Stream raw data to file location
-        if (null !== $streamToFile) {
+        if ($streamToFile !== null) {
             $this->prepareStreamToFile($streamToFile);
         } else {
             /**
@@ -361,7 +361,7 @@ class Data extends AbstractRequest
         // Process query string
         if (isset($_SERVER['QUERY_STRING'])) {
             $this->queryData = rawurldecode($_SERVER['QUERY_STRING']);
-            $this->queryData = ((null !== $contentType) && ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false))) ?
+            $this->queryData = (($contentType !== null) && ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false))) ?
                 Parser::parseDataByContentType($this->queryData, $contentType, $encoding) :
                 Parser::parseDataByContentType($this->queryData, 'application/x-www-form-urlencoded', $encoding);
 
@@ -371,7 +371,7 @@ class Data extends AbstractRequest
         }
 
         // Process raw data
-        if ((null !== $contentType) && (null !== $this->rawData)) {
+        if (($contentType !== null) && ($this->rawData !== null)) {
             $this->parsedData = Parser::parseDataByContentType($this->rawData, $contentType, $encoding);
         }
 
@@ -419,10 +419,10 @@ class Data extends AbstractRequest
                 break;
         }
 
-        if (null !== $contentType) {
+        if ($contentType !== null) {
             $this->addHeader('Content-Type', $contentType);
         }
-        if (null !== $encoding) {
+        if ($encoding !== null) {
             $this->addHeader('Content-Encoding', $encoding);
         }
     }
