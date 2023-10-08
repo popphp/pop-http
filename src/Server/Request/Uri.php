@@ -28,31 +28,31 @@ class Uri
 
     /**
      * Request URI
-     * @var string
+     * @var ?string
      */
-    protected $requestUri = null;
+    protected ?string $requestUri = null;
 
     /**
      * Path segments
      * @var array
      */
-    protected $segments = [];
+    protected array $segments = [];
 
     /**
      * Base path
-     * @var string
+     * @var ?string
      */
-    protected $basePath = null;
+    protected ?string $basePath = null;
 
     /**
      * Constructor
      *
      * Instantiate the request URI object
      *
-     * @param  string $uri
-     * @param  string $basePath
+     * @param ?string $uri
+     * @param ?string $basePath
      */
-    public function __construct($uri = null, $basePath = null)
+    public function __construct(?string $uri = null, ?string $basePath = null)
     {
         $this->setRequestUri($uri, $basePath);
     }
@@ -62,7 +62,7 @@ class Uri
      *
      * @return string
      */
-    public function getBasePath()
+    public function getBasePath(): string
     {
         return $this->basePath;
     }
@@ -72,7 +72,7 @@ class Uri
      *
      * @return string
      */
-    public function getRequestUri()
+    public function getRequestUri(): string
     {
         return $this->requestUri;
     }
@@ -82,7 +82,7 @@ class Uri
      *
      * @return string
      */
-    public function getFullRequestUri()
+    public function getFullRequestUri(): string
     {
         return $this->basePath . $this->requestUri;
     }
@@ -94,11 +94,11 @@ class Uri
      * /hello/world/page
      *
      * @param  int $i
-     * @return string
+     * @return string|null
      */
-    public function getSegment($i)
+    public function getSegment(int $i): string|null
     {
-        return (isset($this->segments[(int)$i])) ? $this->segments[(int)$i] : null;
+        return $this->segments[(int)$i] ?? null;
     }
 
     /**
@@ -106,7 +106,7 @@ class Uri
      *
      * @return array
      */
-    public function getSegments()
+    public function getSegments(): array
     {
         return $this->segments;
     }
@@ -114,10 +114,10 @@ class Uri
     /**
      * Set the base path
      *
-     * @param  string $path
+     * @param  ?string $path
      * @return Uri
      */
-    public function setBasePath($path = null)
+    public function setBasePath(?string $path = null): Uri
     {
         $this->basePath = $path;
         return $this;
@@ -126,11 +126,11 @@ class Uri
     /**
      * Set the request URI
      *
-     * @param  string $uri
-     * @param  string $basePath
+     * @param  ?string $uri
+     * @param  ?string $basePath
      * @return Uri
      */
-    public function setRequestUri($uri = null, $basePath = null)
+    public function setRequestUri(?string $uri = null, ?string $basePath = null)
     {
         if (($uri === null) && isset($_SERVER['REQUEST_URI'])) {
             $uri = $_SERVER['REQUEST_URI'];
@@ -155,19 +155,19 @@ class Uri
 
         if (($dir != $docRoot) && (strlen($dir) > strlen($docRoot))) {
             $realBasePath = str_replace($docRoot, '', $dir);
-            if (substr($uri, 0, strlen($realBasePath)) == $realBasePath) {
+            if (str_starts_with($uri, $realBasePath)) {
                 $this->requestUri = substr($uri, strlen($realBasePath));
             }
         }
 
         $this->basePath = ($basePath === null) ? str_replace($docRoot, '', $dir) : $basePath;
 
-        if (strpos($this->requestUri, '?') !== false) {
+        if (str_contains($this->requestUri, '?')) {
             $this->requestUri = substr($this->requestUri, 0, strpos($this->requestUri, '?'));
         }
 
-        if (($this->requestUri != '/') && (strpos($this->requestUri, '/') !== false)) {
-            $uri = (substr($this->requestUri, 0, 1) == '/') ? substr($this->requestUri, 1) : $this->requestUri;
+        if (($this->requestUri != '/') && (str_contains($this->requestUri, '/'))) {
+            $uri = (str_starts_with($this->requestUri, '/')) ? substr($this->requestUri, 1) : $this->requestUri;
             $this->segments = explode('/', $uri);
         }
 

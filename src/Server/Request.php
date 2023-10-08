@@ -34,51 +34,51 @@ class Request extends AbstractRequest
 
     /**
      * Request URI object
-     * @var Uri
+     * @var ?Uri
      */
-    protected $requestUri = null;
+    protected ?Uri $requestUri = null;
 
     /**
      * Request data object
-     * @var Data
+     * @var ?Data
      */
-    protected $requestData = null;
+    protected ?Data $requestData = null;
 
     /**
      * COOKIE array
      * @var array
      */
-    protected $cookie = [];
+    protected array $cookie = [];
 
     /**
      * SERVER array
      * @var array
      */
-    protected $server = [];
+    protected array $server = [];
 
     /**
      * ENV array
      * @var array
      */
-    protected $env = [];
+    protected array $env = [];
 
     /**
      * HTTP auth object
-     * @var Auth
+     * @var ?Auth
      */
-    protected $auth = null;
+    protected ?Auth $auth = null;
 
     /**
      * Constructor
      *
      * Instantiate the request object
      *
-     * @param  string $uri
-     * @param  string $basePath
-     * @param  mixed  $filters
-     * @param  mixed  $streamToFile
+     * @param  ?string $uri
+     * @param  ?string $basePath
+     * @param  mixed   $filters
+     * @param  mixed   $streamToFile
      */
-    public function __construct($uri = null, $basePath = null, $filters = null, $streamToFile = null)
+    public function __construct(?string $uri = null, ?string $basePath = null, mixed $filters = null, mixed $streamToFile = null)
     {
         parent::__construct($filters);
 
@@ -91,9 +91,9 @@ class Request extends AbstractRequest
             $this->addHeaders(getallheaders());
         } else {
             foreach ($_SERVER as $key => $value) {
-                if (substr($key, 0, 5) == 'HTTP_') {
+                if (str_starts_with($key, 'HTTP_')) {
                     $key = ucfirst(strtolower(str_replace('HTTP_', '', $key)));
-                    if (strpos($key, '_') !== false) {
+                    if (str_contains($key, '_')) {
                         $ary = explode('_', $key);
                         foreach ($ary as $k => $v){
                             $ary[$k] = ucfirst(strtolower($v));
@@ -125,7 +125,7 @@ class Request extends AbstractRequest
      * @param  Auth $auth
      * @return Request
      */
-    public function setAuth(Auth $auth)
+    public function setAuth(Auth $auth): Request
     {
         $this->auth = $auth;
         return $this;
@@ -136,7 +136,7 @@ class Request extends AbstractRequest
      *
      * @return Auth
      */
-    public function getAuth()
+    public function getAuth(): Auth
     {
         return $this->auth;
     }
@@ -144,9 +144,9 @@ class Request extends AbstractRequest
     /**
      * Has auth object
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasAuth()
+    public function hasAuth(): bool
     {
         return ($this->auth !== null);
     }
@@ -154,9 +154,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is GET
      *
-     * @return boolean
+     * @return bool
      */
-    public function isGet()
+    public function isGet(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'GET'));
     }
@@ -164,9 +164,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is HEAD
      *
-     * @return boolean
+     * @return bool
      */
-    public function isHead()
+    public function isHead(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'HEAD'));
     }
@@ -174,9 +174,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is POST
      *
-     * @return boolean
+     * @return bool
      */
-    public function isPost()
+    public function isPost(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'POST'));
     }
@@ -184,9 +184,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is PUT
      *
-     * @return boolean
+     * @return bool
      */
-    public function isPut()
+    public function isPut(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'PUT'));
     }
@@ -194,9 +194,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is DELETE
      *
-     * @return boolean
+     * @return bool
      */
-    public function isDelete()
+    public function isDelete(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'DELETE'));
     }
@@ -204,9 +204,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is TRACE
      *
-     * @return boolean
+     * @return bool
      */
-    public function isTrace()
+    public function isTrace(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'TRACE'));
     }
@@ -214,9 +214,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is OPTIONS
      *
-     * @return boolean
+     * @return bool
      */
-    public function isOptions()
+    public function isOptions(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'OPTIONS'));
     }
@@ -224,9 +224,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is CONNECT
      *
-     * @return boolean
+     * @return bool
      */
-    public function isConnect()
+    public function isConnect(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'CONNECT'));
     }
@@ -234,9 +234,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the method is PATCH
      *
-     * @return boolean
+     * @return bool
      */
-    public function isPatch()
+    public function isPatch(): bool
     {
         return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'PATCH'));
     }
@@ -244,9 +244,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the request is secure
      *
-     * @return boolean
+     * @return bool
      */
-    public function isSecure()
+    public function isSecure(): bool
     {
         return (isset($this->server['HTTPS']) || (isset($_SERVER['SERVER_PORT']) && ($_SERVER['SERVER_PORT'] == '443')));
     }
@@ -254,31 +254,31 @@ class Request extends AbstractRequest
     /**
      * Get the document root
      *
-     * @return string
+     * @return string|null
      */
-    public function getDocumentRoot()
+    public function getDocumentRoot(): string|null
     {
-        return (isset($this->server['DOCUMENT_ROOT'])) ? $this->server['DOCUMENT_ROOT'] : null;
+        return $this->server['DOCUMENT_ROOT'] ?? null;
     }
 
     /**
      * Get the method
      *
-     * @return string
+     * @return string|null
      */
-    public function getMethod()
+    public function getMethod(): string|null
     {
-        return (isset($this->server['REQUEST_METHOD'])) ? $this->server['REQUEST_METHOD'] : null;
+        return $this->server['REQUEST_METHOD'] ?? null;
     }
 
     /**
      * Get the server port
      *
-     * @return string
+     * @return string|null
      */
-    public function getPort()
+    public function getPort(): string|null
     {
-        return (isset($this->server['SERVER_PORT'])) ? $this->server['SERVER_PORT'] : null;
+        return $this->server['SERVER_PORT'] ?? null;
     }
 
     /**
@@ -286,17 +286,17 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getScheme()
+    public function getScheme(): string
     {
         return ($this->isSecure()) ? 'https' : 'http';
     }
 
     /**
-     * Get host without port)
+     * Get host (without port)
      *
      * @return string
      */
-    public function getHost()
+    public function getHost(): string
     {
         $hostname = null;
 
@@ -306,7 +306,7 @@ class Request extends AbstractRequest
             $hostname = $this->server['SERVER_NAME'];
         }
 
-        if (strpos($hostname, ':') !== false) {
+        if (str_contains($hostname, ':')) {
             $hostname = substr($hostname, 0, strpos($hostname, ':'));
         }
 
@@ -318,7 +318,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getFullHost()
+    public function getFullHost(): string
     {
         $port     = $this->getPort();
         $hostname = null;
@@ -329,7 +329,7 @@ class Request extends AbstractRequest
             $hostname = $this->server['SERVER_NAME'];
         }
 
-        if ((strpos($hostname, ':') === false) && ($port !== null)) {
+        if ((!str_contains($hostname, ':')) && ($port !== null)) {
             $hostname .= ':' . $port;
         }
 
@@ -339,10 +339,10 @@ class Request extends AbstractRequest
     /**
      * Get client's IP
      *
-     * @param  boolean $proxy
+     * @param  bool $proxy
      * @return string
      */
-    public function getIp($proxy = true)
+    public function getIp(bool $proxy = true): string
     {
         $ip = null;
 
@@ -360,45 +360,45 @@ class Request extends AbstractRequest
     /**
      * Get a value from $_COOKIE, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getCookie($key = null)
+    public function getCookie(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->cookie;
         } else {
-            return (isset($this->cookie[$key])) ? $this->cookie[$key] : null;
+            return $this->cookie[$key] ?? null;
         }
     }
 
     /**
      * Get a value from $_SERVER, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getServer($key = null)
+    public function getServer(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->server;
         } else {
-            return (isset($this->server[$key])) ? $this->server[$key] : null;
+            return $this->server[$key] ?? null;
         }
     }
 
     /**
      * Get a value from $_ENV, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getEnv($key = null)
+    public function getEnv(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->env;
         } else {
-            return (isset($this->env[$key])) ? $this->env[$key] : null;
+            return $this->env[$key] ?? null;
         }
     }
 
@@ -407,7 +407,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getBasePath()
+    public function getBasePath(): string
     {
         return $this->requestUri->getBasePath();
     }
@@ -417,7 +417,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getRequestUri()
+    public function getRequestUri(): string
     {
         return $this->requestUri->getRequestUri();
     }
@@ -427,7 +427,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getFullRequestUri()
+    public function getFullRequestUri(): string
     {
         return $this->requestUri->getFullRequestUri();
     }
@@ -439,9 +439,9 @@ class Request extends AbstractRequest
      * /hello/world/page
      *
      * @param  int $i
-     * @return string
+     * @return string|null
      */
-    public function getSegment($i)
+    public function getSegment(int $i): string|null
     {
         return $this->requestUri->getSegment($i);
     }
@@ -451,7 +451,7 @@ class Request extends AbstractRequest
      *
      * @return array
      */
-    public function getSegments()
+    public function getSegments(): array
     {
         return $this->requestUri->getSegments();
     }
@@ -459,10 +459,10 @@ class Request extends AbstractRequest
     /**
      * Set the base path
      *
-     * @param  string $path
+     * @param  ?string $path
      * @return Request
      */
-    public function setBasePath($path = null)
+    public function setBasePath(?string $path = null): Request
     {
         $this->requestUri->setBasePath($path);
         return $this;
@@ -471,9 +471,9 @@ class Request extends AbstractRequest
     /**
      * Return whether or not the request has FILES
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasFiles()
+    public function hasFiles(): bool
     {
         return $this->requestData->hasFiles();
     }
@@ -481,10 +481,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from $_GET, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getQuery($key = null)
+    public function getQuery(?string $key = null): string|array|null
     {
         return $this->requestData->getQuery($key);
     }
@@ -492,10 +492,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from $_POST, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getPost($key = null)
+    public function getPost(?string $key = null): string|array|null
     {
         return $this->requestData->getPost($key);
     }
@@ -503,10 +503,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from $_FILES, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getFiles($key = null)
+    public function getFiles(?string $key = null): string|array|null
     {
         return $this->requestData->getFiles($key);
     }
@@ -514,10 +514,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from PUT query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getPut($key = null)
+    public function getPut(?string $key = null): string|array|null
     {
         return $this->requestData->getPut($key);
     }
@@ -525,10 +525,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from PATCH query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getPatch($key = null)
+    public function getPatch(?string $key = null): string|array|null
     {
         return $this->requestData->getPatch($key);
     }
@@ -536,10 +536,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from DELETE query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getDelete($key = null)
+    public function getDelete(?string $key = null): string|array|null
     {
         return $this->requestData->getDelete($key);
     }
@@ -548,10 +548,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getQueryData($key = null)
+    public function getQueryData(?string $key = null): string|array|null
     {
         return $this->requestData->getQueryData($key);
     }
@@ -559,9 +559,9 @@ class Request extends AbstractRequest
     /**
      * Has query data
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasQueryData()
+    public function hasQueryData(): bool
     {
         return $this->requestData->hasQueryData();
     }
@@ -569,10 +569,10 @@ class Request extends AbstractRequest
     /**
      * Get a value from parsed data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getParsedData($key = null)
+    public function getParsedData(?string $key = null): string|array|null
     {
         return $this->requestData->getParsedData($key);
     }
@@ -580,9 +580,9 @@ class Request extends AbstractRequest
     /**
      * Has parsed data
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasParsedData()
+    public function hasParsedData(): bool
     {
         return $this->requestData->hasParsedData();
     }
@@ -592,7 +592,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getRawData()
+    public function getRawData(): string
     {
         return $this->requestData->getRawData();
     }
@@ -600,9 +600,9 @@ class Request extends AbstractRequest
     /**
      * Has raw data
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasRawData()
+    public function hasRawData(): bool
     {
         return $this->requestData->hasRawData();
     }
@@ -612,7 +612,7 @@ class Request extends AbstractRequest
      *
      * @return Uri
      */
-    public function getRequestUriObject()
+    public function getRequestUriObject(): Uri
     {
         return $this->requestUri;
     }
@@ -622,7 +622,7 @@ class Request extends AbstractRequest
      *
      * @return Data
      */
-    public function getRequestDataObject()
+    public function getRequestDataObject(): Data
     {
         return $this->requestData;
     }
@@ -633,48 +633,23 @@ class Request extends AbstractRequest
      * @param  string $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
-        switch ($name) {
-            case 'get':
-                return $this->requestData->get;
-                break;
-            case 'post':
-                return $this->requestData->post;
-                break;
-            case 'files':
-                return $this->requestData->files;
-                break;
-            case 'put':
-                return $this->requestData->put;
-                break;
-            case 'patch':
-                return $this->requestData->patch;
-                break;
-            case 'delete':
-                return $this->requestData->delete;
-                break;
-            case 'parsed':
-                return $this->requestData->parsed;
-                break;
-            case 'raw':
-                return $this->requestData->raw;
-                break;
-            case 'cookie':
-                return $this->cookie;
-                break;
-            case 'server':
-                return $this->server;
-                break;
-            case 'env':
-                return $this->env;
-                break;
-            case 'headers':
-                return $this->headers;
-                break;
-            default:
-                return null;
-        }
+        return match ($name) {
+            'get'     => $this->requestData->get,
+            'post'    => $this->requestData->post,
+            'files'   => $this->requestData->files,
+            'put'     => $this->requestData->put,
+            'patch'   => $this->requestData->patch,
+            'delete'  => $this->requestData->delete,
+            'parsed'  => $this->requestData->parsed,
+            'raw'     => $this->requestData->raw,
+            'cookie'  => $this->cookie,
+            'server'  => $this->server,
+            'env'     => $this->env,
+            'headers' => $this->headers,
+            default   => null,
+        };
     }
 
 }

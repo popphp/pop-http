@@ -60,7 +60,7 @@ class Upload
      * Error messageed
      * @var array
      */
-    protected static $errorMessages = [
+    protected static array $errorMessages = [
          0 => 'The file uploaded successfully',
          1 => 'The uploaded file exceeds the upload_max_filesize directive',
          2 => 'The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form',
@@ -79,45 +79,45 @@ class Upload
 
     /**
      * The upload directory path
-     * @var string
+     * @var ?string
      */
-    protected $uploadDir = null;
+    protected ?string $uploadDir = null;
 
     /**
      * The final filename of the uploaded file
-     * @var string
+     * @var ?string
      */
-    protected $uploadedFile = null;
+    protected ?string $uploadedFile = null;
 
     /**
      * Allowed maximum file size
      * @var int
      */
-    protected $maxSize = 0;
+    protected int $maxSize = 0;
 
     /**
      * Allowed file types
      * @var array
      */
-    protected $allowedTypes = [];
+    protected array $allowedTypes = [];
 
     /**
      * Disallowed file types
      * @var array
      */
-    protected $disallowedTypes = [];
+    protected array $disallowedTypes = [];
 
     /**
      * Overwrite flag
-     * @var boolean
+     * @var bool
      */
-    protected $overwrite = false;
+    protected bool $overwrite = false;
 
     /**
      * Error flag
      * @var int
      */
-    protected $error = 0;
+    protected int $error = 0;
 
     /**
      * Constructor
@@ -126,10 +126,10 @@ class Upload
      *
      * @param  string $dir
      * @param  int    $maxSize
-     * @param  array  $disallowedTypes
-     * @param  array  $allowedTypes
+     * @param  ?array $disallowedTypes
+     * @param  ?array $allowedTypes
      */
-    public function __construct($dir, $maxSize = 0, array $disallowedTypes = null, array $allowedTypes = null)
+    public function __construct(string $dir, int $maxSize = 0, ?array $disallowedTypes = null, ?array $allowedTypes = null)
     {
         $this->setUploadDir($dir);
         $this->setMaxSize($maxSize);
@@ -147,11 +147,11 @@ class Upload
      *
      * @param  string $dir
      * @param  int    $maxSize
-     * @param  array  $disallowedTypes
-     * @param  array  $allowedTypes
+     * @param  ?array $disallowedTypes
+     * @param  ?array $allowedTypes
      * @return Upload
      */
-    public static function create($dir, $maxSize = 0, array $disallowedTypes = null, array $allowedTypes = null)
+    public static function create(string $dir, int $maxSize = 0, ?array $disallowedTypes = null, ?array $allowedTypes = null): Upload
     {
         return new static($dir, $maxSize, $disallowedTypes, $allowedTypes);
     }
@@ -163,7 +163,7 @@ class Upload
      * @param  string $file
      * @return string
      */
-    public static function checkDuplicate($dir, $file)
+    public static function checkDuplicate(string $dir, string $file): string
     {
         return (new static($dir))->checkFilename($file);
     }
@@ -173,9 +173,9 @@ class Upload
      *
      * @param  string $dir
      * @param  string $file
-     * @return boolean
+     * @return bool
      */
-    public static function doesFileExists($dir, $file)
+    public static function doesFileExists(string $dir, string $file): bool
     {
         return (new static($dir))->fileExists($file);
     }
@@ -185,7 +185,7 @@ class Upload
      *
      * @return Upload
      */
-    public function setDefaults()
+    public function setDefaults(): Upload
     {
         // Allow basic text, graphic, audio/video, data and archive file types
         $allowedTypes = [
@@ -214,7 +214,7 @@ class Upload
      * @param  string $dir
      * @return Upload
      */
-    public function setUploadDir($dir)
+    public function setUploadDir(string $dir): Upload
     {
         // Check to see if the upload directory exists.
         if (!file_exists($dir) || !is_dir($dir)) {
@@ -234,7 +234,7 @@ class Upload
      * @param  int $maxSize
      * @return Upload
      */
-    public function setMaxSize($maxSize)
+    public function setMaxSize(int $maxSize): Upload
     {
         $this->maxSize = (int)$maxSize;
         return $this;
@@ -246,7 +246,7 @@ class Upload
      * @param  array $allowedTypes
      * @return Upload
      */
-    public function setAllowedTypes(array $allowedTypes)
+    public function setAllowedTypes(array $allowedTypes): Upload
     {
         foreach ($allowedTypes as $type) {
             $this->addAllowedType($type);
@@ -260,7 +260,7 @@ class Upload
      * @param  array $disallowedTypes
      * @return Upload
      */
-    public function setDisallowedTypes(array $disallowedTypes)
+    public function setDisallowedTypes(array $disallowedTypes): Upload
     {
         foreach ($disallowedTypes as $type) {
             $this->addDisallowedType($type);
@@ -274,7 +274,7 @@ class Upload
      * @param  string $type
      * @return Upload
      */
-    public function addAllowedType($type)
+    public function addAllowedType(string $type): Upload
     {
         if (!in_array(strtolower($type), $this->allowedTypes)) {
             $this->allowedTypes[] = strtolower($type);
@@ -288,7 +288,7 @@ class Upload
      * @param  string $type
      * @return Upload
      */
-    public function addDisallowedType($type)
+    public function addDisallowedType(string $type): Upload
     {
         if (!in_array(strtolower($type), $this->disallowedTypes)) {
             $this->disallowedTypes[] = strtolower($type);
@@ -302,7 +302,7 @@ class Upload
      * @param  string $type
      * @return Upload
      */
-    public function removeAllowedType($type)
+    public function removeAllowedType(string $type): Upload
     {
         if (in_array(strtolower($type), $this->allowedTypes)) {
             unset($this->allowedTypes[array_search(strtolower($type), $this->allowedTypes)]);
@@ -316,7 +316,7 @@ class Upload
      * @param  string $type
      * @return Upload
      */
-    public function removeDisallowedType($type)
+    public function removeDisallowedType(string $type): Upload
     {
         if (in_array(strtolower($type), $this->disallowedTypes)) {
             unset($this->disallowedTypes[array_search(strtolower($type), $this->disallowedTypes)]);
@@ -327,10 +327,10 @@ class Upload
     /**
      * Set the overwrite flag
      *
-     * @param  boolean $overwrite
+     * @param  bool $overwrite
      * @return Upload
      */
-    public function overwrite($overwrite)
+    public function overwrite(bool $overwrite): Upload
     {
         $this->overwrite = (bool)$overwrite;
         return $this;
@@ -341,7 +341,7 @@ class Upload
      *
      * @return string
      */
-    public function getUploadDir()
+    public function getUploadDir(): string
     {
         return $this->uploadDir;
     }
@@ -349,9 +349,9 @@ class Upload
     /**
      * Get uploaded file
      *
-     * @return string
+     * @return string|null
      */
-    public function getUploadedFile()
+    public function getUploadedFile(): string|null
     {
         return $this->uploadedFile;
     }
@@ -361,7 +361,7 @@ class Upload
      *
      * @return string
      */
-    public function getUploadedFullPath()
+    public function getUploadedFullPath(): string
     {
         return $this->uploadDir . DIRECTORY_SEPARATOR . $this->uploadedFile;
     }
@@ -371,7 +371,7 @@ class Upload
      *
      * @return int
      */
-    public function getMaxSize()
+    public function getMaxSize(): int
     {
         return $this->maxSize;
     }
@@ -381,7 +381,7 @@ class Upload
      *
      * @return array
      */
-    public function getDisallowedTypes()
+    public function getDisallowedTypes(): array
     {
         return $this->disallowedTypes;
     }
@@ -391,7 +391,7 @@ class Upload
      *
      * @return array
      */
-    public function getAllowedTypes()
+    public function getAllowedTypes(): array
     {
         return $this->allowedTypes;
     }
@@ -400,9 +400,9 @@ class Upload
      * Determine if a file type is allowed
      *
      * @param  string $ext
-     * @return boolean
+     * @return bool
      */
-    public function isAllowed($ext)
+    public function isAllowed(string $ext): bool
     {
         $disallowed = ((count($this->disallowedTypes) > 0) && (in_array(strtolower($ext), $this->disallowedTypes)));
         $allowed    = ((count($this->allowedTypes) == 0) ||
@@ -415,9 +415,9 @@ class Upload
      * Determine if a file type is not allowed
      *
      * @param  string $ext
-     * @return boolean
+     * @return bool
      */
-    public function isNotAllowed($ext)
+    public function isNotAllowed(string $ext): bool
     {
         $disallowed = ((count($this->disallowedTypes) > 0) && (in_array(strtolower($ext), $this->disallowedTypes)));
         $allowed    = ((count($this->allowedTypes) == 0) ||
@@ -429,9 +429,9 @@ class Upload
     /**
      * Determine if the overwrite flag is set
      *
-     * @return boolean
+     * @return bool
      */
-    public function isOverwrite()
+    public function isOverwrite(): bool
     {
         return $this->overwrite;
     }
@@ -439,9 +439,9 @@ class Upload
     /**
      * Determine if the upload was a success
      *
-     * @return boolean
+     * @return bool
      */
-    public function isSuccess()
+    public function isSuccess(): bool
     {
         return ($this->error == UPLOAD_ERR_OK);
     }
@@ -449,9 +449,9 @@ class Upload
     /**
      * Determine if the upload was an error
      *
-     * @return boolean
+     * @return bool
      */
-    public function isError()
+    public function isError(): bool
     {
         return ($this->error != UPLOAD_ERR_OK);
     }
@@ -461,7 +461,7 @@ class Upload
      *
      * @return int
      */
-    public function getErrorCode()
+    public function getErrorCode(): int
     {
         return $this->error;
     }
@@ -471,7 +471,7 @@ class Upload
      *
      * @return string
      */
-    public function getErrorMessage()
+    public function getErrorMessage(): string
     {
         return self::$errorMessages[$this->error];
     }
@@ -480,9 +480,9 @@ class Upload
      * Check if filename exists in the upload directory
      *
      * @param  string $file
-     * @return boolean
+     * @return bool
      */
-    public function fileExists($file)
+    public function fileExists(string $file): bool
     {
         return (file_exists($this->uploadDir . DIRECTORY_SEPARATOR . $file));
     }
@@ -493,7 +493,7 @@ class Upload
      * @param  string $file
      * @return string
      */
-    public function checkFilename($file)
+    public function checkFilename(string $file): string
     {
         $newFilename  = $file;
         $parts        = pathinfo($file);
@@ -512,10 +512,10 @@ class Upload
     /**
      * Test a file upload before moving it
      *
-     * @param  array  $file
-     * @return boolean
+     * @param  array $file
+     * @return bool
      */
-    public function test($file)
+    public function test(array $file): bool
     {
         if ($this->error != 0) {
             return false;
@@ -552,11 +552,11 @@ class Upload
      * Upload file to the upload dir, returns the newly uploaded file
      *
      * @param  array   $file
-     * @param  string  $to
-     * @param  boolean $secure
+     * @param  ?string $to
+     * @param  bool    $secure
      * @return mixed
      */
-    public function upload($file, $to = null, $secure = true)
+    public function upload(array $file, ?string $to = null, bool $secure = true): mixed
     {
         if ($this->test($file)) {
             if ($to === null) {

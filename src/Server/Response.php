@@ -33,11 +33,11 @@ class Response extends AbstractResponse
     /**
      * Prepare response body
      *
-     * @param  boolean $length
-     * @param  boolean $mb
+     * @param  bool $length
+     * @param  bool $mb
      * @return string
      */
-    public function prepareBody($length = false, $mb = false)
+    public function prepareBody(bool $length = false, bool $mb = false): string
     {
         $body = $this->body->render();
 
@@ -56,11 +56,11 @@ class Response extends AbstractResponse
     /**
      * Get the response headers as a string
      *
-     * @param  boolean $status
-     * @param  string  $eol
+     * @param  mixed  $status
+     * @param  string $eol
      * @return string
      */
-    public function getHeadersAsString($status = null, $eol = "\r\n")
+    public function getHeadersAsString(mixed $status = null, string $eol = "\r\n"): string
     {
         $httpStatus = ($status === true) ? "HTTP/{$this->version} {$this->code} {$this->message}" : $status;
         return parent::getHeadersAsString($httpStatus, $eol);
@@ -72,7 +72,7 @@ class Response extends AbstractResponse
      * @throws Exception
      * @return void
      */
-    public function sendHeaders()
+    public function sendHeaders(): void
     {
         if (headers_sent()) {
             throw new Exception('The headers have already been sent.');
@@ -91,12 +91,13 @@ class Response extends AbstractResponse
     /**
      * Send full response
      *
-     * @param  int     $code
-     * @param  array   $headers
-     * @param  boolean $length
+     * @param  ?int   $code
+     * @param  ?array $headers
+     * @param  bool   $length
+     * @throws Exception|\Pop\Http\Exception
      * @return void
      */
-    public function send($code = null, array $headers = null, $length = false)
+    public function send(?int $code = null, ?array $headers = null, bool $length = false): void
     {
         if ($code !== null) {
             $this->setCode($code);
@@ -114,12 +115,13 @@ class Response extends AbstractResponse
     /**
      * Send full response and exit
      *
-     * @param  int   $code
-     * @param  array $headers
-     * @param  boolean $length
+     * @param  ?int   $code
+     * @param  ?array $headers
+     * @param  bool   $length
+     * @throws Exception|\Pop\Http\Exception
      * @return void
      */
-    public function sendAndExit($code = null, array $headers = null, $length = false)
+    public function sendAndExit(?int $code = null, ?array $headers = null, $length = false)
     {
         $this->send($code, $headers, $length);
         exit();
@@ -130,7 +132,7 @@ class Response extends AbstractResponse
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         $body = $this->prepareBody();
         return $this->getHeadersAsString(true) . "\r\n" . $body;
@@ -140,12 +142,12 @@ class Response extends AbstractResponse
      * Send redirect
      *
      * @param  string $url
-     * @param  string $code
+     * @param  int    $code
      * @param  string $version
      * @throws Exception
      * @return void
      */
-    public static function redirect($url, $code = '302', $version = '1.1')
+    public static function redirect(string $url, int $code = 302, string $version = '1.1'): void
     {
         if (headers_sent()) {
             throw new Exception('The headers have already been sent.');
@@ -162,12 +164,13 @@ class Response extends AbstractResponse
     /**
      * Send redirect and exit
      *
-     * @param  string  $url
-     * @param  string  $code
-     * @param  string  $version
+     * @param  string $url
+     * @param  int    $code
+     * @param  string $version
+     * @throws Exception
      * @return void
      */
-    public static function redirectAndExit($url, $code = '302', $version = '1.1')
+    public static function redirectAndExit(string $url, int $code = 302, string $version = '1.1'): void
     {
         static::redirect($url, $code, $version);
         exit();
@@ -177,9 +180,10 @@ class Response extends AbstractResponse
      * Forward a client response as the server response
      *
      * @param  Client\Response $clientResponse
+     * @throws Exception|\Pop\Http\Exception
      * @return void
      */
-    public static function forward(Client\Response $clientResponse)
+    public static function forward(Client\Response $clientResponse): void
     {
         $serverResponse = new static([
             'version' => $clientResponse->getVersion(),
@@ -195,9 +199,10 @@ class Response extends AbstractResponse
      * Forward a client response as the server response and exit
      *
      * @param  Client\Response $clientResponse
+     * @throws Exception|\Pop\Http\Exception
      * @return void
      */
-    public static function forwardAndExit(Client\Response $clientResponse)
+    public static function forwardAndExit(Client\Response $clientResponse): void
     {
         static::forward($clientResponse);
         exit();
@@ -210,7 +215,7 @@ class Response extends AbstractResponse
      * @throws Exception
      * @return string
      */
-    public static function getMessageFromCode($code)
+    public static function getMessageFromCode(int $code): string
     {
         if (!array_key_exists($code, self::$responseCodes)) {
             throw new Exception('The header code ' . $code . ' is not valid.');

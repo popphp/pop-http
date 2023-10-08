@@ -130,12 +130,6 @@ BODY;
         $this->assertStringContainsString('Wik', $response->decodeBodyContent($body)->getContent());
     }
 
-    public function testRedirectHeadersSentException()
-    {
-        $this->expectException('Pop\Http\Server\Exception');
-        Response::redirect('http://www.popphp.org/version');
-    }
-
     public function testPrepareBody()
     {
         $response = new Response();

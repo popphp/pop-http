@@ -14,6 +14,7 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\Auth;
+use Pop\Mime\Part\Body;
 
 /**
  * HTTP client interface
@@ -34,21 +35,21 @@ interface ClientInterface
      * @param  Auth $auth
      * @return ClientInterface
      */
-    public function setAuth(Auth $auth);
+    public function setAuth(Auth $auth): ClientInterface;
 
     /**
      * Get the auth object
      *
      * @return Auth
      */
-    public function getAuth();
+    public function getAuth(): Auth;
 
     /**
      * Has auth object
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasAuth();
+    public function hasAuth(): bool;
 
     /**
      * Set the URL
@@ -56,7 +57,7 @@ interface ClientInterface
      * @param  string $url
      * @return ClientInterface
      */
-    public function setUrl($url);
+    public function setUrl(string $url): ClientInterface;
 
     /**
      * Append to the URL
@@ -64,52 +65,51 @@ interface ClientInterface
      * @param  string $url
      * @return ClientInterface
      */
-    public function appendToUrl($url);
+    public function appendToUrl(string $url): ClientInterface;
 
     /**
      * Get the URL
      *
      * @return string
      */
-    public function getUrl();
+    public function getUrl(): string;
 
     /**
      * Set the method
      *
-     * @param  string  $method
-     * @param  boolean $strict
-     * @throws Exception
+     * @param  string $method
+     * @param  bool   $strict
      * @return ClientInterface
      */
-    public function setMethod($method, $strict = true);
+    public function setMethod(string $method, bool $strict = true): ClientInterface;
 
     /**
      * Get the method
      *
      * @return string
      */
-    public function getMethod();
+    public function getMethod(): string;
 
     /**
      * Determine whether or not resource is available
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasResource();
+    public function hasResource(): bool;
 
     /**
      * Get the resource
      *
-     * @return resource
+     * @return mixed
      */
-    public function getResource();
+    public function getResource(): mixed;
 
     /**
      * Get the resource (alias method)
      *
-     * @return resource
+     * @return mixed
      */
-    public function resource();
+    public function resource(): mixed;
 
     /**
      * Set the request object
@@ -117,28 +117,28 @@ interface ClientInterface
      * @param  Request $request
      * @return ClientInterface
      */
-    public function setRequest(Request $request);
+    public function setRequest(Request $request): ClientInterface;
 
     /**
      * Has request object
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasRequest();
+    public function hasRequest(): bool;
 
     /**
      * Get the request object
      *
      * @return Request
      */
-    public function getRequest();
+    public function getRequest(): Request;
 
     /**
      * Get the request object (alias method)
      *
      * @return Request
      */
-    public function request();
+    public function request(): Request;
 
     /**
      * Set the response object
@@ -146,28 +146,28 @@ interface ClientInterface
      * @param  Response $response
      * @return ClientInterface
      */
-    public function setResponse(Response $response);
+    public function setResponse(Response $response): ClientInterface;
 
     /**
      * Has response object
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasResponse();
+    public function hasResponse(): bool;
 
     /**
      * Get the response object
      *
      * @return Response
      */
-    public function getResponse();
+    public function getResponse(): Response;
 
     /**
      * Get the response object (alias method)
      *
      * @return Response
      */
-    public function response();
+    public function response(): Response;
 
     /**
      * Set a field
@@ -176,7 +176,7 @@ interface ClientInterface
      * @param  mixed  $value
      * @return ClientInterface
      */
-    public function setField($name, $value);
+    public function setField(string $name, mixed $value): ClientInterface;
 
     /**
      * Set all fields
@@ -184,7 +184,7 @@ interface ClientInterface
      * @param  array $fields
      * @return ClientInterface
      */
-    public function setFields(array $fields);
+    public function setFields(array $fields): ClientInterface;
 
     /**
      * Get a field
@@ -192,14 +192,14 @@ interface ClientInterface
      * @param  string $name
      * @return mixed
      */
-    public function getField($name);
+    public function getField(string $name): mixed;
 
     /**
      * Get all field
      *
      * @return array
      */
-    public function getFields();
+    public function getFields(): array;
 
     /**
      * Remove a field
@@ -207,14 +207,14 @@ interface ClientInterface
      * @param  string $name
      * @return ClientInterface
      */
-    public function removeField($name);
+    public function removeField(string $name): ClientInterface;
 
     /**
      * Remove all fields
      *
      * @return ClientInterface
      */
-    public function removeFields();
+    public function removeFields(): ClientInterface;
 
     /**
      * Add request headers
@@ -222,7 +222,7 @@ interface ClientInterface
      * @param  array $headers
      * @return ClientInterface
      */
-    public function addRequestHeaders(array $headers);
+    public function addRequestHeaders(array $headers): ClientInterface;
 
     /**
      * Add request header
@@ -231,29 +231,29 @@ interface ClientInterface
      * @param  string $value
      * @return ClientInterface
      */
-    public function addRequestHeader($name, $value);
+    public function addRequestHeader(string $name, string $value): ClientInterface;
 
     /**
      * Has request headers
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasRequestHeaders();
+    public function hasRequestHeaders(): bool;
 
     /**
      * Has request header
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasRequestHeader($name);
+    public function hasRequestHeader(string $name): bool;
 
     /**
      * Get the request headers
      *
      * @return array
      */
-    public function getRequestHeaders();
+    public function getRequestHeaders(): array;
 
     /**
      * Get the request header
@@ -261,14 +261,14 @@ interface ClientInterface
      * @param  string $name
      * @return mixed
      */
-    public function getRequestHeader($name);
+    public function getRequestHeader(string $name): mixed;
 
     /**
      * Get the request body
      *
-     * @return string
+     * @return Body
      */
-    public function getRequestBody();
+    public function getRequestBody(): Body;
 
 
     /**
@@ -276,56 +276,56 @@ interface ClientInterface
      *
      * @return ClientInterface
      */
-    public function createAsJson();
+    public function createAsJson(): ClientInterface;
 
     /**
      * Check if request is JSON
      *
-     * @return boolean
+     * @return bool
      */
-    public function isJson();
+    public function isJson(): bool;
 
     /**
      * Create request as XML
      *
      * @return ClientInterface
      */
-    public function createAsXml();
+    public function createAsXml(): ClientInterface;
 
     /**
      * Check if request is XML
      *
-     * @return boolean
+     * @return bool
      */
-    public function isXml();
+    public function isXml(): bool;
 
     /**
      * Create request as a URL-encoded form
      *
      * @return ClientInterface
      */
-    public function createUrlEncodedForm();
+    public function createUrlEncodedForm(): ClientInterface;
 
     /**
      * Check if request is a URL-encoded form
      *
-     * @return boolean
+     * @return bool
      */
-    public function isUrlEncodedForm();
+    public function isUrlEncodedForm(): bool;
 
     /**
      * Create request as a multipart form
      *
      * @return ClientInterface
      */
-    public function createMultipartForm();
+    public function createMultipartForm(): ClientInterface;
 
     /**
      * Check if request is a multipart form
      *
-     * @return boolean
+     * @return bool
      */
-    public function isMultipartForm();
+    public function isMultipartForm(): bool;
 
     /**
      * Add response headers
@@ -333,7 +333,7 @@ interface ClientInterface
      * @param  array $headers
      * @return ClientInterface
      */
-    public function addResponseHeaders(array $headers);
+    public function addResponseHeaders(array $headers): ClientInterface;
 
     /**
      * Add response header
@@ -342,29 +342,29 @@ interface ClientInterface
      * @param  string $value
      * @return ClientInterface
      */
-    public function addResponseHeader($name, $value);
+    public function addResponseHeader(string $name, string $value): ClientInterface;
 
     /**
      * Has response headers
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasResponseHeaders();
+    public function hasResponseHeaders(): bool;
 
     /**
      * Has response header
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasResponseHeader($name);
+    public function hasResponseHeader(string $name): bool;
 
     /**
      * Get the response headers
      *
      * @return array
      */
-    public function getResponseHeaders();
+    public function getResponseHeaders(): array;
 
     /**
      * Get the response header
@@ -372,21 +372,21 @@ interface ClientInterface
      * @param  string $name
      * @return mixed
      */
-    public function getResponseHeader($name);
+    public function getResponseHeader(string $name): mixed;
 
     /**
      * Get the response body
      *
-     * @return string
+     * @return Body
      */
-    public function getResponseBody();
+    public function getResponseBody(): Body;
 
     /**
      * Get the response code
      *
      * @return string
      */
-    public function getResponseCode();
+    public function getResponseCode(): string;
 
     /**
      * Throw an exception upon an error.
@@ -395,27 +395,27 @@ interface ClientInterface
      * @throws Exception
      * @return void
      */
-    public function throwError($error);
+    public function throwError(string $error): void;
 
     /**
      * Create and open the client resource
      *
      * @return ClientInterface
      */
-    public function open();
+    public function open(): ClientInterface;
 
     /**
      * Method to send the request and get the response
      *
      * @return void
      */
-    public function send();
+    public function send(): void;
 
     /**
      * Method to reset the client object
      *
      * @return ClientInterface
      */
-    public function reset();
+    public function reset(): ClientInterface;
 
 }

@@ -28,7 +28,7 @@ class StreamTest extends TestCase
     }
     public function testCreateContext()
     {
-        $client = new Stream(null, null);
+        $client = new Stream(null);
         $client->createContext();
         $this->assertTrue(is_resource($client->getContext()));
     }

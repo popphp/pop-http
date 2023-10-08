@@ -31,46 +31,49 @@ class Stream extends AbstractClient
 
     /**
      * Stream context
-     * @var resource
+     * @var mixed
      */
-    protected $context = null;
+    protected mixed $context = null;
 
     /**
      * Stream context options
      * @var array
      */
-    protected $contextOptions = [];
+    protected array $contextOptions = [];
 
     /**
      * Stream context parameters
      * @var array
      */
-    protected $contextParams = [];
+    protected array $contextParams = [];
 
     /**
      * Stream mode
      * @var string
      */
-    protected $mode = 'r';
+    protected string $mode = 'r';
 
     /**
      * HTTP response headers
-     * @var array
+     * @var ?array
      */
-    protected $httpResponseHeaders = null;
+    protected ?array $httpResponseHeaders = null;
 
     /**
      * Constructor
      *
      * Instantiate the stream object
      *
-     * @param  string $url
-     * @param  string $method
-     * @param  string $mode
-     * @param  array  $options
-     * @param  array  $params
+     * @param  ?string $url
+     * @param  string  $method
+     * @param  string  $mode
+     * @param  array   $options
+     * @param  array   $params
+     * @throws Exception
      */
-    public function __construct($url = null, $method = 'GET', $mode = 'r', array $options = [], array $params = [])
+    public function __construct(
+        ?string $url = null, string $method = 'GET', string $mode = 'r', array $options = [], array $params = []
+    )
     {
         parent::__construct($url, $method);
 
@@ -87,12 +90,12 @@ class Stream extends AbstractClient
     /**
      * Set the method
      *
-     * @param  string  $method
-     * @param  boolean $strict
+     * @param  string $method
+     * @param  bool   $strict
      * @throws Exception
      * @return Stream
      */
-    public function setMethod($method, $strict = true)
+    public function setMethod(string $method, bool $strict = true): Stream
     {
         parent::setMethod($method, $strict);
 
@@ -108,9 +111,9 @@ class Stream extends AbstractClient
     /**
      * Return stream resource (alias to $this->getResource())
      *
-     * @return resource
+     * @return mixed
      */
-    public function stream()
+    public function stream(): mixed
     {
         return $this->resource;
     }
@@ -120,7 +123,7 @@ class Stream extends AbstractClient
      *
      * @return Stream
      */
-    public function createContext()
+    public function createContext(): Stream
     {
         if ((count($this->contextOptions) > 0) && (count($this->contextParams) > 0)) {
             $this->context = stream_context_create($this->contextOptions, $this->contextParams);
@@ -140,7 +143,7 @@ class Stream extends AbstractClient
      * @param  mixed  $option
      * @return Stream
      */
-    public function addContextOption($name, $option)
+    public function addContextOption(string $name, mixed $option): Stream
     {
         if (isset($this->contextOptions[$name]) && is_array($this->contextOptions[$name]) && is_array($option)) {
             $this->contextOptions[$name] = array_merge($this->contextOptions[$name], $option);
@@ -158,7 +161,7 @@ class Stream extends AbstractClient
      * @param  mixed  $param
      * @return Stream
      */
-    public function addContextParam($name, $param)
+    public function addContextParam(string $name, mixed $param): Stream
     {
         $this->contextParams[$name] = $param;
         return $this;
@@ -170,7 +173,7 @@ class Stream extends AbstractClient
      * @param  array $options
      * @return Stream
      */
-    public function setContextOptions(array $options)
+    public function setContextOptions(array $options): Stream
     {
         foreach ($options as $name => $option) {
             $this->addContextOption($name, $option);
@@ -184,7 +187,7 @@ class Stream extends AbstractClient
      * @param  array $params
      * @return Stream
      */
-    public function setContextParams(array $params)
+    public function setContextParams(array $params): Stream
     {
         foreach ($params as $name => $param) {
             $this->addContextParam($name, $param);
@@ -198,7 +201,7 @@ class Stream extends AbstractClient
      * @param  string $mode
      * @return Stream
      */
-    public function setMode($mode)
+    public function setMode(string $mode): Stream
     {
         $this->mode = $mode;
         return $this;
@@ -207,9 +210,9 @@ class Stream extends AbstractClient
     /**
      * Get the context resource
      *
-     * @return resource
+     * @return mixed
      */
-    public function getContext()
+    public function getContext(): mixed
     {
         return $this->context;
     }
@@ -219,7 +222,7 @@ class Stream extends AbstractClient
      *
      * @return array
      */
-    public function getContextOptions()
+    public function getContextOptions(): array
     {
         return $this->contextOptions;
     }
@@ -230,18 +233,18 @@ class Stream extends AbstractClient
      * @param  string $name
      * @return mixed
      */
-    public function getContextOption($name)
+    public function getContextOption(string $name): mixed
     {
-        return (isset($this->contextOptions[$name])) ? $this->contextOptions[$name] : null;
+        return $this->contextOptions[$name] ?? null;
     }
 
     /**
      * Determine if a context option has been set
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasContextOption($name)
+    public function hasContextOption(string $name): bool
     {
         return (isset($this->contextOptions[$name]));
     }
@@ -251,7 +254,7 @@ class Stream extends AbstractClient
      *
      * @return array
      */
-    public function getContextParams()
+    public function getContextParams(): array
     {
         return $this->contextParams;
     }
@@ -262,18 +265,18 @@ class Stream extends AbstractClient
      * @param  string $name
      * @return mixed
      */
-    public function getContextParam($name)
+    public function getContextParam(string $name): mixed
     {
-        return (isset($this->contextParams[$name])) ? $this->contextParams[$name] : null;
+        return $this->contextParams[$name] ?? null;
     }
 
     /**
      * Determine if a context parameter has been set
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasContextParam($name)
+    public function hasContextParam(string $name): bool
     {
         return (isset($this->contextParams[$name]));
     }
@@ -283,7 +286,7 @@ class Stream extends AbstractClient
      *
      * @return string
      */
-    public function getMode()
+    public function getMode(): string
     {
         return $this->mode;
     }
@@ -291,10 +294,11 @@ class Stream extends AbstractClient
     /**
      * Create and open stream resource
      *
-     * @param boolean $clear
+     * @param  bool $clear
+     * @throws \Pop\Http\Exception
      * @return Stream
      */
-    public function open($clear = true)
+    public function open(bool $clear = true): Stream
     {
         $url                  = $this->url;
         $http_response_header = null;
@@ -390,14 +394,14 @@ class Stream extends AbstractClient
     /**
      * Method to send the request and get the response
      *
-     * @param  boolean $clear
+     * @param  bool $clear
+     * @throws \Pop\Http\Exception
      * @return void
      */
-    public function send($clear = true)
+    public function send(bool $clear = true): void
     {
-        $rawHeader = null;
-        $headers   = [];
-        $body      = null;
+        $headers = [];
+        $body    = null;
 
         $this->open($clear);
 
@@ -406,11 +410,11 @@ class Stream extends AbstractClient
         }
 
         if ($this->resource !== false) {
-            $meta      = stream_get_meta_data($this->resource);
-            $headers   = $meta['wrapper_data'];
-            $body      = stream_get_contents($this->resource);
+            $meta    = stream_get_meta_data($this->resource);
+            $headers = $meta['wrapper_data'];
+            $body    = stream_get_contents($this->resource);
         } else if ($this->httpResponseHeaders !== null) {
-            $headers   = $this->httpResponseHeaders;
+            $headers = $this->httpResponseHeaders;
         }
 
         // Parse response headers
@@ -431,7 +435,7 @@ class Stream extends AbstractClient
      *
      * @return Stream
      */
-    public function reset()
+    public function reset(): Stream
     {
         $this->request             = new Request();
         $this->response            = new Response();
@@ -448,7 +452,7 @@ class Stream extends AbstractClient
      *
      * @return void
      */
-    public function disconnect()
+    public function disconnect(): void
     {
         if ($this->hasResource()) {
             $this->resource = null;

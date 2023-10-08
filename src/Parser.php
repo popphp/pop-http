@@ -14,6 +14,7 @@
 namespace Pop\Http;
 
 use Pop\Http;
+use Pop\Http\Server\Response;
 use Pop\Http\Client\Stream;
 use Pop\Mime\Message;
 use Pop\Mime\Part\Header;
@@ -48,7 +49,7 @@ class Parser
      * @param  mixed $headers
      * @return array
      */
-    public static function parseHeaders($headers)
+    public static function parseHeaders(mixed $headers): array
     {
         $httpVersion   = null;
         $httpCode      = null;
@@ -59,7 +60,7 @@ class Parser
             array_map('trim', explode("\n", $headers)) : (array)$headers;
 
         foreach ($headers as $header) {
-            if (strpos($header, 'HTTP/') !== false) {
+            if (str_contains($header, 'HTTP/')) {
                 $httpVersion = substr($header, 0, strpos($header, ' '));
                 $httpVersion = substr($httpVersion, (strpos($httpVersion, '/') + 1));
 
@@ -70,7 +71,7 @@ class Parser
                     $httpCode    = $match[0];
                     $httpMessage = trim(substr($header, strpos($header, ' ' . $httpCode . ' ') + 5));
                 }
-            } else if (strpos($header, ':') !== false) {
+            } else if (str_contains($header, ':')) {
                 $headerObject = Header::parse($header);
                 $headerObjects[$headerObject->getName()] = $headerObject;
             }
@@ -88,12 +89,14 @@ class Parser
      * Parse request or response data based on content type
      *
      * @param  string  $rawData
-     * @param  string  $contentType
-     * @param  string  $encoding
-     * @param  boolean $chunked
+     * @param  ?string $contentType
+     * @param  ?string $encoding
+     * @param  bool    $chunked
      * @return mixed
      */
-    public static function parseDataByContentType($rawData, $contentType = null, $encoding = null, $chunked = false)
+    public static function parseDataByContentType(
+        string $rawData, ?string $contentType = null, ?string $encoding = null, bool $chunked = false
+    ): mixed
     {
         $parsedResult = false;
 
@@ -105,10 +108,10 @@ class Parser
         }
 
         // JSON data
-        if (($contentType !== null) && (strpos($contentType, 'json') !== false)) {
+        if (($contentType !== null) && (str_contains($contentType, 'json'))) {
             $parsedResult = json_decode(self::decodeData($rawData, $encoding, $chunked), true);
         // XML data
-        } else if (($contentType !== null) && (strpos($contentType, 'xml') !== false)) {
+        } else if (($contentType !== null) && (str_contains($contentType, 'xml'))) {
             $rawData = self::decodeData($rawData, $encoding, $chunked);
             $matches = [];
             preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
@@ -124,11 +127,12 @@ class Parser
 
             $parsedResult = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
         // URL-encoded form data
-        } else if (($contentType !== null) && (strpos($contentType, 'application/x-www-form-urlencoded') !== false)) {
+        } else if (($contentType !== null) && (str_contains($contentType, 'application/x-www-form-urlencoded'))) {
+            $parsedResult = [];
             parse_str(self::decodeData($rawData, $encoding, $chunked), $parsedResult);
         // Multipart form data
-        } else if (($contentType !== null) && (strpos($contentType, 'multipart/form-data') !== false)) {
-            $formContent  = (strpos($rawData, 'Content-Type:') === false) ?
+        } else if (($contentType !== null) && (str_contains($contentType, 'multipart/form-data'))) {
+            $formContent  = (!str_contains($rawData, 'Content-Type:')) ?
                 'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
             $parsedResult = Message::parseForm($formContent);
         // Fallback to just the encoding
@@ -147,14 +151,16 @@ class Parser
      * @param  string $mode
      * @param  array  $options
      * @param  array  $params
-     * @return Http\Server\Response
+     * @return Response
      */
-    public static function parseResponseFromUri($uri, $method = 'GET', $mode = 'r', array $options = [], array $params = [])
+    public static function parseResponseFromUri(
+        string $uri, string $method = 'GET', string $mode = 'r', array $options = [], array $params = []
+    ): Response
     {
         $client = new Stream($uri, $method, $mode, $options, $params);
         $client->send(false);
 
-        return new Http\Server\Response([
+        return new Response([
             'code'    => $client->response()->getCode(),
             'headers' => $client->response()->getHeaders(),
             'body'    => $client->response()->getBody(),
@@ -167,9 +173,9 @@ class Parser
      * Parse a response from a full response string
      *
      * @param  string $responseString
-     * @return Http\Server\Response
+     * @return Response
      */
-    public static function parseResponseFromString($responseString)
+    public static function parseResponseFromString(string $responseString): Response
     {
         $headerString  = substr($responseString, 0, strpos($responseString, "\r\n\r\n"));
         $bodyString    = substr($responseString, (strpos($responseString, "\r\n\r\n") + 4));
@@ -184,7 +190,7 @@ class Parser
             $body     = $bodyString;
         }
 
-        return new Http\Server\Response([
+        return new Response([
             'code'    => $parsedHeaders['code'],
             'headers' => $parsedHeaders['headers'],
             'body'    => $body,
@@ -196,11 +202,11 @@ class Parser
     /**
      * Encode data
      *
-     * @param  string $data
-     * @param  string $encoding
+     * @param  string  $data
+     * @param  ?string $encoding
      * @return string
      */
-    public static function encodeData($data, $encoding = null)
+    public static function encodeData(string $data, ?string $encoding = null): string
     {
         switch ($encoding) {
             case self::BASE64:
@@ -230,11 +236,11 @@ class Parser
      * Decode data
      *
      * @param  string  $data
-     * @param  string  $encoding
-     * @param  boolean $chunked
+     * @param  ?string $encoding
+     * @param  bool    $chunked
      * @return string
      */
-    public static function decodeData($data, $encoding = null, $chunked = false)
+    public static function decodeData(string $data, ?string $encoding = null, bool $chunked = false): string
     {
         if ($chunked) {
             $data = self::decodeChunkedData($data);
@@ -268,10 +274,10 @@ class Parser
     /**
      * Decode a chunked transfer-encoded data and return the decoded data
      *
-     * @param string $data
+     * @param  string $data
      * @return string
      */
-    public static function decodeChunkedData($data)
+    public static function decodeChunkedData(string $data): string
     {
         $decoded = '';
 

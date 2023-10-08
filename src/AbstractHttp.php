@@ -33,22 +33,22 @@ abstract class AbstractHttp implements HttpInterface
      * Headers
      * @var array
      */
-    protected $headers = [];
+    protected array $headers = [];
 
     /**
      * Body
-     * @var Body
+     * @var ?Body
      */
-    protected $body = null;
+    protected ?Body $body = null;
 
     /**
      * Add a header
      *
      * @param  Header|string $header
-     * @param  string $value
+     * @param  ?string       $value
      * @return AbstractHttp
      */
-    public function addHeader($header, $value = null)
+    public function addHeader(Header|string$header, ?string $value = null): AbstractHttp
     {
         if ($header instanceof Header) {
             $this->headers[$header->getName()] = $header;
@@ -65,7 +65,7 @@ abstract class AbstractHttp implements HttpInterface
      * @param  array $headers
      * @return AbstractHttp
      */
-    public function addHeaders(array $headers)
+    public function addHeaders(array $headers): AbstractHttp
     {
         foreach ($headers as $header => $value) {
             if ($value instanceof Header) {
@@ -83,21 +83,21 @@ abstract class AbstractHttp implements HttpInterface
      * @param  string $name
      * @return mixed
      */
-    public function getHeader($name)
+    public function getHeader(string $name): mixed
     {
-        return (isset($this->headers[$name])) ? $this->headers[$name] : null;
+        return $this->headers[$name] ?? null;
     }
 
     /**
      * Get header value
      *
      * @param  string $name
+     * @param  int    $i
      * @return mixed
      */
-    public function getHeaderValue($name)
+    public function getHeaderValue(string $name, int $i = 0): mixed
     {
-        return (isset($this->headers[$name]) && (count($this->headers[$name]->getValues()) == 1)) ?
-            $this->headers[$name]->getValue(0) : null;
+        return (isset($this->headers[$name])) ? $this->headers[$name]?->getValue($i) : null;
     }
 
     /**
@@ -105,7 +105,7 @@ abstract class AbstractHttp implements HttpInterface
      *
      * @return array
      */
-    public function getHeaders()
+    public function getHeaders(): array
     {
         return $this->headers;
     }
@@ -113,10 +113,10 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Get all header values as associative array
      *
-     * @param  boolean $asStrings
+     * @param  bool $asStrings
      * @return array
      */
-    public function getHeadersAsArray($asStrings = true)
+    public function getHeadersAsArray(bool $asStrings = true): array
     {
         $headers = [];
 
@@ -133,15 +133,15 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Get all header values formatted string
      *
-     * @param  string $status
+     * @param  mixed  $status
      * @param  string $eol
      * @return string
      */
-    public function getHeadersAsString($status = null, $eol = "\r\n")
+    public function getHeadersAsString(mixed $status = null, string $eol = "\r\n"): string
     {
         $headers = '';
 
-        if ($status !== null) {
+        if (is_string($status)) {
             $headers = $status . $eol;
         }
 
@@ -155,9 +155,9 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Determine if there are headers
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasHeaders()
+    public function hasHeaders(): bool
     {
         return (count($this->headers) > 0);
     }
@@ -166,9 +166,9 @@ abstract class AbstractHttp implements HttpInterface
      * Has a header
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasHeader($name)
+    public function hasHeader(string $name): bool
     {
         return (isset($this->headers[$name]));
     }
@@ -179,7 +179,7 @@ abstract class AbstractHttp implements HttpInterface
      * @param  string $name
      * @return AbstractHttp
      */
-    public function removeHeader($name)
+    public function removeHeader(string $name): AbstractHttp
     {
         if (isset($this->headers[$name])) {
             unset($this->headers[$name]);
@@ -193,7 +193,7 @@ abstract class AbstractHttp implements HttpInterface
      *
      * @return AbstractHttp
      */
-    public function removeHeaders()
+    public function removeHeaders(): AbstractHttp
     {
         $this->headers = [];
         return $this;
@@ -205,7 +205,7 @@ abstract class AbstractHttp implements HttpInterface
      * @param  string|Body $body
      * @return AbstractHttp
      */
-    public function setBody($body)
+    public function setBody(string|Body $body): AbstractHttp
     {
         $this->body = ($body instanceof Body) ? $body : new Body($body);
         return $this;
@@ -216,7 +216,7 @@ abstract class AbstractHttp implements HttpInterface
      *
      * @return Body
      */
-    public function getBody()
+    public function getBody(): Body
     {
         return $this->body;
     }
@@ -226,7 +226,7 @@ abstract class AbstractHttp implements HttpInterface
      *
      * @return mixed
      */
-    public function getBodyContent()
+    public function getBodyContent(): mixed
     {
         return ($this->body !== null) ? $this->body->getContent() : null;
     }
@@ -234,9 +234,9 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Has a body
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasBody()
+    public function hasBody(): bool
     {
         return ($this->body !== null);
     }
@@ -244,9 +244,9 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Has body content
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasBodyContent()
+    public function hasBodyContent(): bool
     {
         return (($this->body !== null) && $this->body->hasContent());
     }
@@ -254,10 +254,10 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Decode the body
      *
-     * @param  string $body
+     * @param  ?string $body
      * @return Body
      */
-    public function decodeBodyContent($body = null)
+    public function decodeBodyContent(?string $body = null): body
     {
         if ($body !== null) {
             $this->setBody($body);
@@ -278,7 +278,7 @@ abstract class AbstractHttp implements HttpInterface
      *
      * @return AbstractHttp
      */
-    public function removeBody()
+    public function removeBody(): AbstractHttp
     {
         $this->body = null;
         return $this;
@@ -290,18 +290,13 @@ abstract class AbstractHttp implements HttpInterface
      * @param  string $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
-        switch ($name) {
-            case 'headers':
-                return $this->headers;
-                break;
-            case 'body':
-                return $this->body;
-                break;
-            default:
-                return null;
-        }
+        return match ($name) {
+            'headers' => $this->headers,
+            'body'    => $this->body,
+            default   => null,
+        };
     }
 
 }

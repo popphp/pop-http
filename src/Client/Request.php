@@ -14,7 +14,6 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\AbstractRequest;
-use Pop\Mime\Part;
 
 /**
  * HTTP client request class
@@ -45,19 +44,19 @@ class Request extends AbstractRequest
      *    ]
      * @var array
      */
-    protected $fields = [];
+    protected array $fields = [];
 
     /**
      * Request query
-     * @var string
+     * @var ?string
      */
-    protected $query = null;
+    protected ?string $query = null;
 
     /**
      * Request form type
-     * @var string
+     * @var ?string
      */
-    protected $formType = null;
+    protected ?string $formType = null;
 
     /**
      * Set a field
@@ -66,7 +65,7 @@ class Request extends AbstractRequest
      * @param  mixed  $value
      * @return Request
      */
-    public function setField($name, $value)
+    public function setField(string $name, string $value): Request
     {
         $this->fields[$name] = $value;
         $this->prepareQuery();
@@ -80,7 +79,7 @@ class Request extends AbstractRequest
      * @param  array $fields
      * @return Request
      */
-    public function setFields(array $fields)
+    public function setFields(array $fields): Request
     {
         foreach ($fields as $name => $value) {
             $this->setField($name, $value);
@@ -97,7 +96,7 @@ class Request extends AbstractRequest
      * @param  string $name
      * @return mixed
      */
-    public function getField($name)
+    public function getField(string $name): mixed
     {
         return (isset($this->fields[$name])) ? $this->fields[$name] : null;
     }
@@ -107,7 +106,7 @@ class Request extends AbstractRequest
      *
      * @return array
      */
-    public function getFields()
+    public function getFields(): array
     {
         return $this->fields;
     }
@@ -115,9 +114,9 @@ class Request extends AbstractRequest
     /**
      * Has fields
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasFields()
+    public function hasFields(): bool
     {
         return (!empty($this->fields));
     }
@@ -126,9 +125,9 @@ class Request extends AbstractRequest
      * Has field
      *
      * @param  string $name
-     * @return boolean
+     * @return bool
      */
-    public function hasField($name)
+    public function hasField(string $name): bool
     {
         return (isset($this->fields[$name]));
     }
@@ -139,7 +138,7 @@ class Request extends AbstractRequest
      * @param  string $name
      * @return Request
      */
-    public function removeField($name)
+    public function removeField(string $name): Request
     {
         if (isset($this->fields[$name])) {
             unset($this->fields[$name]);
@@ -155,7 +154,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function removeFields()
+    public function removeFields(): Request
     {
         $this->fields = [];
         $this->query  = null;
@@ -168,7 +167,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function prepareQuery()
+    public function prepareQuery(): string
     {
         if (($this->hasFilters()) && !empty($this->fields)) {
             $this->fields = $this->filter($this->fields);
@@ -180,9 +179,9 @@ class Request extends AbstractRequest
     /**
      * Is HTTP query prepared
      *
-     * @return string
+     * @return bool
      */
-    public function hasQuery()
+    public function hasQuery(): bool
     {
         return ($this->query !== null);
     }
@@ -192,7 +191,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getQuery()
+    public function getQuery(): string
     {
         return $this->query;
     }
@@ -200,10 +199,10 @@ class Request extends AbstractRequest
     /**
      * Get HTTP query length
      *
-     * @param  boolean $mb
+     * @param  bool $mb
      * @return int
      */
-    public function getQueryLength($mb = false)
+    public function getQueryLength(bool $mb = false): int
     {
         return ($mb) ? mb_strlen($this->query) : strlen($this->query);
     }
@@ -213,7 +212,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createAsJson()
+    public function createAsJson(): Request
     {
         $this->formType = 'application/json';
 
@@ -228,9 +227,9 @@ class Request extends AbstractRequest
     /**
      * Check if request is JSON
      *
-     * @return boolean
+     * @return bool
      */
-    public function isJson()
+    public function isJson(): bool
     {
         return ($this->formType == 'application/json');
     }
@@ -240,7 +239,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createAsXml()
+    public function createAsXml(): Request
     {
         $this->formType = 'application/xml';
 
@@ -255,7 +254,7 @@ class Request extends AbstractRequest
     /**
      * Check if request is XML
      *
-     * @return boolean
+     * @return bool
      */
     public function isXml()
     {
@@ -267,7 +266,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createUrlEncodedForm()
+    public function createUrlEncodedForm(): Request
     {
         $this->formType = 'application/x-www-form-urlencoded';
 
@@ -282,9 +281,9 @@ class Request extends AbstractRequest
     /**
      * Check if request is a URL-encoded form
      *
-     * @return boolean
+     * @return bool
      */
-    public function isUrlEncodedForm()
+    public function isUrlEncodedForm(): bool
     {
         return ($this->formType == 'application/x-www-form-urlencoded');
     }
@@ -294,7 +293,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createMultipartForm()
+    public function createMultipartForm(): Request
     {
         $this->formType = 'multipart/form-data';
         return $this;
@@ -303,9 +302,9 @@ class Request extends AbstractRequest
     /**
      * Check if request is a multipart form
      *
-     * @return boolean
+     * @return bool
      */
-    public function isMultipartForm()
+    public function isMultipartForm(): bool
     {
         return ($this->formType == 'multipart/form-data');
     }
@@ -315,7 +314,7 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getFormType()
+    public function getFormType(): string
     {
         return $this->formType;
     }

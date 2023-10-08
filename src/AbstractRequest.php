@@ -35,9 +35,9 @@ abstract class AbstractRequest extends AbstractHttp
      *
      * Instantiate the request object
      *
-     * @param  mixed  $filters
+     * @param  mixed $filters
      */
-    public function __construct($filters = null)
+    public function __construct(mixed $filters = null)
     {
         if ($filters !== null) {
             if (is_array($filters)) {
@@ -52,9 +52,9 @@ abstract class AbstractRequest extends AbstractHttp
      * Filter values
      *
      * @param  mixed $values
-     * @return mixed
+     * @return array
      */
-    public function filter($values)
+    public function filter(mixed $values): array
     {
         $disabledFunctions = array_filter(array_map('trim', explode(',', ini_get('disable_functions'))));
 

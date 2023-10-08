@@ -30,7 +30,7 @@ abstract class AbstractResponse extends AbstractHttp
      * Response codes & messages
      * @var array
      */
-    protected static $responseCodes = [
+    protected static array $responseCodes = [
         // Informational 1xx
         100 => 'Continue',
         101 => 'Switching Protocols',
@@ -107,19 +107,19 @@ abstract class AbstractResponse extends AbstractHttp
      * HTTP version for response, i.e. 1.0, 1.1, 2.0, 3.0, etc.
      * @var string
      */
-    protected $version = 1.1;
+    protected string $version = '1.1';
 
     /**
      * Response code
-     * @var int
+     * @var ?int
      */
-    protected $code = null;
+    protected ?int $code = null;
 
     /**
      * Response message
-     * @var string
+     * @var ?string
      */
-    protected $message = null;
+    protected ?string $message = null;
 
     /**
      * Constructor
@@ -144,16 +144,15 @@ abstract class AbstractResponse extends AbstractHttp
         if (!isset($config['message'])) {
             $config['message'] = self::$responseCodes[$config['code']];
         }
-        if (!isset($config['headers']) || (isset($config['headers']) && !is_array($config['headers']))) {
+        if (!isset($config['headers']) || (!is_array($config['headers']))) {
             $config['headers'] = ['Content-Type' => 'text/html'];
         }
-        if (!isset($config['body'])) {
-            $config['body'] = null;
+        if (isset($config['body'])) {
+            $this->setBody($config['body']);
         }
 
         $this->setMessage($config['message'])
-            ->addHeaders($config['headers'])
-            ->setBody($config['body']);
+            ->addHeaders($config['headers']);
     }
 
     /**
@@ -162,18 +161,18 @@ abstract class AbstractResponse extends AbstractHttp
      * @param  float|string $version
      * @return AbstractResponse
      */
-    public function setVersion($version)
+    public function setVersion(float|string $version): AbstractResponse
     {
-        $this->version = $version;
+        $this->version = (string)$version;
         return $this;
     }
 
     /**
      * Get the response HTTP version
      *
-     * @return float|string
+     * @return string
      */
-    public function getVersion()
+    public function getVersion(): string
     {
         return $this->version;
     }
@@ -182,13 +181,13 @@ abstract class AbstractResponse extends AbstractHttp
      * Set the response code
      *
      * @param  int $code
-     * @throws \Pop\Http\Exception
+     * @throws Exception
      * @return AbstractResponse
      */
-    public function setCode($code = 200)
+    public function setCode(int $code = 200): AbstractResponse
     {
         if (!array_key_exists($code, self::$responseCodes)) {
-            throw new \Pop\Http\Exception('The header code ' . $code . ' is not allowed.');
+            throw new Exception("Error: The header code '" . $code . "' is not allowed.");
         }
 
         $this->code    = $code;
@@ -200,9 +199,9 @@ abstract class AbstractResponse extends AbstractHttp
     /**
      * Get the response code
      *
-     * @return string
+     * @return int
      */
-    public function getCode()
+    public function getCode(): int
     {
         return $this->code;
     }
@@ -210,10 +209,10 @@ abstract class AbstractResponse extends AbstractHttp
     /**
      * Set the response message
      *
-     * @param  string $message
+     * @param  ?string $message
      * @return AbstractResponse
      */
-    public function setMessage($message = null)
+    public function setMessage(?string $message = null): AbstractResponse
     {
         $this->message = $message;
         return $this;
@@ -224,18 +223,17 @@ abstract class AbstractResponse extends AbstractHttp
      *
      * @return string
      */
-    public function getMessage()
+    public function getMessage(): string
     {
         return $this->message;
     }
 
-
     /**
      * Determine if the response is a success
      *
-     * @return boolean
+     * @return bool
      */
-    public function isSuccess()
+    public function isSuccess(): bool
     {
         $type = floor($this->code / 100);
         return (($type == 1) || ($type == 2) || ($type == 3));
@@ -244,9 +242,9 @@ abstract class AbstractResponse extends AbstractHttp
     /**
      * Determine if the response is a redirect
      *
-     * @return boolean
+     * @return bool
      */
-    public function isRedirect()
+    public function isRedirect(): bool
     {
         $type = floor($this->code / 100);
         return ($type == 3);
@@ -255,9 +253,9 @@ abstract class AbstractResponse extends AbstractHttp
     /**
      * Determine if the response is an error
      *
-     * @return boolean
+     * @return bool
      */
-    public function isError()
+    public function isError(): bool
     {
         $type = floor($this->code / 100);
         return (($type == 4) || ($type == 5));
@@ -266,9 +264,9 @@ abstract class AbstractResponse extends AbstractHttp
     /**
      * Determine if the response is a client error
      *
-     * @return boolean
+     * @return bool
      */
-    public function isClientError()
+    public function isClientError(): bool
     {
         $type = floor($this->code / 100);
         return ($type == 4);
@@ -277,9 +275,9 @@ abstract class AbstractResponse extends AbstractHttp
     /**
      * Determine if the response is a server error
      *
-     * @return boolean
+     * @return bool
      */
-    public function isServerError()
+    public function isServerError(): bool
     {
         $type = floor($this->code / 100);
         return ($type == 5);

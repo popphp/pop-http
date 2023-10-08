@@ -32,50 +32,52 @@ class Auth
      * Auth header name
      * @var string
      */
-    protected $header = 'Authorization';
+    protected string $header = 'Authorization';
 
     /**
      * Auth scheme
-     * @var string
+     * @var ?string
      */
-    protected $scheme = null;
+    protected ?string $scheme = null;
 
     /**
      * Auth token
-     * @var string
+     * @var ?string
      */
-    protected $token = null;
+    protected ?string $token = null;
 
     /**
      * Auth username
-     * @var string
+     * @var ?string
      */
-    protected $username = null;
+    protected ?string $username = null;
 
     /**
      * Auth password
-     * @var string
+     * @var ?string
      */
-    protected $password = null;
+    protected ?string $password = null;
 
     /**
      * Auth header object
-     * @var Header
+     * @var ?Header
      */
-    protected $authHeader = null;
+    protected ?Header $authHeader = null;
 
     /**
      * Constructor
      *
      * Instantiate the auth object
      *
-     * @param  string $header
-     * @param  string $scheme
-     * @param  string $token
-     * @param  string $username
-     * @param  string $password
+     * @param  string  $header
+     * @param  ?string $scheme
+     * @param  ?string $token
+     * @param  ?string $username
+     * @param  ?string $password
      */
-    public function __construct($header = 'Authorization', $scheme = null, $token = null, $username = null, $password = null)
+    public function __construct(
+        $header = 'Authorization', ?string $scheme = null, ?string $token = null, ?string $username = null, ?string $password = null
+    )
     {
         $this->setHeader($header);
         if ($scheme !== null) {
@@ -99,7 +101,7 @@ class Auth
      * @param  string $password
      * @return Auth
      */
-    public static function createBasic($username, $password)
+    public static function createBasic(string $username, string $password): Auth
     {
         return new static('Authorization', 'Basic', null, $username, $password);
     }
@@ -110,7 +112,7 @@ class Auth
      * @param  string $token
      * @return Auth
      */
-    public static function createBearer($token)
+    public static function createBearer(string $token): Auth
     {
         return new static('Authorization', 'Bearer', $token);
     }
@@ -118,12 +120,12 @@ class Auth
     /**
      * Create key auth
      *
-     * @param  string $token
-     * @param  string $header
-     * @param  string $scheme
+     * @param  string  $token
+     * @param  string  $header
+     * @param  ?string $scheme
      * @return Auth
      */
-    public static function createKey($token, $header = 'Authorization', $scheme = null)
+    public static function createKey(string $token, string $header = 'Authorization', ?string $scheme = null): Auth
     {
         return new static($header, $scheme, $token);
     }
@@ -131,11 +133,11 @@ class Auth
     /**
      * Parse header
      *
-     * @param  mixed  $header
-     * @param  string $scheme
+     * @param  mixed   $header
+     * @param  ?string $scheme
      * @return Auth
      */
-    public static function parse($header, $scheme = null)
+    public static function parse(mixed $header, ?string $scheme = null): Auth
     {
         $auth = new static();
 
@@ -146,24 +148,24 @@ class Auth
         $auth->setHeader($header->getName());
 
         if (count($header->getValues()) == 1) {
-            $value = $header->getValue(0);
+            $value = $header->getValue();
         } else {
             $value = $header->getValuesAsStrings('; ');
         }
 
-        if (substr($value, 0, 5) == 'Basic') {
+        if (str_starts_with($value, 'Basic')) {
             $auth->setScheme('Basic');
             $creds = base64_decode(trim(substr($value, 5)));
-            if (($creds !== false) && (strpos($creds, ':') !== false)) {
+            if (($creds !== false) && (str_contains($creds, ':'))) {
                 [$username, $password] = explode(':', $creds);
                 $auth->setUsername($username)
                     ->setPassword($password);
             }
-        } else if (substr($value, 0, 6) == 'Bearer') {
+        } else if (str_starts_with($value, 'Bearer')) {
             $auth->setScheme('Bearer');
             $auth->setToken(trim(substr($value, 6)));
         } else {
-            if (($scheme !== null) && (substr($value, 0, strlen($scheme)) == $scheme)) {
+            if (($scheme !== null) && (str_starts_with($value, $scheme))) {
                 $value = substr($value, strlen($scheme));
                 $auth->setScheme($scheme);
             }
@@ -179,7 +181,7 @@ class Auth
      * @param  string $header
      * @return Auth
      */
-    public function setHeader($header)
+    public function setHeader(string $header): Auth
     {
         $this->header = $header;
         return $this;
@@ -191,7 +193,7 @@ class Auth
      * @param  string $scheme
      * @return Auth
      */
-    public function setScheme($scheme)
+    public function setScheme(string $scheme): Auth
     {
         $this->scheme = $scheme;
         return $this;
@@ -203,7 +205,7 @@ class Auth
      * @param  string $token
      * @return Auth
      */
-    public function setToken($token)
+    public function setToken(string $token): Auth
     {
         $this->token = $token;
         return $this;
@@ -215,7 +217,7 @@ class Auth
      * @param  string $username
      * @return Auth
      */
-    public function setUsername($username)
+    public function setUsername(string $username): Auth
     {
         $this->username = $username;
         return $this;
@@ -227,7 +229,7 @@ class Auth
      * @param  string $password
      * @return Auth
      */
-    public function setPassword($password)
+    public function setPassword(string $password): Auth
     {
         $this->password = $password;
         return $this;
@@ -238,7 +240,7 @@ class Auth
      *
      * @return string
      */
-    public function getHeader()
+    public function getHeader(): string
     {
         return $this->header;
     }
@@ -248,7 +250,7 @@ class Auth
      *
      * @return string
      */
-    public function getScheme()
+    public function getScheme(): string
     {
         return $this->scheme;
     }
@@ -258,7 +260,7 @@ class Auth
      *
      * @return string
      */
-    public function getToken()
+    public function getToken(): string
     {
         return $this->token;
     }
@@ -268,7 +270,7 @@ class Auth
      *
      * @return string
      */
-    public function getUsername()
+    public function getUsername(): string
     {
         return $this->username;
     }
@@ -278,7 +280,7 @@ class Auth
      *
      * @return string
      */
-    public function getPassword()
+    public function getPassword(): string
     {
         return $this->password;
     }
@@ -286,9 +288,9 @@ class Auth
     /**
      * Has scheme
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasScheme()
+    public function hasScheme(): bool
     {
         return ($this->scheme !== null);
     }
@@ -296,9 +298,9 @@ class Auth
     /**
      * Has token
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasToken()
+    public function hasToken(): bool
     {
         return ($this->token !== null);
     }
@@ -306,9 +308,9 @@ class Auth
     /**
      * Has $username
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasUsername()
+    public function hasUsername(): bool
     {
         return ($this->username !== null);
     }
@@ -316,9 +318,9 @@ class Auth
     /**
      * Has password
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasPassword()
+    public function hasPassword(): bool
     {
         return ($this->password !== null);
     }
@@ -326,9 +328,9 @@ class Auth
     /**
      * Has auth header
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasAuthHeader()
+    public function hasAuthHeader(): bool
     {
         return ($this->authHeader !== null);
     }
@@ -336,9 +338,9 @@ class Auth
     /**
      * Determine if the auth is basic
      *
-     * @return boolean
+     * @return bool
      */
-    public function isBasic()
+    public function isBasic(): bool
     {
         return (strtolower($this->scheme) == 'basic');
     }
@@ -346,9 +348,9 @@ class Auth
     /**
      * Determine if the auth is bearer
      *
-     * @return boolean
+     * @return bool
      */
-    public function isBearer()
+    public function isBearer(): bool
     {
         return (strtolower($this->scheme) == 'bearer');
     }
@@ -358,7 +360,7 @@ class Auth
      *
      * @return Header
      */
-    public function getAuthHeader()
+    public function getAuthHeader(): Header
     {
         return $this->authHeader;
     }
@@ -366,25 +368,27 @@ class Auth
     /**
      * Get auth header value as an array
      *
-     * @param  boolean $assoc
+     * @param  bool $assoc
+     * @throws Exception
      * @return array
      */
-    public function getAuthHeaderAsArray($assoc = true)
+    public function getAuthHeaderAsArray(bool $assoc = true): array
     {
         $this->createAuthHeader();
 
         return ($assoc) ?
-            [$this->authHeader->getName() => $this->authHeader->getValue(0)]:
-            [$this->authHeader->getName(), $this->authHeader->getValue(0)];
+            [$this->authHeader->getName() => $this->authHeader->getValue()]:
+            [$this->authHeader->getName(), $this->authHeader->getValue()];
     }
 
     /**
      * Get auth header value as a string
      *
-     * @param  boolean $crlf
+     * @param  bool $crlf
+     * @throws Exception
      * @return string
      */
-    public function getAuthHeaderAsString($crlf = false)
+    public function getAuthHeaderAsString(bool $crlf = false): string
     {
         $this->createAuthHeader();
 
@@ -406,7 +410,7 @@ class Auth
      * @throws Exception
      * @return Header
      */
-    public function createAuthHeader()
+    public function createAuthHeader(): Header
     {
         if (($this->isBasic()) && (($this->username === null) || ($this->password === null))) {
             throw new Exception('Error: The username and password values must be set for basic authorization');
@@ -438,7 +442,7 @@ class Auth
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getAuthHeaderAsString();
     }

@@ -33,79 +33,79 @@ class Data extends AbstractRequest
      * GET array
      * @var array
      */
-    protected $get = [];
+    protected array $get = [];
 
     /**
      * POST array
      * @var array
      */
-    protected $post = [];
+    protected array $post = [];
 
     /**
      * FILES array
      * @var array
      */
-    protected $files = [];
+    protected array $files = [];
 
     /**
      * PUT array
      * @var array
      */
-    protected $put = [];
+    protected array $put = [];
 
     /**
      * PATCH array
      * @var array
      */
-    protected $patch = [];
+    protected array $patch = [];
 
     /**
      * DELETE array
      * @var array
      */
-    protected $delete = [];
+    protected array $delete = [];
 
     /**
      * Query data
      * @var mixed
      */
-    protected $queryData = null;
+    protected mixed $queryData = null;
 
     /**
      * Parsed data
      * @var mixed
      */
-    protected $parsedData = null;
+    protected mixed $parsedData = null;
 
     /**
      * Raw data
      * @var mixed
      */
-    protected $rawData = null;
+    protected mixed $rawData = null;
 
     /**
      * Stream to file
-     * @var boolean
+     * @var bool
      */
-    protected $streamToFile = false;
+    protected bool $streamToFile = false;
 
     /**
      * Stream to file
-     * @var string
+     * @var ?string
      */
-    protected $streamToFileLocation = null;
+    protected ?string $streamToFileLocation = null;
 
     /**
      * Constructor
      *
      * Instantiate the request data object
      *
-     * @param  string $contentType
-     * @param  string $encoding
-     * @param  mixed  $filters
-     * @param  mixed  $streamToFile
+     * @param  ?string $contentType
+     * @param  ?string $encoding
+     * @param  mixed   $filters
+     * @param  mixed   $streamToFile
      */
-    public function __construct($contentType = null, $encoding = null, $filters = null, $streamToFile = null)
+    public function __construct(?string $contentType = null, ?string $encoding = null, mixed $filters = null, mixed $streamToFile = null)
     {
         parent::__construct($filters);
 
@@ -121,9 +121,9 @@ class Data extends AbstractRequest
     /**
      * Return whether or not the request has FILES
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasFiles()
+    public function hasFiles(): bool
     {
         return (count($this->files) > 0);
     }
@@ -131,108 +131,108 @@ class Data extends AbstractRequest
     /**
      * Get a value from $_GET, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getQuery($key = null)
+    public function getQuery(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->get;
         } else {
-            return (isset($this->get[$key])) ? $this->get[$key] : null;
+            return $this->get[$key] ?? null;
         }
     }
 
     /**
      * Get a value from $_POST, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getPost($key = null)
+    public function getPost(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->post;
         } else {
-            return (isset($this->post[$key])) ? $this->post[$key] : null;
+            return $this->post[$key] ?? null;
         }
     }
 
     /**
      * Get a value from $_FILES, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getFiles($key = null)
+    public function getFiles(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->files;
         } else {
-            return (isset($this->files[$key])) ? $this->files[$key] : null;
+            return $this->files[$key] ?? null;
         }
     }
 
     /**
      * Get a value from PUT query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getPut($key = null)
+    public function getPut(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->put;
         } else {
-            return (isset($this->put[$key])) ? $this->put[$key] : null;
+            return $this->put[$key] ?? null;
         }
     }
 
     /**
      * Get a value from PATCH query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getPatch($key = null)
+    public function getPatch(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->patch;
         } else {
-            return (isset($this->patch[$key])) ? $this->patch[$key] : null;
+            return $this->patch[$key] ?? null;
         }
     }
 
     /**
      * Get a value from DELETE query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getDelete($key = null)
+    public function getDelete(?string $key = null): string|array|null
     {
         if ($key === null) {
             return $this->delete;
         } else {
-            return (isset($this->delete[$key])) ? $this->delete[$key] : null;
+            return $this->delete[$key] ?? null;
         }
     }
 
     /**
      * Get a value from query data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getQueryData($key = null)
+    public function getQueryData(?string $key = null): string|array|null
     {
         $result = null;
 
-        if (($this->queryData !== null) && is_array($this->queryData)) {
+        if (is_array($this->queryData)) {
             if ($key === null) {
                 $result = $this->queryData;
             } else {
-                $result = (isset($this->queryData[$key])) ? $this->queryData[$key] : null;
+                $result = $this->queryData[$key] ?? null;
             }
         }
 
@@ -242,18 +242,18 @@ class Data extends AbstractRequest
     /**
      * Get a value from parsed data, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getParsedData($key = null)
+    public function getParsedData(?string $key = null): string|array|null
     {
         $result = null;
 
-        if (($this->parsedData !== null) && is_array($this->parsedData)) {
+        if (is_array($this->parsedData)) {
             if ($key === null) {
                 $result = $this->parsedData;
             } else {
-                $result = (isset($this->parsedData[$key])) ? $this->parsedData[$key] : null;
+                $result = $this->parsedData[$key] ?? null;
             }
         }
 
@@ -265,7 +265,7 @@ class Data extends AbstractRequest
      *
      * @return string
      */
-    public function getRawData()
+    public function getRawData(): string
     {
         return $this->rawData;
     }
@@ -273,9 +273,9 @@ class Data extends AbstractRequest
     /**
      * Has query data
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasQueryData()
+    public function hasQueryData(): bool
     {
         return !empty($this->queryData);
     }
@@ -283,9 +283,9 @@ class Data extends AbstractRequest
     /**
      * Has parsed data
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasParsedData()
+    public function hasParsedData(): bool
     {
         return !empty($this->parsedData);
     }
@@ -293,9 +293,9 @@ class Data extends AbstractRequest
     /**
      * Has raw data
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasRawData()
+    public function hasRawData(): bool
     {
         return !empty($this->rawData);
     }
@@ -303,9 +303,9 @@ class Data extends AbstractRequest
     /**
      * Is the request stream to file
      *
-     * @return boolean
+     * @return bool
      */
-    public function isStreamToFile()
+    public function isStreamToFile(): bool
     {
         return $this->streamToFile;
     }
@@ -315,7 +315,7 @@ class Data extends AbstractRequest
      *
      * @return string
      */
-    public function getStreamToFileLocation()
+    public function getStreamToFileLocation(): string
     {
         return $this->streamToFileLocation;
     }
@@ -325,7 +325,7 @@ class Data extends AbstractRequest
      *
      * @return Data
      */
-    public function processStreamToFile()
+    public function processStreamToFile(): Data
     {
         if (($this->streamToFile) && file_exists($this->streamToFileLocation)) {
             $contentType      = $this->getHeaderValue('Content-Type');
@@ -340,12 +340,13 @@ class Data extends AbstractRequest
     /**
      * Process any data that came with the request
      *
-     * @param  string $contentType
-     * @param  string $encoding
+     * @param  ?string $contentType
+     * @param  ?string $encoding
      * @param  mixed  $streamToFile
+     * @throws Exception
      * @return void
      */
-    public function processData($contentType = null, $encoding = null, $streamToFile = null)
+    public function processData(?string $contentType = null, ?string $encoding = null, mixed $streamToFile = null)
     {
         // Stream raw data to file location
         if ($streamToFile !== null) {
@@ -434,7 +435,7 @@ class Data extends AbstractRequest
      * @throws Exception
      * @return void
      */
-    public function prepareStreamToFile($streamToFile)
+    public function prepareStreamToFile(mixed $streamToFile): void
     {
         $this->streamToFile = true;
 
@@ -457,11 +458,7 @@ class Data extends AbstractRequest
          * $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
          */
         if (!empty($this->streamToFileLocation)) {
-            file_put_contents(
-                $this->streamToFileLocation,
-                (isset($_SERVER['X_POP_HTTP_RAW_DATA']) ?
-                    $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input'))
-            );
+            file_put_contents($this->streamToFileLocation, ($_SERVER['X_POP_HTTP_RAW_DATA'] ?? file_get_contents('php://input')));
 
             clearstatcache();
 
@@ -478,7 +475,7 @@ class Data extends AbstractRequest
      *
      * @return Data
      */
-    public function clearStreamToFile()
+    public function clearStreamToFile(): Data
     {
         if (file_exists($this->streamToFileLocation) && is_writable($this->streamToFileLocation)) {
             unlink($this->streamToFileLocation);
@@ -492,36 +489,19 @@ class Data extends AbstractRequest
      * @param  string $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
-        switch ($name) {
-            case 'get':
-                return $this->get;
-                break;
-            case 'post':
-                return $this->post;
-                break;
-            case 'files':
-                return $this->files;
-                break;
-            case 'put':
-                return $this->put;
-                break;
-            case 'patch':
-                return $this->patch;
-                break;
-            case 'delete':
-                return $this->delete;
-                break;
-            case 'parsed':
-                return $this->parsedData;
-                break;
-            case 'raw':
-                return $this->rawData;
-                break;
-            default:
-                return null;
-        }
+        return match ($name) {
+            'get'    => $this->get,
+            'post'   => $this->post,
+            'files'  => $this->files,
+            'put'    => $this->put,
+            'patch'  => $this->patch,
+            'delete' => $this->delete,
+            'parsed' => $this->parsedData,
+            'raw'    => $this->rawData,
+            default  => null,
+        };
     }
 
 }
