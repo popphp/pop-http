@@ -95,7 +95,6 @@ class Promise extends AbstractPromise
         if ($this->client->isComplete()) {
             if ($this->client->isSuccess()) {
                 $this->setState(self::FULFILLED);
-                $successCallback->addNamedParameter('response', $this->client->getParsedResponse());
                 $successCallback->call([
                     'response' => $this->client->getResponse()
                 ]);
