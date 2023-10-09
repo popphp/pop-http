@@ -11,10 +11,10 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Server\Request;
+namespace Pop\Http;
 
 /**
- * HTTP server request exception class
+ * HTTP client class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -23,4 +23,7 @@ namespace Pop\Http\Server\Request;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-class Exception extends \Exception {}
+class Client extends AbstractHttp
+{
+
+}

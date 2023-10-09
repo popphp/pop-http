@@ -13,8 +13,11 @@
  */
 namespace Pop\Http;
 
+use Pop\Mime\Part\Header;
+use Pop\Mime\Part\Body;
+
 /**
- * Abstract HTTP request class
+ * Abstract HTTP response class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -23,7 +26,7 @@ namespace Pop\Http;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-abstract class AbstractResponse extends AbstractHttp
+abstract class AbstractResponse extends AbstractRequestResponse
 {
 
     /**
@@ -104,7 +107,7 @@ abstract class AbstractResponse extends AbstractHttp
     ];
 
     /**
-     * HTTP version for response, i.e. 1.0, 1.1, 2.0, 3.0, etc.
+     * HTTP version for response, i.e. 1.0, 1.1, 2.0, etc.
      * @var string
      */
     protected string $version = '1.1';
@@ -248,6 +251,28 @@ abstract class AbstractResponse extends AbstractHttp
     {
         $type = floor($this->code / 100);
         return (($type == 1) || ($type == 2) || ($type == 3));
+    }
+
+    /**
+     * Determine if the response is a continue
+     *
+     * @return bool
+     */
+    public function isContinue(): bool
+    {
+        $type = floor($this->code / 100);
+        return ($type == 1);
+    }
+
+    /**
+     * Determine if the response is OK
+     *
+     * @return bool
+     */
+    public function isOk(): bool
+    {
+        $type = floor($this->code / 100);
+        return ($type == 2);
     }
 
     /**

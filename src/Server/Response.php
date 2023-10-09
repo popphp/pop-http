@@ -13,12 +13,12 @@
  */
 namespace Pop\Http\Server;
 
-use Pop\Http\AbstractResponse;
 use Pop\Http\Parser;
+use Pop\Http\AbstractResponse;
 use Pop\Http\Client;
 
 /**
- * HTTP response class
+ * HTTP server response class
  *
  * @category   Pop
  * @package    Pop\Http

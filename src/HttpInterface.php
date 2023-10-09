@@ -13,9 +13,6 @@
  */
 namespace Pop\Http;
 
-use Pop\Mime\Part\Header;
-use Pop\Mime\Part\Body;
-
 /**
  * HTTP interface
  *
@@ -30,141 +27,47 @@ interface HttpInterface
 {
 
     /**
-     * Set a header
+     * Set the request
      *
-     * @param  Header|string $header
-     * @param  ?string       $value
+     * @param  RequestResponseInterface $request
      * @return HttpInterface
      */
-    public function addHeader(Header|string $header, ?string $value = null): HttpInterface;
+    public function setRequest(RequestResponseInterface $request): HttpInterface;
 
     /**
-     * Set all headers
+     * Set the response
      *
-     * @param  array $headers
+     * @param  RequestResponseInterface $response
      * @return HttpInterface
      */
-    public function addHeaders(array $headers): HttpInterface;
+    public function setResponse(RequestResponseInterface $response): HttpInterface;
 
     /**
-     * Get a header
+     * Get the request
      *
-     * @param  string $name
-     * @return mixed
+     * @return RequestResponseInterface
      */
-    public function getHeader(string $name): mixed;
+    public function getRequest(): RequestResponseInterface;
 
     /**
-     * Get header value
+     * Get the response
      *
-     * @param  string $name
-     * @param  int    $i
-     * @return mixed
+     * @return RequestResponseInterface
      */
-    public function getHeaderValue(string $name, int $i = 0): mixed;
+    public function getResponse(): RequestResponseInterface;
 
     /**
-     * Get all headers
-     *
-     * @return array
-     */
-    public function getHeaders(): array;
-
-    /**
-     * Get all header values as associative array
-     *
-     * @return array
-     */
-    public function getHeadersAsArray(): array;
-
-    /**
-     * Get all header values formatted string
-     *
-     * @param  ?string $status
-     * @param  string  $eol
-     * @return string
-     */
-    public function getHeadersAsString(?string $status = null, string $eol = "\r\n"): string;
-
-    /**
-     * Determine if there are headers
+     * Has request
      *
      * @return bool
      */
-    public function hasHeaders(): bool;
+    public function hasRequest(): bool;
 
     /**
-     * Has a header
-     *
-     * @param  string $name
-     * @return bool
-     */
-    public function hasHeader(string $name): bool;
-
-    /**
-     * Remove a header
-     *
-     * @param  string $name
-     * @return HttpInterface
-     */
-    public function removeHeader(string $name): HttpInterface;
-
-    /**
-     * Remove all headers
-     *
-     * @return HttpInterface
-     */
-    public function removeHeaders(): HttpInterface;
-
-    /**
-     * Set the body
-     *
-     * @param  string|Body $body
-     * @return HttpInterface
-     */
-    public function setBody(string|Body $body): HttpInterface;
-
-    /**
-     * Get the body
-     *
-     * @return Body
-     */
-    public function getBody(): Body;
-
-    /**
-     * Get body content
-     *
-     * @return mixed
-     */
-    public function getBodyContent(): mixed;
-
-    /**
-     * Has a body
+     * Get the response
      *
      * @return bool
      */
-    public function hasBody(): bool;
-
-    /**
-     * Has body content
-     *
-     * @return bool
-     */
-    public function hasBodyContent(): bool;
-
-    /**
-     * Decode the body content
-     *
-     * @param  ?string $body
-     * @return Body
-     */
-    public function decodeBodyContent(?string $body = null): Body;
-
-    /**
-     * Remove the body
-     *
-     * @return HttpInterface
-     */
-    public function removeBody(): HttpInterface;
+    public function hasResponse(): bool;
 
 }

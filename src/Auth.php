@@ -69,14 +69,15 @@ class Auth
      *
      * Instantiate the auth object
      *
-     * @param  string  $header
+     * @param string $header
      * @param  ?string $scheme
      * @param  ?string $token
      * @param  ?string $username
      * @param  ?string $password
      */
     public function __construct(
-        $header = 'Authorization', ?string $scheme = null, ?string $token = null, ?string $username = null, ?string $password = null
+        string $header = 'Authorization', ?string $scheme = null, ?string $token = null,
+        ?string $username = null, ?string $password = null
     )
     {
         $this->setHeader($header);

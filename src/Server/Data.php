@@ -11,10 +11,10 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Server\Request;
+namespace Pop\Http\Server;
 
-use Pop\Http\AbstractRequest;
 use Pop\Http\Parser;
+use Pop\Http\HttpFilterableTrait;
 
 /**
  * HTTP server request data class
@@ -26,8 +26,10 @@ use Pop\Http\Parser;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-class Data extends AbstractRequest
+class Data
 {
+
+    use HttpFilterableTrait;
 
     /**
      * GET array
@@ -102,12 +104,19 @@ class Data extends AbstractRequest
      *
      * @param  ?string $contentType
      * @param  ?string $encoding
-     * @param  mixed   $filters
-     * @param  mixed   $streamToFile
+     * @param  mixed $filters
+     * @param  mixed $streamToFile
+     * @throws Exception
      */
     public function __construct(?string $contentType = null, ?string $encoding = null, mixed $filters = null, mixed $streamToFile = null)
     {
-        parent::__construct($filters);
+        if ($filters !== null) {
+            if (is_array($filters)) {
+                $this->addFilters($filters);
+            } else {
+                $this->addFilter($filters);
+            }
+        }
 
         $this->get   = (isset($_GET))   ? $_GET   : [];
         $this->post  = (isset($_POST))  ? $_POST  : [];
@@ -323,13 +332,13 @@ class Data extends AbstractRequest
     /**
      * Process stream to file
      *
+     * @param  ?string $contentType
+     * @param  ?string $contentEncoding
      * @return Data
      */
-    public function processStreamToFile(): Data
+    public function processStreamToFile(?string $contentType = null, ?string $contentEncoding = null): Data
     {
         if (($this->streamToFile) && file_exists($this->streamToFileLocation)) {
-            $contentType      = $this->getHeaderValue('Content-Type');
-            $contentEncoding  = $this->getHeaderValue('Content-Encoding');
             $this->rawData    = file_get_contents($this->streamToFileLocation);
             $this->parsedData = Parser::parseDataByContentType($this->rawData, $contentType, $contentEncoding);
         }
@@ -379,7 +388,7 @@ class Data extends AbstractRequest
         // If the query string had a processed custom data string
         if ((strtoupper($_SERVER['REQUEST_METHOD']) == 'GET') && ($this->get != $this->queryData) && !empty($this->queryData)) {
             $this->get = $this->queryData;
-        // If the request was POST and had processed custom data
+            // If the request was POST and had processed custom data
         } else if ((strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') && ($this->post != $this->parsedData) && !empty($this->parsedData)) {
             $this->post = $this->parsedData;
         }
@@ -419,13 +428,6 @@ class Data extends AbstractRequest
                 $this->delete = $this->parsedData;
                 break;
         }
-
-        if ($contentType !== null) {
-            $this->addHeader('Content-Type', $contentType);
-        }
-        if ($encoding !== null) {
-            $this->addHeader('Content-Encoding', $encoding);
-        }
     }
 
     /**
@@ -442,10 +444,10 @@ class Data extends AbstractRequest
         // Stream raw data to system temp folder with auto-generated filename
         if ($streamToFile === true) {
             $this->streamToFileLocation = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pop-http-' . uniqid();
-        // Else, stream raw data to user-specified file location
+            // Else, stream raw data to user-specified file location
         } else if (!is_dir($streamToFile) && is_dir(dirname($streamToFile)) && is_writable(dirname($streamToFile))) {
             $this->streamToFileLocation = $streamToFile;
-        // Else, stream raw data to user-specified direction with auto-generated filename
+            // Else, stream raw data to user-specified direction with auto-generated filename
         } else if (is_dir($streamToFile) && is_writable($streamToFile)) {
             $filename = 'pop-http-' . uniqid();
             $this->streamToFileLocation = $streamToFile .

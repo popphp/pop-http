@@ -11,10 +11,10 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Client;
+namespace Pop\Http\Client\Handler;
 
 /**
- * HTTP client exception class
+ * HTTP client curl handler class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -23,4 +23,7 @@ namespace Pop\Http\Client;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-class Exception extends \Exception {}
+class Curl
+{
+
+}

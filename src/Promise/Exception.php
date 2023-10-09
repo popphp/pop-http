@@ -14,7 +14,7 @@
 namespace Pop\Http\Promise;
 
 /**
- * Promise exception class
+ * HTTP promise exception class
  *
  * @category   Pop
  * @package    Pop\Http

@@ -110,7 +110,7 @@ class Parser
         // JSON data
         if (($contentType !== null) && (str_contains($contentType, 'json'))) {
             $parsedResult = json_decode(self::decodeData($rawData, $encoding, $chunked), true);
-        // XML data
+            // XML data
         } else if (($contentType !== null) && (str_contains($contentType, 'xml'))) {
             $rawData = self::decodeData($rawData, $encoding, $chunked);
             $matches = [];
@@ -126,16 +126,16 @@ class Parser
             }
 
             $parsedResult = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
-        // URL-encoded form data
+            // URL-encoded form data
         } else if (($contentType !== null) && (str_contains($contentType, 'application/x-www-form-urlencoded'))) {
             $parsedResult = [];
             parse_str(self::decodeData($rawData, $encoding, $chunked), $parsedResult);
-        // Multipart form data
+            // Multipart form data
         } else if (($contentType !== null) && (str_contains($contentType, 'multipart/form-data'))) {
             $formContent  = (!str_contains($rawData, 'Content-Type:')) ?
                 'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
             $parsedResult = Message::parseForm($formContent);
-        // Fallback to just the encoding
+            // Fallback to just the encoding
         } else if ($encoding !== null) {
             $parsedResult = self::decodeData($rawData, $encoding, $chunked);
         }

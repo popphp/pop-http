@@ -13,10 +13,9 @@
  */
 namespace Pop\Http\Server;
 
-use Pop\Http\AbstractRequest;
 use Pop\Http\Auth;
-use Pop\Http\Server\Request\Data;
-use Pop\Http\Server\Request\Uri;
+use Pop\Http\Uri;
+use Pop\Http\AbstractRequest;
 use Pop\Mime\Part\Body;
 
 /**
@@ -33,16 +32,10 @@ class Request extends AbstractRequest
 {
 
     /**
-     * Request URI object
-     * @var ?Uri
-     */
-    protected ?Uri $requestUri = null;
-
-    /**
-     * Request data object
+     * Server request data object
      * @var ?Data
      */
-    protected ?Data $requestData = null;
+    protected ?Data $data = null;
 
     /**
      * COOKIE array
@@ -73,14 +66,14 @@ class Request extends AbstractRequest
      *
      * Instantiate the request object
      *
-     * @param  ?string $uri
-     * @param  ?string $basePath
-     * @param  mixed   $filters
-     * @param  mixed   $streamToFile
+     * @param  ?Uri  $uri
+     * @param  mixed $filters
+     * @param  mixed $streamToFile
+     * @throws Exception
      */
-    public function __construct(?string $uri = null, ?string $basePath = null, mixed $filters = null, mixed $streamToFile = null)
+    public function __construct(?Uri $uri = null, mixed $filters = null, mixed $streamToFile = null)
     {
-        parent::__construct($filters);
+        parent::__construct($uri);
 
         $this->cookie = (isset($_COOKIE)) ? $_COOKIE : [];
         $this->server = (isset($_SERVER)) ? $_SERVER : [];
@@ -109,28 +102,26 @@ class Request extends AbstractRequest
             $this->setAuth(Auth::parse($this->getHeader('Authorization')));
         }
 
-        $this->requestUri  = new Uri($uri, $basePath);
-        $this->requestData = new Data(
+        $this->data = new Data(
             $this->getHeaderValue('Content-Type'), $this->getHeaderValue('Content-Encoding'), $filters, $streamToFile
         );
 
-        if ($this->requestData->hasRawData()) {
-            $this->body = new Body($this->requestData->getRawData());
+        if ($this->data->hasRawData()) {
+            $this->body = new Body($this->data->getRawData());
         }
     }
-
 
     /**
      * Factory to create a new request object
      *
-     * @param  ?string $uri
-     * @param  ?string $basePath
-     * @param  mixed   $filters
-     * @param  mixed   $streamToFile
+     * @param  ?Uri  $uri
+     * @param  mixed $filters
+     * @param  mixed $streamToFile
+     * @return Request
      */
-    public static function create(?string $uri = null, ?string $basePath = null, mixed $filters = null, mixed $streamToFile = null)
+    public static function create(?Uri $uri = null, mixed $filters = null, mixed $streamToFile = null): Request
     {
-        return new self($uri, $basePath, $filters, $streamToFile);
+        return new self($uri, $filters, $streamToFile);
     }
 
     /**
@@ -423,7 +414,7 @@ class Request extends AbstractRequest
      */
     public function getBasePath(): string
     {
-        return $this->requestUri->getBasePath();
+        return $this->uri->getBasePath();
     }
 
     /**
@@ -431,9 +422,9 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getRequestUri(): string
+    public function getUriString(): string
     {
-        return $this->requestUri->getRequestUri();
+        return $this->uri->getUri();
     }
 
     /**
@@ -441,9 +432,9 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getFullRequestUri(): string
+    public function getFullUriString(): string
     {
-        return $this->requestUri->getFullRequestUri();
+        return $this->uri->getFullUri();
     }
 
     /**
@@ -457,7 +448,7 @@ class Request extends AbstractRequest
      */
     public function getSegment(int $i): string|null
     {
-        return $this->requestUri->getSegment($i);
+        return $this->uri->getSegment($i);
     }
 
     /**
@@ -467,7 +458,7 @@ class Request extends AbstractRequest
      */
     public function getSegments(): array
     {
-        return $this->requestUri->getSegments();
+        return $this->uri->getSegments();
     }
 
     /**
@@ -478,7 +469,7 @@ class Request extends AbstractRequest
      */
     public function setBasePath(?string $path = null): Request
     {
-        $this->requestUri->setBasePath($path);
+        $this->uri->setBasePath($path);
         return $this;
     }
 
@@ -489,7 +480,7 @@ class Request extends AbstractRequest
      */
     public function hasFiles(): bool
     {
-        return $this->requestData->hasFiles();
+        return $this->data->hasFiles();
     }
 
     /**
@@ -500,7 +491,7 @@ class Request extends AbstractRequest
      */
     public function getQuery(?string $key = null): string|array|null
     {
-        return $this->requestData->getQuery($key);
+        return $this->data->getQuery($key);
     }
 
     /**
@@ -511,7 +502,7 @@ class Request extends AbstractRequest
      */
     public function getPost(?string $key = null): string|array|null
     {
-        return $this->requestData->getPost($key);
+        return $this->data->getPost($key);
     }
 
     /**
@@ -522,7 +513,7 @@ class Request extends AbstractRequest
      */
     public function getFiles(?string $key = null): string|array|null
     {
-        return $this->requestData->getFiles($key);
+        return $this->data->getFiles($key);
     }
 
     /**
@@ -533,7 +524,7 @@ class Request extends AbstractRequest
      */
     public function getPut(?string $key = null): string|array|null
     {
-        return $this->requestData->getPut($key);
+        return $this->data->getPut($key);
     }
 
     /**
@@ -544,7 +535,7 @@ class Request extends AbstractRequest
      */
     public function getPatch(?string $key = null): string|array|null
     {
-        return $this->requestData->getPatch($key);
+        return $this->data->getPatch($key);
     }
 
     /**
@@ -555,7 +546,7 @@ class Request extends AbstractRequest
      */
     public function getDelete(?string $key = null): string|array|null
     {
-        return $this->requestData->getDelete($key);
+        return $this->data->getDelete($key);
     }
 
 
@@ -567,7 +558,7 @@ class Request extends AbstractRequest
      */
     public function getQueryData(?string $key = null): string|array|null
     {
-        return $this->requestData->getQueryData($key);
+        return $this->data->getQueryData($key);
     }
 
     /**
@@ -577,7 +568,7 @@ class Request extends AbstractRequest
      */
     public function hasQueryData(): bool
     {
-        return $this->requestData->hasQueryData();
+        return $this->data->hasQueryData();
     }
 
     /**
@@ -588,7 +579,7 @@ class Request extends AbstractRequest
      */
     public function getParsedData(?string $key = null): string|array|null
     {
-        return $this->requestData->getParsedData($key);
+        return $this->data->getParsedData($key);
     }
 
     /**
@@ -598,7 +589,7 @@ class Request extends AbstractRequest
      */
     public function hasParsedData(): bool
     {
-        return $this->requestData->hasParsedData();
+        return $this->data->hasParsedData();
     }
 
     /**
@@ -608,7 +599,7 @@ class Request extends AbstractRequest
      */
     public function getRawData(): string
     {
-        return $this->requestData->getRawData();
+        return $this->data->getRawData();
     }
 
     /**
@@ -618,27 +609,27 @@ class Request extends AbstractRequest
      */
     public function hasRawData(): bool
     {
-        return $this->requestData->hasRawData();
+        return $this->data->hasRawData();
     }
 
     /**
-     * Get request URI object
+     * Get data
      *
      * @return Uri
      */
-    public function getRequestUriObject(): Uri
+    public function getData(): Data
     {
-        return $this->requestUri;
+        return $this->data;
     }
 
     /**
-     * Get request data object
+     * Has data
      *
-     * @return Data
+     * @return bool
      */
-    public function getRequestDataObject(): Data
+    public function hasData(): bool
     {
-        return $this->requestData;
+        return ($this->data !== null);
     }
 
     /**
@@ -650,14 +641,14 @@ class Request extends AbstractRequest
     public function __get(string $name): mixed
     {
         return match ($name) {
-            'get'     => $this->requestData->get,
-            'post'    => $this->requestData->post,
-            'files'   => $this->requestData->files,
-            'put'     => $this->requestData->put,
-            'patch'   => $this->requestData->patch,
-            'delete'  => $this->requestData->delete,
-            'parsed'  => $this->requestData->parsed,
-            'raw'     => $this->requestData->raw,
+            'get'     => $this->data->get,
+            'post'    => $this->data->post,
+            'files'   => $this->data->files,
+            'put'     => $this->data->put,
+            'patch'   => $this->data->patch,
+            'delete'  => $this->data->delete,
+            'parsed'  => $this->data->parsed,
+            'raw'     => $this->data->raw,
             'cookie'  => $this->cookie,
             'server'  => $this->server,
             'env'     => $this->env,

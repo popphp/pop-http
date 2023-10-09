@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client;
 
+use Pop\Http\Uri;
 use Pop\Http\AbstractRequest;
 
 /**
@@ -27,195 +28,94 @@ use Pop\Http\AbstractRequest;
  */
 class Request extends AbstractRequest
 {
-
     /**
-     * Fields (form fields and files)
-     *    $fields = [
-     *      'username' => 'admin'
-     *      'file1'     => [
-     *          'filename'    => __DIR__ . '/path/to/file.txt',
-     *          'contentType' => 'text/plain'
-     *      ],
-     *      'file2'     => [
-     *          'filename'    => 'test.pdf',
-     *          'contentType' => 'application/pdf',
-     *          'contents'    => file_get_contents(__DIR__ . '/path/to/test.pdf'
-     *      ]
-     *    ]
-     * @var array
+     * Client request data object
+     * @var ?Data
      */
-    protected array $fields = [];
+    protected ?Data $data = null;
 
     /**
-     * Request query
+     * Request type
      * @var ?string
      */
-    protected ?string $query = null;
+    protected ?string $requestType = null;
 
     /**
-     * Request form type
-     * @var ?string
+     * Constructor
+     *
+     * Instantiate the request data object
+     *
+     * @param ?Uri $uri
+     * @param ?Data $data
+     * @param ?string $type
      */
-    protected ?string $formType = null;
+    public function __construct(?Uri $uri = null, ?Data $data = null, ?string $type = null)
+    {
+        parent::__construct($uri);
+
+        if ($data !== null) {
+            $this->setData($data);
+        }
+        if ($type !== null) {
+            switch ($type) {
+                case 'application/json':
+                    $this->createAsJson();
+                    break;
+                case 'application/xml':
+                    $this->createAsXml();
+                    break;
+                case 'application/x-www-form-urlencoded':
+                    $this->createUrlEncodedForm();
+                    break;
+                case 'multipart/form-data':
+                    $this->createMultipartForm();
+                    break;
+            }
+        }
+    }
 
     /**
      * Factory method to create a Request object
      *
-     * @param  mixed $filters
+     * @param  ?Uri $uri
+     * @param  ?Data $data
      * @return Request
      */
-    public static function create(mixed $filters = null): Request
+    public static function create(?Uri $uri = null, ?Data $data = null, ?string $type = null): Request
     {
-        return new self($filters);
+        return new self($uri, $data);
     }
 
     /**
-     * Set a field
+     * Set data
      *
-     * @param  string $name
-     * @param  mixed  $value
+     * @param  Data $data
      * @return Request
      */
-    public function setField(string $name, string $value): Request
+    public function setData(Data $data): Request
     {
-        $this->fields[$name] = $value;
-        $this->prepareQuery();
-
+        $this->data = $data;
         return $this;
     }
 
     /**
-     * Set all fields
+     * Get data
      *
-     * @param  array $fields
-     * @return Request
+     * @return Uri
      */
-    public function setFields(array $fields): Request
+    public function getData(): Data
     {
-        foreach ($fields as $name => $value) {
-            $this->setField($name, $value);
-        }
-
-        $this->prepareQuery();
-
-        return $this;
+        return $this->data;
     }
 
     /**
-     * Get a field
-     *
-     * @param  string $name
-     * @return mixed
-     */
-    public function getField(string $name): mixed
-    {
-        return (isset($this->fields[$name])) ? $this->fields[$name] : null;
-    }
-
-    /**
-     * Get all field
-     *
-     * @return array
-     */
-    public function getFields(): array
-    {
-        return $this->fields;
-    }
-
-    /**
-     * Has fields
+     * Has data
      *
      * @return bool
      */
-    public function hasFields(): bool
+    public function hasData(): bool
     {
-        return (!empty($this->fields));
-    }
-
-    /**
-     * Has field
-     *
-     * @param  string $name
-     * @return bool
-     */
-    public function hasField(string $name): bool
-    {
-        return (isset($this->fields[$name]));
-    }
-
-    /**
-     * Remove a field
-     *
-     * @param  string $name
-     * @return Request
-     */
-    public function removeField(string $name): Request
-    {
-        if (isset($this->fields[$name])) {
-            unset($this->fields[$name]);
-        }
-
-        $this->prepareQuery();
-
-        return $this;
-    }
-
-    /**
-     * Remove all fields
-     *
-     * @return Request
-     */
-    public function removeFields(): Request
-    {
-        $this->fields = [];
-        $this->query  = null;
-
-        return $this;
-    }
-
-    /**
-     * Prepare the HTTP query
-     *
-     * @return string
-     */
-    public function prepareQuery(): string
-    {
-        if (($this->hasFilters()) && !empty($this->fields)) {
-            $this->fields = $this->filter($this->fields);
-        }
-        $this->query = http_build_query($this->fields);
-        return $this->query;
-    }
-
-    /**
-     * Is HTTP query prepared
-     *
-     * @return bool
-     */
-    public function hasQuery(): bool
-    {
-        return ($this->query !== null);
-    }
-
-    /**
-     * Get HTTP query
-     *
-     * @return string
-     */
-    public function getQuery(): string
-    {
-        return $this->query;
-    }
-
-    /**
-     * Get HTTP query length
-     *
-     * @param  bool $mb
-     * @return int
-     */
-    public function getQueryLength(bool $mb = false): int
-    {
-        return ($mb) ? mb_strlen($this->query) : strlen($this->query);
+        return ($this->data !== null);
     }
 
     /**
@@ -225,12 +125,12 @@ class Request extends AbstractRequest
      */
     public function createAsJson(): Request
     {
-        $this->formType = 'application/json';
+        $this->requestType = 'application/json';
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
         }
-        $this->addHeader('Content-Type', $this->formType);
+        $this->addHeader('Content-Type', $this->requestType);
 
         return $this;
     }
@@ -242,7 +142,7 @@ class Request extends AbstractRequest
      */
     public function isJson(): bool
     {
-        return ($this->formType == 'application/json');
+        return ($this->requestType == 'application/json');
     }
 
     /**
@@ -252,12 +152,12 @@ class Request extends AbstractRequest
      */
     public function createAsXml(): Request
     {
-        $this->formType = 'application/xml';
+        $this->requestType = 'application/xml';
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
         }
-        $this->addHeader('Content-Type', $this->formType);
+        $this->addHeader('Content-Type', $this->requestType);
 
         return $this;
     }
@@ -269,7 +169,7 @@ class Request extends AbstractRequest
      */
     public function isXml()
     {
-        return ($this->formType == 'application/xml');
+        return ($this->requestType == 'application/xml');
     }
 
     /**
@@ -279,12 +179,12 @@ class Request extends AbstractRequest
      */
     public function createUrlEncodedForm(): Request
     {
-        $this->formType = 'application/x-www-form-urlencoded';
+        $this->requestType = 'application/x-www-form-urlencoded';
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
         }
-        $this->addHeader('Content-Type', $this->formType);
+        $this->addHeader('Content-Type', $this->requestType);
 
         return $this;
     }
@@ -296,7 +196,7 @@ class Request extends AbstractRequest
      */
     public function isUrlEncodedForm(): bool
     {
-        return ($this->formType == 'application/x-www-form-urlencoded');
+        return ($this->requestType == 'application/x-www-form-urlencoded');
     }
 
     /**
@@ -306,7 +206,7 @@ class Request extends AbstractRequest
      */
     public function createMultipartForm(): Request
     {
-        $this->formType = 'multipart/form-data';
+        $this->requestType = 'multipart/form-data';
         return $this;
     }
 
@@ -317,7 +217,7 @@ class Request extends AbstractRequest
      */
     public function isMultipartForm(): bool
     {
-        return ($this->formType == 'multipart/form-data');
+        return ($this->requestType == 'multipart/form-data');
     }
 
     /**
@@ -325,9 +225,9 @@ class Request extends AbstractRequest
      *
      * @return string
      */
-    public function getFormType(): string
+    public function getRequestType(): string
     {
-        return $this->formType;
+        return $this->requestType;
     }
 
 }

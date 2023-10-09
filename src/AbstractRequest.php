@@ -13,8 +13,6 @@
  */
 namespace Pop\Http;
 
-use Pop\Filter\FilterableTrait;
-
 /**
  * Abstract HTTP request class
  *
@@ -25,54 +23,69 @@ use Pop\Filter\FilterableTrait;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-abstract class AbstractRequest extends AbstractHttp
+abstract class AbstractRequest extends AbstractRequestResponse
 {
 
-    use FilterableTrait;
+    /**
+     * Request URI object
+     * @var ?Uri
+     */
+    protected ?Uri $uri = null;
 
     /**
      * Constructor
      *
      * Instantiate the request object
      *
-     * @param  mixed $filters
+     * @param  ?Uri $uri
      */
-    public function __construct(mixed $filters = null)
+    public function __construct(?Uri $uri = null)
     {
-        if ($filters !== null) {
-            if (is_array($filters)) {
-                $this->addFilters($filters);
-            } else {
-                $this->addFilter($filters);
-            }
+        if ($uri !== null) {
+            $this->setUri($uri);
         }
     }
 
     /**
-     * Filter values
+     * Set URI
      *
-     * @param  mixed $values
-     * @return mixed
+     * @param  Uri $uri
+     * @return AbstractRequest
      */
-    public function filter(mixed $values): mixed
+    public function setUri(Uri $uri): AbstractRequest
     {
-        $disabledFunctions = array_filter(array_map('trim', explode(',', ini_get('disable_functions'))));
+        $this->uri = $uri;
+        return $this;
+    }
 
-        foreach ($this->filters as $filter) {
-            if (is_array($values)) {
-                foreach ($values as $key => $value) {
-                    if (!in_array($value, $disabledFunctions)) {
-                        $values[$key] = $filter->filter($value, $key);
-                    }
-                }
-            } else {
-                if (!in_array($values, $disabledFunctions)) {
-                    $values = $filter->filter($values);
-                }
-            }
-        }
+    /**
+     * Get URI
+     *
+     * @return Uri
+     */
+    public function getUri(): Uri
+    {
+        return $this->uri;
+    }
 
-        return $values;
+    /**
+     * Get URI as string
+     *
+     * @return string
+     */
+    public function getUriAsString(): string
+    {
+        return $this->uri->render();
+    }
+
+    /**
+     * Has URI
+     *
+     * @return bool
+     */
+    public function hasUri(): bool
+    {
+        return ($this->uri !== null);
     }
 
 }

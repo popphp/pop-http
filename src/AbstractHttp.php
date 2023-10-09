@@ -13,9 +13,6 @@
  */
 namespace Pop\Http;
 
-use Pop\Mime\Part\Header;
-use Pop\Mime\Part\Body;
-
 /**
  * Abstract HTTP class
  *
@@ -30,273 +27,79 @@ abstract class AbstractHttp implements HttpInterface
 {
 
     /**
-     * Headers
-     * @var array
+     * Request
+     * @var ?RequestResponseInterface
      */
-    protected array $headers = [];
+    protected ?RequestResponseInterface $request = null;
 
     /**
-     * Body
-     * @var ?Body
+     * Response
+     * @var ?RequestResponseInterface
      */
-    protected ?Body $body = null;
+    protected ?RequestResponseInterface $response = null;
 
     /**
-     * Add a header
+     * Set the request
      *
-     * @param  Header|string $header
-     * @param  ?string       $value
+     * @param  RequestResponseInterface $request
      * @return AbstractHttp
      */
-    public function addHeader(Header|string$header, ?string $value = null): AbstractHttp
+    public function setRequest(RequestResponseInterface $request): AbstractHttp
     {
-        if ($header instanceof Header) {
-            $this->headers[$header->getName()] = $header;
-        } else {
-            $this->headers[$header] = new Header($header, $value);
-        }
-
+        $this->request = $request;
         return $this;
     }
 
     /**
-     * Add all headers
+     * Set the response
      *
-     * @param  array $headers
+     * @param  RequestResponseInterface $response
      * @return AbstractHttp
      */
-    public function addHeaders(array $headers): AbstractHttp
+    public function setResponse(RequestResponseInterface $response): AbstractHttp
     {
-        foreach ($headers as $header => $value) {
-            if ($value instanceof Header) {
-                $this->addHeader($value);
-            } else {
-                $this->addHeader($header, $value);
-            }
-        }
+        $this->response = $response;
         return $this;
     }
 
     /**
-     * Get a header
+     * Get the request
      *
-     * @param  string $name
-     * @return mixed
+     * @return RequestResponseInterface
      */
-    public function getHeader(string $name): mixed
+    public function getRequest(): RequestResponseInterface
     {
-        return $this->headers[$name] ?? null;
+        return $this->request;
     }
 
     /**
-     * Get header value
+     * Get the response
      *
-     * @param  string $name
-     * @param  int    $i
-     * @return mixed
+     * @return RequestResponseInterface
      */
-    public function getHeaderValue(string $name, int $i = 0): mixed
+    public function getResponse(): RequestResponseInterface
     {
-        return (isset($this->headers[$name])) ? $this->headers[$name]?->getValue($i) : null;
+        return $this->response;
     }
 
     /**
-     * Get all headers
-     *
-     * @return array
-     */
-    public function getHeaders(): array
-    {
-        return $this->headers;
-    }
-
-    /**
-     * Get all header values as associative array
-     *
-     * @param  bool $asStrings
-     * @return array
-     */
-    public function getHeadersAsArray(bool $asStrings = true): array
-    {
-        $headers = [];
-
-        foreach ($this->headers as $name => $header) {
-            if (count($header->getValues()) == 1) {
-                $headers[$name] = ($asStrings) ? $header->getValueAsString(0) : $header->getValue(0);
-            } else {
-                $headers[$name] = ($asStrings) ? $header->getValuesAsStrings() : $header->getValues();
-            }
-        }
-        return $headers;
-    }
-
-    /**
-     * Get all header values formatted string
-     *
-     * @param  mixed  $status
-     * @param  string $eol
-     * @return string
-     */
-    public function getHeadersAsString(mixed $status = null, string $eol = "\r\n"): string
-    {
-        $headers = '';
-
-        if (is_string($status)) {
-            $headers = $status . $eol;
-        }
-
-        foreach ($this->headers as $header) {
-            $headers .= $header . $eol;
-        }
-
-        return $headers;
-    }
-
-    /**
-     * Determine if there are headers
+     * Has request
      *
      * @return bool
      */
-    public function hasHeaders(): bool
+    public function hasRequest(): bool
     {
-        return (count($this->headers) > 0);
+        return ($this->request !== null);
     }
 
     /**
-     * Has a header
-     *
-     * @param  string $name
-     * @return bool
-     */
-    public function hasHeader(string $name): bool
-    {
-        return (isset($this->headers[$name]));
-    }
-
-    /**
-     * Remove a header
-     *
-     * @param  string $name
-     * @return AbstractHttp
-     */
-    public function removeHeader(string $name): AbstractHttp
-    {
-        if (isset($this->headers[$name])) {
-            unset($this->headers[$name]);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Remove all headers
-     *
-     * @return AbstractHttp
-     */
-    public function removeHeaders(): AbstractHttp
-    {
-        $this->headers = [];
-        return $this;
-    }
-
-    /**
-     * Set the body
-     *
-     * @param  string|Body $body
-     * @return AbstractHttp
-     */
-    public function setBody(string|Body $body): AbstractHttp
-    {
-        $this->body = ($body instanceof Body) ? $body : new Body($body);
-        return $this;
-    }
-
-    /**
-     * Get the body
-     *
-     * @return Body
-     */
-    public function getBody(): Body
-    {
-        return $this->body;
-    }
-
-    /**
-     * Get body content
-     *
-     * @return mixed
-     */
-    public function getBodyContent(): mixed
-    {
-        return ($this->body !== null) ? $this->body->getContent() : null;
-    }
-
-    /**
-     * Has a body
+     * Get the response
      *
      * @return bool
      */
-    public function hasBody(): bool
+    public function hasResponse(): bool
     {
-        return ($this->body !== null);
-    }
-
-    /**
-     * Has body content
-     *
-     * @return bool
-     */
-    public function hasBodyContent(): bool
-    {
-        return (($this->body !== null) && $this->body->hasContent());
-    }
-
-    /**
-     * Decode the body
-     *
-     * @param  ?string $body
-     * @return Body
-     */
-    public function decodeBodyContent(?string $body = null): body
-    {
-        if ($body !== null) {
-            $this->setBody($body);
-        }
-        if (($this->hasHeader('Transfer-Encoding')) && (count($this->getHeader('Transfer-Encoding')->getValues()) == 1) &&
-            (strtolower($this->getHeader('Transfer-Encoding')->getValue(0)) == 'chunked')) {
-            $this->body->setContent(Parser::decodeChunkedData($this->body->getContent()));
-        }
-        $contentEncoding = ($this->hasHeader('Content-Encoding') && (count($this->getHeader('Content-Encoding')->getValues()) == 1)) ?
-            $this->getHeader('Content-Encoding')->getValue(0) : null;
-        $this->body->setContent(Parser::decodeData($this->body->getContent(), $contentEncoding));
-
-        return $this->body;
-    }
-
-    /**
-     * Remove the body
-     *
-     * @return AbstractHttp
-     */
-    public function removeBody(): AbstractHttp
-    {
-        $this->body = null;
-        return $this;
-    }
-
-    /**
-     * Magic method to get either the headers or body
-     *
-     * @param  string $name
-     * @return mixed
-     */
-    public function __get(string $name): mixed
-    {
-        return match ($name) {
-            'headers' => $this->headers,
-            'body'    => $this->body,
-            default   => null,
-        };
+        return ($this->response !== null);
     }
 
 }

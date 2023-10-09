@@ -11,10 +11,10 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Client\Curl;
+namespace Pop\Http\Client\Handler;
 
 /**
- * Curl multi-handler exception class
+ * HTTP client handler exception class
  *
  * @category   Pop
  * @package    Pop\Http
