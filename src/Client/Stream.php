@@ -88,6 +88,24 @@ class Stream extends AbstractClient
     }
 
     /**
+     * Factory method to create a Stream client
+     *
+     * @param  ?string $url
+     * @param  string $method
+     * @param  string $mode
+     * @param  array $options
+     * @param  array $params
+     * @throws Exception
+     * @return Stream
+     */
+    public static function create(
+        ?string $url = null, string $method = 'GET', string $mode = 'r', array $options = [], array $params = []
+    ): Stream
+    {
+        return new self($url, $method, $mode, $options, $params);
+    }
+
+    /**
      * Set the method
      *
      * @param  string $method

@@ -30,7 +30,7 @@ class Curl extends AbstractClient
 {
 
     /**
-     * cURL options
+     * Curl options
      * @var array
      */
     protected array $options = [];
@@ -38,7 +38,7 @@ class Curl extends AbstractClient
     /**
      * Constructor
      *
-     * Instantiate the cURL object
+     * Instantiate the Curl object
      *
      * @param  ?string $url
      * @param  string  $method
@@ -48,7 +48,7 @@ class Curl extends AbstractClient
     public function __construct(?string $url = null, string $method = 'GET', ?array $opts = null)
     {
         if (!function_exists('curl_init')) {
-            throw new Exception('Error: cURL is not available.');
+            throw new Exception('Error: Curl is not available.');
         }
 
         $this->resource = curl_init();
@@ -61,6 +61,21 @@ class Curl extends AbstractClient
         if ($opts !== null) {
             $this->setOptions($opts);
         }
+    }
+
+    /**
+     * Factory method to create a Curl client
+     *
+     * @param  ?string $url
+     * @param  string $method
+     * @param  ?array $opts
+     * @throws Exception
+     * @return Curl
+     *
+     */
+    public static function create(?string $url = null, string $method = 'GET', ?array $opts = null): Curl
+    {
+        return new self($url, $method, $opts);
     }
 
     /**
@@ -86,7 +101,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Return cURL resource (alias to $this->getResource())
+     * Return Curl resource (alias to $this->getResource())
      *
      * @return mixed
      */
@@ -96,7 +111,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Set cURL session option
+     * Set Curl option
      *
      * @param  int   $opt
      * @param  mixed $val
@@ -104,7 +119,7 @@ class Curl extends AbstractClient
      */
     public function setOption(int $opt, mixed $val): Curl
     {
-        // Set the protected property to keep track of the cURL options.
+        // Set the protected property to keep track of the Curl options.
         $this->options[$opt] = $val;
         curl_setopt($this->resource, $opt, $val);
 
@@ -112,14 +127,14 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Set cURL session options
+     * Set Curl options
      *
      * @param  array $opts
      * @return Curl
      */
     public function setOptions(array $opts): Curl
     {
-        // Set the protected property to keep track of the cURL options.
+        // Set the protected property to keep track of the Curl options.
         foreach ($opts as $k => $v) {
             $this->options[$k] = $v;
         }
@@ -130,7 +145,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Set cURL option to return the header
+     * Set Curl option to return the header
      *
      * @param  bool $header
      * @return Curl
@@ -142,7 +157,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Set cURL option to return the transfer
+     * Set Curl option to return the transfer
      *
      * @param  bool $transfer
      * @return Curl
@@ -154,7 +169,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Check if cURL is set to return header
+     * Check if Curl is set to return header
      *
      * @return bool
      */
@@ -164,7 +179,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Check if cURL is set to return transfer
+     * Check if Curl is set to return transfer
      *
      * @return bool
      */
@@ -174,7 +189,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Get a cURL session option
+     * Get a Curl option
      *
      * @param  int $opt
      * @return mixed
@@ -185,7 +200,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Has a cURL session option
+     * Has a Curl option
      *
      * @param  int $opt
      * @return bool
@@ -196,7 +211,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Return the cURL session last info
+     * Return the Curl last info
      *
      * @param  ?int $opt
      * @return array|string
@@ -207,8 +222,9 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Create and open cURL resource
+     * Create and open Curl resource
      *
+     * @throws Exception|\Pop\Http\Exception
      * @return Curl
      */
     public function open(): Curl
@@ -299,7 +315,7 @@ class Curl extends AbstractClient
         }
 
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
-        if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true)) {
+        if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER])) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
             if ($this->options[CURLOPT_HEADER]) {
                 $parsedHeaders = Parser::parseHeaders(substr($response, 0, $headerSize));
@@ -317,6 +333,7 @@ class Curl extends AbstractClient
             $this->response->decodeBodyContent();
         }
     }
+
     /**
      * Method to reset the client object
      *
@@ -326,13 +343,12 @@ class Curl extends AbstractClient
     {
         $this->request  = new Request();
         $this->response = new Response();
-        $this->options  = [];
 
         return $this;
     }
 
     /**
-     * Return the cURL version
+     * Return the Curl version
      *
      * @return array
      */
@@ -342,7 +358,7 @@ class Curl extends AbstractClient
     }
 
     /**
-     * Close the cURL connection
+     * Close the Curl connection
      *
      * @return void
      */
@@ -351,6 +367,10 @@ class Curl extends AbstractClient
         if ($this->hasResource()) {
             curl_close($this->resource);
             $this->resource = null;
+            $this->request  = new Request();
+            $this->response = new Response();
+            $this->options  = [];
+
         }
     }
 

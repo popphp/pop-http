@@ -11,12 +11,10 @@
 /**
  * @namespace
  */
-namespace Pop\Http\Client;
-
-use Pop\Http\AbstractResponse;
+namespace Pop\Http\Client\Curl;
 
 /**
- * HTTP client response class
+ * Curl multi-handler exception class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -25,18 +23,4 @@ use Pop\Http\AbstractResponse;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-class Response extends AbstractResponse
-{
-
-    /**
-     * Factory method to create a Response object
-     *
-     * @param  array $config
-     * @return Response
-     */
-    public static function create(array $config = []): Response
-    {
-        return new self($config);
-    }
-
-}
+class Exception extends \Exception {}

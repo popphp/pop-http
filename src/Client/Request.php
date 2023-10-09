@@ -59,6 +59,17 @@ class Request extends AbstractRequest
     protected ?string $formType = null;
 
     /**
+     * Factory method to create a Request object
+     *
+     * @param  mixed $filters
+     * @return Request
+     */
+    public static function create(mixed $filters = null): Request
+    {
+        return new self($filters);
+    }
+
+    /**
      * Set a field
      *
      * @param  string $name
