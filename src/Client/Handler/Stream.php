@@ -315,8 +315,6 @@ class Stream extends AbstractHandler
             $this->contextOptions['http']['content'] = $request->getBodyContent();
         }
 
-
-
         return $this;
     }
 

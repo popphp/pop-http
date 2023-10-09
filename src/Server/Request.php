@@ -66,12 +66,12 @@ class Request extends AbstractRequest
      *
      * Instantiate the request object
      *
-     * @param  ?Uri  $uri
-     * @param  mixed $filters
-     * @param  mixed $streamToFile
-     * @throws Exception
+     * @param  Uri|string|null $uri
+     * @param  mixed           $filters
+     * @param  mixed           $streamToFile
+     * @throws Exception|\Pop\Http\Exception
      */
-    public function __construct(?Uri $uri = null, mixed $filters = null, mixed $streamToFile = null)
+    public function __construct(Uri|string|null $uri = null, mixed $filters = null, mixed $streamToFile = null)
     {
         parent::__construct($uri);
 
@@ -117,6 +117,7 @@ class Request extends AbstractRequest
      * @param  ?Uri  $uri
      * @param  mixed $filters
      * @param  mixed $streamToFile
+     * @throws Exception|\Pop\Http\Exception
      * @return Request
      */
     public static function create(?Uri $uri = null, mixed $filters = null, mixed $streamToFile = null): Request

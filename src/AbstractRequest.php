@@ -37,9 +37,10 @@ abstract class AbstractRequest extends AbstractRequestResponse
      *
      * Instantiate the request object
      *
-     * @param  ?Uri $uri
+     * @param  Uri|string|null $uri
+     * @throws Exception
      */
-    public function __construct(?Uri $uri = null)
+    public function __construct(Uri|string|null $uri = null)
     {
         if ($uri !== null) {
             $this->setUri($uri);
@@ -49,12 +50,13 @@ abstract class AbstractRequest extends AbstractRequestResponse
     /**
      * Set URI
      *
-     * @param  Uri $uri
+     * @param  Uri|string $uri
+     * @throws Exception
      * @return AbstractRequest
      */
-    public function setUri(Uri $uri): AbstractRequest
+    public function setUri(Uri|string $uri): AbstractRequest
     {
-        $this->uri = $uri;
+        $this->uri = (is_string($uri)) ? new Uri($uri) : $uri;
         return $this;
     }
 

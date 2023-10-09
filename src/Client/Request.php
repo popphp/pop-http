@@ -52,12 +52,13 @@ class Request extends AbstractRequest
      *
      * Instantiate the request data object
      *
-     * @param ?Uri            $uri
-     * @param string          $method
-     * @param array|Data|null $data
-     * @param ?string         $type
+     * @param  Uri|string|null $uri
+     * @param  string          $method
+     * @param  array|Data|null $data
+     * @param  ?string         $type
+     * @throws Exception
      */
-    public function __construct(?Uri $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null)
+    public function __construct(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null)
     {
         parent::__construct($uri);
 
@@ -75,10 +76,11 @@ class Request extends AbstractRequest
     /**
      * Factory method to create a Request object
      *
-     * @param ?Uri $uri
-     * @param string $method
-     * @param array|Data|null $data
-     * @param ?string $type
+     * @param  ?Uri $uri
+     * @param  string $method
+     * @param  array|Data|null $data
+     * @param  ?string $type
+     * @throws Exception
      * @return Request
      */
     public static function create(?Uri $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null): Request

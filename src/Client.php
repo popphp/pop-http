@@ -245,7 +245,7 @@ class Client extends AbstractHttp
      *
      * @param  ?string $uri
      * @param  string  $method
-     * @throws Exception
+     * @throws Exception|Client\Exception
      * @return Response
      */
     public function send(?string $uri = null, string $method = 'GET'): Response
@@ -272,7 +272,9 @@ class Client extends AbstractHttp
             $this->setHandler(new Client\Handler\Curl());
         }
 
-        return $this->handler->prepare($this->request, $this->auth)->send();
+        $this->response = $this->handler->prepare($this->request, $this->auth)->send();
+
+        return $this->response;
     }
 
     /**
