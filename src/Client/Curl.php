@@ -14,6 +14,7 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\Parser;
+use Pop\Http\Promise\Promise;
 use Pop\Mime\Message;
 
 /**
@@ -311,6 +312,16 @@ class Curl extends AbstractClient
         }
 
         $this->parseResponse($response);
+    }
+
+    /**
+     * Method to send the request asynchronously
+     *
+     * @return Promise
+     */
+    public function sendAsync(): Promise
+    {
+        return new Promise($this);
     }
 
     /**

@@ -15,6 +15,7 @@ namespace Pop\Http\Client;
 
 use Pop\Http\Auth;
 use Pop\Http\Parser;
+use Pop\Http\Promise\Promise;
 use Pop\Mime\Part\Body;
 
 /**
@@ -302,13 +303,8 @@ abstract class AbstractClient implements ClientInterface
     {
         $parsedResponse = null;
 
-        if (($this->hasResponse()) && ($this->getResponse()->hasBody()) && ($this->getResponse()->hasHeader('Content-Type')) &&
-            (count($this->getResponse()->getHeader('Content-Type')->getValues()) == 1)) {
-            $rawResponse     = $this->getResponse()->getBody()->getContent();
-            $contentType     = $this->getResponse()->getHeader('Content-Type')->getValue(0);
-            $contentEncoding = ($this->getResponse()->hasHeader('Content-Encoding') && (count($this->getResponse()->getHeader('Content-Encoding')->getValues()) == 1)) ?
-                $this->getResponse()->getHeader('Content-Encoding')->getValue(0) : null;
-            $parsedResponse  = Parser::parseDataByContentType($rawResponse, $contentType, $contentEncoding);
+        if ($this->hasResponse()) {
+            $parsedResponse = $this->response->getParsedResponse();
         }
 
         return $parsedResponse;
@@ -655,11 +651,61 @@ abstract class AbstractClient implements ClientInterface
     /**
      * Get the response code
      *
-     * @return string
+     * @return int
      */
-    public function getResponseCode(): string
+    public function getResponseCode(): int
     {
         return $this->getResponse()->getCode();
+    }
+
+    /**
+     * Get the response message
+     *
+     * @return string
+     */
+    public function getResponseMessage(): string
+    {
+        return $this->getResponse()->getMessage();
+    }
+
+    /**
+     * Determine if the request is complete
+     *
+     * @return bool
+     */
+    public function isComplete(): bool
+    {
+        return $this->hasResponse();
+    }
+
+    /**
+     * Determine if the request is a success
+     *
+     * @return bool|null
+     */
+    public function isSuccess(): bool|null
+    {
+        if ($this->hasResponse()) {
+            $type = floor($this->getResponse()->getCode() / 100);
+            return (($type == 1) || ($type == 2) || ($type == 3));
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Determine if the request is an error
+     *
+     * @return bool|null
+     */
+    public function isError(): bool|null
+    {
+        if ($this->hasResponse()) {
+            $type = floor($this->getResponse()->getCode() / 100);
+            return (($type == 4) || ($type == 5));
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -687,6 +733,13 @@ abstract class AbstractClient implements ClientInterface
      * @return void
      */
     abstract public function send(): void;
+
+    /**
+     * Method to send the request asynchronously
+     *
+     * @return Promise
+     */
+    abstract public function sendAsync(): Promise;
 
     /**
      * Method to reset the client object

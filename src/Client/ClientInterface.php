@@ -14,6 +14,7 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\Auth;
+use Pop\Http\Promise\Promise;
 use Pop\Mime\Part\Body;
 
 /**
@@ -384,9 +385,37 @@ interface ClientInterface
     /**
      * Get the response code
      *
+     * @return int
+     */
+    public function getResponseCode(): int;
+
+    /**
+     * Get the response message
+     *
      * @return string
      */
-    public function getResponseCode(): string;
+    public function getResponseMessage(): string;
+
+    /**
+     * Determine if the request is complete
+     *
+     * @return bool
+     */
+    public function isComplete(): bool;
+
+    /**
+     * Determine if the request is a success
+     *
+     * @return bool|null
+     */
+    public function isSuccess(): bool|null;
+
+    /**
+     * Determine if the request is an error
+     *
+     * @return bool|null
+     */
+    public function isError(): bool|null;
 
     /**
      * Throw an exception upon an error.
@@ -410,6 +439,13 @@ interface ClientInterface
      * @return void
      */
     public function send(): void;
+
+    /**
+     * Method to send the request asynchronously
+     *
+     * @return Promise
+     */
+    public function sendAsync(): Promise;
 
     /**
      * Method to reset the client object

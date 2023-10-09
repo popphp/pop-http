@@ -14,6 +14,7 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\Parser;
+use Pop\Http\Promise\Promise;
 use Pop\Mime\Message;
 
 /**
@@ -418,10 +419,29 @@ class Stream extends AbstractClient
      */
     public function send(bool $clear = true): void
     {
+        $this->open($clear);
+        $this->parseResponse();
+    }
+
+    /**
+     * Method to send the request asynchronously
+     *
+     * @return Promise
+     */
+    public function sendAsync(): Promise
+    {
+        return new Promise($this);
+    }
+
+    /**
+     * Parse the response
+     *
+     * @return void
+     */
+    public function parseResponse(): void
+    {
         $headers = [];
         $body    = null;
-
-        $this->open($clear);
 
         if ($this->response === null) {
             $this->response = new Response();
@@ -441,7 +461,9 @@ class Stream extends AbstractClient
         $this->response->setCode($parsedHeaders['code']);
         $this->response->setMessage($parsedHeaders['message']);
         $this->response->addHeaders($parsedHeaders['headers']);
-        $this->response->setBody($body);
+        if ($body !== null) {
+            $this->response->setBody($body);
+        }
 
         if ($this->response->hasHeader('Content-Encoding')) {
             $this->response->decodeBodyContent();
