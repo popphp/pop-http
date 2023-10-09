@@ -26,4 +26,61 @@ namespace Pop\Http;
 class Server extends AbstractHttp
 {
 
+    /**
+     * Instantiate the server object
+     *
+     * @param ?Server\Request   $request
+     * @param ?Server\Response  $response
+     */
+    public function __construct(
+        ?Server\Request $request = new Server\Request(), ?Server\Response $response = new Server\Response()
+    )
+    {
+        parent::__construct($request, $response);
+    }
+
+    /**
+     * Get the response headers as a string
+     *
+     * @param  mixed  $status
+     * @param  string $eol
+     * @return string
+     */
+    public function getHeadersAsString(mixed $status = null, string $eol = "\r\n"): string
+    {
+        return $this->response->getHeadersAsString($status, $eol);
+    }
+
+    /**
+     * Send response headers
+     *
+     * @throws Exception
+     * @return void
+     */
+    public function sendHeaders(): void
+    {
+        $this->response->sendHeaders();
+    }
+
+    /**
+     * Send the server response
+     *
+     * @return void
+     */
+    public function send(?int $code = null, ?array $headers = null, bool $length = false): void
+    {
+        $this->response->send($code, $headers, $length);
+    }
+
+
+    /**
+     * Send the server response and exit
+     *
+     * @return void
+     */
+    public function sendAndExit(?int $code = null, ?array $headers = null, bool $length = false): void
+    {
+        $this->response->sendAndExit($code, $headers, $length);
+    }
+
 }

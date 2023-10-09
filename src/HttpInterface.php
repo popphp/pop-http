@@ -70,4 +70,9 @@ interface HttpInterface
      */
     public function hasResponse(): bool;
 
+    /**
+     * Send the request/response
+     */
+    public function send();
+
 }

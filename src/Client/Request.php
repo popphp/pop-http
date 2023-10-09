@@ -28,6 +28,13 @@ use Pop\Http\AbstractRequest;
  */
 class Request extends AbstractRequest
 {
+
+    /**
+     * Request method
+     * @var ?string
+     */
+    protected ?string $method = null;
+
     /**
      * Client request data object
      * @var ?Data
@@ -45,67 +52,93 @@ class Request extends AbstractRequest
      *
      * Instantiate the request data object
      *
-     * @param ?Uri $uri
-     * @param ?Data $data
-     * @param ?string $type
+     * @param ?Uri            $uri
+     * @param string          $method
+     * @param array|Data|null $data
+     * @param ?string         $type
      */
-    public function __construct(?Uri $uri = null, ?Data $data = null, ?string $type = null)
+    public function __construct(?Uri $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null)
     {
         parent::__construct($uri);
 
+        if ($method !== null) {
+            $this->setMethod($method);
+        }
         if ($data !== null) {
             $this->setData($data);
         }
         if ($type !== null) {
-            switch ($type) {
-                case 'application/json':
-                    $this->createAsJson();
-                    break;
-                case 'application/xml':
-                    $this->createAsXml();
-                    break;
-                case 'application/x-www-form-urlencoded':
-                    $this->createUrlEncodedForm();
-                    break;
-                case 'multipart/form-data':
-                    $this->createMultipartForm();
-                    break;
-            }
+            $this->setType($type);
         }
     }
 
     /**
      * Factory method to create a Request object
      *
-     * @param  ?Uri $uri
-     * @param  ?Data $data
+     * @param ?Uri $uri
+     * @param string $method
+     * @param array|Data|null $data
+     * @param ?string $type
      * @return Request
      */
-    public static function create(?Uri $uri = null, ?Data $data = null, ?string $type = null): Request
+    public static function create(?Uri $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null): Request
     {
-        return new self($uri, $data);
+        return new self($uri, $method, $data, $type);
+    }
+
+    /**
+     * Set method
+     *
+     * @param  string $method
+     * @param  bool   $strict
+     * @throws Exception
+     * @return Request
+     */
+    public function setMethod(string $method, bool $strict = true): Request
+    {
+        $method = strtoupper($method);
+
+        if ($strict) {
+            if (!$this->isValidMethod($method)) {
+                throw new Exception('Error: That request method is not valid.');
+            }
+        }
+
+        $this->method = $method;
+        return $this;
+    }
+
+    /**
+     * Get method
+     *
+     * @return string
+     */
+    public function getMethod(): string
+    {
+        return $this->method;
     }
 
     /**
      * Set data
      *
-     * @param  Data $data
+     * @param  array|Data $data
      * @return Request
      */
-    public function setData(Data $data): Request
+    public function setData(array|Data $data): Request
     {
-        $this->data = $data;
+        $this->data = (is_array($data)) ? new Data($data) : $data;
         return $this;
     }
 
     /**
      * Get data
      *
-     * @return Uri
+     * @param  bool $asArray
+     * @return Data|array
      */
-    public function getData(): Data
+    public function getData(bool $asArray = false): Data|array
     {
-        return $this->data;
+        return ($asArray) ? $this->data->getData() : $this->data;
     }
 
     /**
@@ -116,6 +149,30 @@ class Request extends AbstractRequest
     public function hasData(): bool
     {
         return ($this->data !== null);
+    }
+
+    /**
+     * Set request type
+     *
+     * @param  string $type
+     * @return Request
+     */
+    public function setType(string $type): Request
+    {
+        switch ($type) {
+            case 'application/json':
+                $this->createAsJson();
+                break;
+            case 'application/xml':
+                $this->createAsXml();
+                break;
+            case 'application/x-www-form-urlencoded':
+                $this->createUrlEncodedForm();
+                break;
+            case 'multipart/form-data':
+                $this->createMultipartForm();
+                break;
+        }
     }
 
     /**
@@ -167,7 +224,7 @@ class Request extends AbstractRequest
      *
      * @return bool
      */
-    public function isXml()
+    public function isXml(): bool
     {
         return ($this->requestType == 'application/xml');
     }
@@ -228,6 +285,39 @@ class Request extends AbstractRequest
     public function getRequestType(): string
     {
         return $this->requestType;
+    }
+
+    /**
+     * Is valid method
+     *
+     * @param  string $method
+     * @return bool
+     */
+    public function isValidMethod(string $method): bool
+    {
+        return in_array(strtoupper($method), ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE']);
+    }
+
+    /**
+     * Magic method to check the is[Method](), i.e. $request->isPost();
+     *
+     * @param  string $methodName
+     * @param  ?array $arguments
+     * @throws Exception
+     * @return bool
+     */
+    public function __call(string $methodName, ?array $arguments = null): bool
+    {
+        if (str_starts_with($methodName, 'is')) {
+            $method = strtoupper(substr($methodName, 2));
+            if ($this->isValidMethod($method)) {
+                return ($this->method == $method);
+            } else {
+                throw new Exception('Error: That request method is not valid.');
+            }
+        } else {
+            throw new Exception('Error: That method/function is not valid.');
+        }
     }
 
 }

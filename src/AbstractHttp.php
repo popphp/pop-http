@@ -39,6 +39,22 @@ abstract class AbstractHttp implements HttpInterface
     protected ?RequestResponseInterface $response = null;
 
     /**
+     * Instantiate the HTTP object
+     *
+     * @param  ?RequestResponseInterface $request
+     * @param  ?RequestResponseInterface $response
+     */
+    public function __construct(?RequestResponseInterface $request = null, ?RequestResponseInterface $response = null)
+    {
+        if ($request !== null) {
+            $this->setRequest($request);
+        }
+        if ($response !== null) {
+            $this->setResponse($response);
+        }
+    }
+
+    /**
      * Set the request
      *
      * @param  RequestResponseInterface $request
@@ -101,5 +117,10 @@ abstract class AbstractHttp implements HttpInterface
     {
         return ($this->response !== null);
     }
+
+    /**
+     * Send the request/response
+     */
+    abstract public function send();
 
 }

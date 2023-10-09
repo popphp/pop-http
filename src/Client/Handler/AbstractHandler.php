@@ -18,7 +18,7 @@ use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
 
 /**
- * HTTP client curl multi handler class
+ * HTTP client handler interface
  *
  * @category   Pop
  * @package    Pop\Http
@@ -27,27 +27,43 @@ use Pop\Http\Client\Response;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-class CurlMulti extends AbstractCurl
+abstract class AbstractHandler implements HandlerInterface
 {
 
     /**
-     * Get info about the Curl multi-handler
-     *
-     * @return array|false
+     * Client resource object
+     * @var mixed
      */
-    public function getInfo(): array|false
+    protected mixed $resource = null;
+
+    /**
+     * Determine whether or not resource is available
+     *
+     * @return bool
+     */
+    public function hasResource(): bool
     {
-        return curl_multi_info_read($this->resource);
+        return ($this->resource !== null);
     }
 
     /**
-     * Set a wait time until there is any activity on a connection
+     * Get the resource
      *
-     * @return int
+     * @return mixed
      */
-    public function setWait(float $timeout = 1.0): int
+    public function getResource(): mixed
     {
-        return curl_multi_select($this->resource, $timeout);
+        return $this->resource;
+    }
+
+    /**
+     * Get the resource (alias method)
+     *
+     * @return mixed
+     */
+    public function resource(): mixed
+    {
+        return $this->resource;
     }
 
     /**
@@ -55,52 +71,34 @@ class CurlMulti extends AbstractCurl
      *
      * @param  Request $request
      * @param  ?Auth   $auth
-     * @return CurlMulti
+     * @return AbstractHandler
      */
-    public function prepare(Request $request, ?Auth $auth = null): CurlMulti
-    {
-        return $this;
-    }
+    abstract public function prepare(Request $request, ?Auth $auth = null): AbstractHandler;
 
     /**
-     * Method to send the multiple Curl connections
-     *
-     * @param  ?int $active
-     * @return int
+     * Method to send the request
      */
-    public function send(?int &$active = null): int
-    {
-        return curl_multi_exec($this->resource, $active);
-    }
+    abstract public function send();
 
     /**
      * Parse the response
      *
      * @return Response
      */
-    public function parseResponse(): Response
-    {
-
-    }
+    abstract public function parseResponse(): Response;
 
     /**
      * Method to reset the handler
      *
-     * @return CurlMulti
+     * @return AbstractHandler
      */
-    public function reset(): CurlMulti
-    {
-        return $this;
-    }
+    abstract public function reset(): AbstractHandler;
 
     /**
      * Close the handler connection
      *
      * @return void
      */
-    public function disconnect(): void
-    {
-
-    }
+    abstract public function disconnect(): void;
 
 }

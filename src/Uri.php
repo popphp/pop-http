@@ -170,7 +170,7 @@ class Uri
      */
     public function getHost(): string
     {
-        return $this->scheme;
+        return $this->host;
     }
 
     /**
@@ -501,8 +501,10 @@ class Uri
      */
     public function setUri(?string $uri = null, ?string $basePath = null): Uri
     {
+        $isServerRequest = false;
         if (($uri === null) && isset($_SERVER['REQUEST_URI'])) {
             $uri = $_SERVER['REQUEST_URI'];
+            $isServerRequest = true;
         }
 
         if (!empty($basePath)) {
@@ -519,22 +521,22 @@ class Uri
 
         // Some slash clean up
         $this->uri = $uri;
-        $docRoot   = (isset($_SERVER['DOCUMENT_ROOT'])) ? str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']) : null;
-        $dir       = str_replace('\\', '/', getcwd());
 
-        if (($dir != $docRoot) && (strlen($dir) > strlen($docRoot))) {
-            $realBasePath = str_replace($docRoot, '', $dir);
-            if (str_starts_with($uri, $realBasePath)) {
-                $this->uri = substr($uri, strlen($realBasePath));
+        if ($isServerRequest) {
+            $docRoot = (isset($_SERVER['DOCUMENT_ROOT'])) ? str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']) : null;
+            $dir     = str_replace('\\', '/', getcwd());
+
+            if (($dir != $docRoot) && (strlen($dir) > strlen($docRoot))) {
+                $realBasePath = str_replace($docRoot, '', $dir);
+                if (str_starts_with($uri, $realBasePath)) {
+                    $this->uri = substr($uri, strlen($realBasePath));
+                }
             }
+
+            $this->basePath = ($basePath === null) ? str_replace($docRoot, '', $dir) : $basePath;
         }
 
-        $this->basePath = ($basePath === null) ? str_replace($docRoot, '', $dir) : $basePath;
-
-        if (str_contains($this->uri, '?')) {
-            $this->uri = substr($this->uri, 0, strpos($this->uri, '?'));
-        }
-
+        // Get segments
         if (($this->uri != '/') && (str_contains($this->uri, '/'))) {
             $uri = (str_starts_with($this->uri, '/')) ? substr($this->uri, 1) : $this->uri;
             $this->segments = explode('/', $uri);

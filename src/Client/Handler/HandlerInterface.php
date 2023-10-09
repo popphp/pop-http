@@ -18,7 +18,7 @@ use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
 
 /**
- * HTTP client curl multi handler class
+ * HTTP client handler interface
  *
  * @category   Pop
  * @package    Pop\Http
@@ -27,80 +27,63 @@ use Pop\Http\Client\Response;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-class CurlMulti extends AbstractCurl
+interface HandlerInterface
 {
 
     /**
-     * Get info about the Curl multi-handler
+     * Determine whether or not resource is available
      *
-     * @return array|false
+     * @return bool
      */
-    public function getInfo(): array|false
-    {
-        return curl_multi_info_read($this->resource);
-    }
+    public function hasResource(): bool;
 
     /**
-     * Set a wait time until there is any activity on a connection
+     * Get the resource
      *
-     * @return int
+     * @return mixed
      */
-    public function setWait(float $timeout = 1.0): int
-    {
-        return curl_multi_select($this->resource, $timeout);
-    }
+    public function getResource(): mixed;
+
+    /**
+     * Get the resource (alias method)
+     *
+     * @return mixed
+     */
+    public function resource(): mixed;
 
     /**
      * Method to prepare the handler
      *
      * @param  Request $request
      * @param  ?Auth   $auth
-     * @return CurlMulti
+     * @return HandlerInterface
      */
-    public function prepare(Request $request, ?Auth $auth = null): CurlMulti
-    {
-        return $this;
-    }
+    public function prepare(Request $request, ?Auth $auth = null): HandlerInterface;
 
     /**
-     * Method to send the multiple Curl connections
-     *
-     * @param  ?int $active
-     * @return int
+     * Method to send the request
      */
-    public function send(?int &$active = null): int
-    {
-        return curl_multi_exec($this->resource, $active);
-    }
+    public function send();
 
     /**
      * Parse the response
      *
      * @return Response
      */
-    public function parseResponse(): Response
-    {
-
-    }
+    public function parseResponse(): Response;
 
     /**
      * Method to reset the handler
      *
-     * @return CurlMulti
+     * @return HandlerInterface
      */
-    public function reset(): CurlMulti
-    {
-        return $this;
-    }
+    public function reset(): HandlerInterface;
 
     /**
      * Close the handler connection
      *
      * @return void
      */
-    public function disconnect(): void
-    {
-
-    }
+    public function disconnect(): void;
 
 }

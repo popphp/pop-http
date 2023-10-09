@@ -161,9 +161,10 @@ class Data
     /**
      * Prepare the query string
      *
+     * @param  bool $withQuestionMark
      * @return string|null
      */
-    public function prepareQueryString(): string|null
+    public function prepareQueryString(bool $withQuestionMark = false): string|null
     {
         if (!empty($this->data)) {
             if ($this->hasFilters()) {
@@ -174,7 +175,7 @@ class Data
             $this->queryString = null;
         }
 
-        return $this->queryString;
+        return ($withQuestionMark) ? '?' . $this->queryString : $this->queryString;
     }
 
     /**
