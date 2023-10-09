@@ -70,6 +70,27 @@ class Stream extends AbstractHandler
     protected ?array $httpResponseHeaders = null;
 
     /**
+     * Constructor
+     *
+     * Instantiate the stream handler object
+     *
+     * @param string $mode
+     * @param array $options
+     * @param array $params
+     */
+    public function __construct(string $mode = 'r', array $options = [], array $params = [])
+    {
+        $this->setMode($mode);
+
+        if (count($options) > 0) {
+            $this->setContextOptions($options);
+        }
+        if (count($params) > 0) {
+            $this->setContextParams($params);
+        }
+    }
+
+    /**
      * Return stream resource (alias to $this->getResource())
      *
      * @return mixed

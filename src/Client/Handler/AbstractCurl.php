@@ -41,7 +41,7 @@ abstract class AbstractCurl extends AbstractHandler
     /**
      * Constructor
      *
-     * Instantiate the Curl multi-handler object
+     * Instantiate the Curl handler object
      *
      * @param  ?array $opts
      * @throws Exception

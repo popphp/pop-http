@@ -13,9 +13,6 @@
  */
 namespace Pop\Http;
 
-use Pop\Http;
-use Pop\Http\Server\Response;
-use Pop\Http\Client\Stream;
 use Pop\Mime\Message;
 use Pop\Mime\Part\Header;
 
@@ -151,21 +148,23 @@ class Parser
      * @param  string $mode
      * @param  array  $options
      * @param  array  $params
-     * @return Response
+     * @throws Client\Exception|Exception
+     * @return Server\Response
      */
     public static function parseResponseFromUri(
         string $uri, string $method = 'GET', string $mode = 'r', array $options = [], array $params = []
-    ): Response
+    ): Server\Response
     {
-        $client = new Stream($uri, $method, $mode, $options, $params);
-        $client->send(false);
+        $request  = new Client\Request($uri, $method);
+        $handler  = new Client\Handler\Stream($mode, $options, $params);
+        $response = $handler->prepare($request, null, false)->send();
 
-        return new Response([
-            'code'    => $client->response()->getCode(),
-            'headers' => $client->response()->getHeaders(),
-            'body'    => $client->response()->getBody(),
-            'message' => $client->response()->getMessage(),
-            'version' => $client->response()->getVersion()
+        return new Server\Response([
+            'code'    => $response->getCode(),
+            'headers' => $response->getHeaders(),
+            'body'    => $response->getBody(),
+            'message' => $response->getMessage(),
+            'version' => $response->getVersion()
         ]);
     }
 
@@ -173,9 +172,9 @@ class Parser
      * Parse a response from a full response string
      *
      * @param  string $responseString
-     * @return Response
+     * @return Server\Response
      */
-    public static function parseResponseFromString(string $responseString): Response
+    public static function parseResponseFromString(string $responseString): Server\Response
     {
         $headerString  = substr($responseString, 0, strpos($responseString, "\r\n\r\n"));
         $bodyString    = substr($responseString, (strpos($responseString, "\r\n\r\n") + 4));
@@ -190,7 +189,7 @@ class Parser
             $body     = $bodyString;
         }
 
-        return new Response([
+        return new Server\Response([
             'code'    => $parsedHeaders['code'],
             'headers' => $parsedHeaders['headers'],
             'body'    => $body,
