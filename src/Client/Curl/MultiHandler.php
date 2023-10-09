@@ -174,16 +174,18 @@ class MultiHandler
      */
     public function addRequest(Client\Curl|CurlHandle $curlRequest, ?string $name = null): MultiHandler
     {
-        if ($curlRequest instanceof Client\Curl) {
-            $curlRequest = $curlRequest->resource();
-        }
-        curl_multi_add_handle($this->resource, $curlRequest);
-
         if ($name !== null) {
             $this->requests[$name] = $curlRequest;
         } else {
             $this->requests[] = $curlRequest;
         }
+
+        if ($curlRequest instanceof Client\Curl) {
+            $curlRequest->open();
+            $curlRequest = $curlRequest->resource();
+        }
+
+        curl_multi_add_handle($this->resource, $curlRequest);
 
         return $this;
     }
@@ -235,8 +237,6 @@ class MultiHandler
      */
     public function removeRequest(Client\Curl|CurlHandle $curlRequest, ?string $name = null): MultiHandler
     {
-        curl_multi_remove_handle($this->resource, $curlRequest->resource());
-
         if (($name !== null) && isset($this->requests[$name])) {
             unset($this->requests[$name]);
         } else {
@@ -247,11 +247,17 @@ class MultiHandler
             }
         }
 
+        if ($curlRequest instanceof Client\Curl) {
+            $curlRequest = $curlRequest->resource();
+        }
+
+        curl_multi_remove_handle($this->resource, $curlRequest);
+
         return $this;
     }
 
     /**
-     * Get Curl request
+     * Get Curl request content
      *
      * @param  string|Client\Curl|CurlHandle $curlRequest
      * @return mixed
@@ -270,6 +276,24 @@ class MultiHandler
     }
 
     /**
+     * Process Curl response content
+     *
+     * @param  string|Client\Curl|CurlHandle $curlRequest
+     * @return mixed
+     */
+    public function processResponse(string|Client\Curl|CurlHandle $curlRequest): mixed
+    {
+        $response = $this->getRequestContent($curlRequest);
+
+        if ($curlRequest instanceof Client\Curl) {
+            $curlRequest->parseResponse($response);
+            return $curlRequest;
+        } else {
+            return $response;
+        }
+    }
+
+    /**
      * Get info about the Curl multi-handler
      *
      * @return array
@@ -282,9 +306,9 @@ class MultiHandler
     /**
      * Set a wait time until there is any activity on a connection
      *
-     * @return mixed
+     * @return int
      */
-    public function setWait(float $timeout = 1.0): mixed
+    public function setWait(float $timeout = 1.0): int
     {
         return curl_multi_select($this->resource, $timeout);
     }

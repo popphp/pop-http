@@ -310,6 +310,17 @@ class Curl extends AbstractClient
             $this->throwError('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
         }
 
+        $this->parseResponse($response);
+    }
+
+    /**
+     * Parse the response
+     *
+     * @param  string $response
+     * @return void
+     */
+    public function parseResponse(string $response): void
+    {
         if ($this->response === null) {
             $this->response = new Response();
         }
