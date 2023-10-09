@@ -13,7 +13,9 @@ class StreamTest extends TestCase
     public function testConstructor()
     {
         $client = new Stream('http://localhost/', 'GET', 'r', ['http' => ['user_agent' => 'Mozilla']], ['foo' => 'bar']);
+        $client2 = Stream::create('http://localhost/', 'GET', 'r', ['http' => ['user_agent' => 'Mozilla']], ['foo' => 'bar']);
         $this->assertInstanceOf('Pop\Http\Client\Stream', $client);
+        $this->assertInstanceOf('Pop\Http\Client\Stream', $client2);
         $this->assertEquals('GET', $client->getContextOption('http')['method']);
         $this->assertEquals('r', $client->getMode());
         $client->send();

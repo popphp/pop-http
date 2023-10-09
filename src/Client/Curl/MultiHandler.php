@@ -219,6 +219,16 @@ class MultiHandler
     }
 
     /**
+     * Has Curl request
+     *
+     * @return bool
+     */
+    public function hasRequest(string $name): bool
+    {
+        return isset($this->requests[$name]);
+    }
+
+    /**
      * Get Curl requests
      *
      * @return array
@@ -231,20 +241,24 @@ class MultiHandler
     /**
      * Remove Curl request
      *
-     * @param  Client\Curl|CurlHandle $curlRequest
-     * @param  ?string     $name
+     * @param  ?string $name
+     * @param  Client\Curl|CurlHandle|null $curlRequest
+     * @throws Exception
      * @return MultiHandler
      */
-    public function removeRequest(Client\Curl|CurlHandle $curlRequest, ?string $name = null): MultiHandler
+    public function removeRequest(?string $name = null, Client\Curl|CurlHandle|null $curlRequest = null): MultiHandler
     {
         if (($name !== null) && isset($this->requests[$name])) {
+            $curlRequest = $this->requests[$name];
             unset($this->requests[$name]);
-        } else {
+        } else if ($curlRequest !== null) {
             foreach ($this->requests as $i => $request) {
                 if ($request == $curlRequest) {
                     unset($this->requests[$i]);
                 }
             }
+        } else {
+            throw new Exception('Error: You must pass at least a name or request parameter.');
         }
 
         if ($curlRequest instanceof Client\Curl) {
@@ -296,9 +310,9 @@ class MultiHandler
     /**
      * Get info about the Curl multi-handler
      *
-     * @return array
+     * @return array|false
      */
-    public function getInfo(): array
+    public function getInfo(): array|false
     {
         return curl_multi_info_read($this->resource);
     }
@@ -351,7 +365,7 @@ class MultiHandler
      */
     public function getErrorMessage(): string
     {
-        return curl_multi_strerror($this->resource);
+        return curl_multi_strerror(curl_multi_errno($this->resource));
     }
 
     /**

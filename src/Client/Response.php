@@ -28,15 +28,4 @@ use Pop\Http\AbstractResponse;
 class Response extends AbstractResponse
 {
 
-    /**
-     * Factory method to create a Response object
-     *
-     * @param  array $config
-     * @return Response
-     */
-    public static function create(array $config = []): Response
-    {
-        return new self($config);
-    }
-
 }

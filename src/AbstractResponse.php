@@ -156,6 +156,17 @@ abstract class AbstractResponse extends AbstractHttp
     }
 
     /**
+     * Factory method to create a Response object
+     *
+     * @param  array $config
+     * @return static
+     */
+    public static function create(array $config = []): static
+    {
+        return new static($config);
+    }
+
+    /**
      * Set the response version
      *
      * @param  float|string $version

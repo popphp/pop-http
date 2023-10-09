@@ -16,8 +16,12 @@ class CurlTest extends TestCase
         $client = new Curl('http://localhost/', 'POST', [
             CURLOPT_POST => true
         ]);
+        $client2 = Curl::create('http://localhost/', 'POST', [
+            CURLOPT_POST => true
+        ]);
         $client->setField('foo', 'bar');
         $this->assertInstanceOf('Pop\Http\Client\Curl', $client);
+        $this->assertInstanceOf('Pop\Http\Client\Curl', $client2);
         $this->assertEquals('POST', $client->getMethod());
         $this->assertEquals('http://localhost/', $client->getUrl());
         $this->assertEquals('bar', $client->getField('foo'));
@@ -213,9 +217,11 @@ XML;
         $client->createMultipartForm();
         $client->setOption(CURLOPT_POSTFIELDS, true);
 
+        $this->assertEquals('admin', $client->getField('username'));
+
         $client->reset();
 
-        $this->assertFalse($client->hasOption(CURLOPT_POSTFIELDS));
+        $this->assertNull($client->getField('username'));
     }
 
 }

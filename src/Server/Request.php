@@ -119,6 +119,20 @@ class Request extends AbstractRequest
         }
     }
 
+
+    /**
+     * Factory to create a new request object
+     *
+     * @param  ?string $uri
+     * @param  ?string $basePath
+     * @param  mixed   $filters
+     * @param  mixed   $streamToFile
+     */
+    public static function create(?string $uri = null, ?string $basePath = null, mixed $filters = null, mixed $streamToFile = null)
+    {
+        return new self($uri, $basePath, $filters, $streamToFile);
+    }
+
     /**
      * Set the auth object
      *
