@@ -15,6 +15,7 @@ namespace Pop\Http\Promise;
 
 use Pop\Http\Client;
 use Pop\Http\Client\Response;
+use Pop\Utils\CallableObject;
 
 /**
  * Abstract HTTP promise class
@@ -44,10 +45,28 @@ abstract class AbstractPromise implements PromiseInterface
     protected ?Client $client = null;
 
     /**
-     * Current state
-     * @var ?string
+     * Success callable
+     * @var ?CallableObject
      */
-    protected ?string $state = null;
+    protected ?CallableObject $onSuccess = null;
+
+    /**
+     * Failure callable
+     * @var ?CallableObject
+     */
+    protected ?CallableObject $onFailure = null;
+
+    /**
+     * Cancel callable
+     * @var ?CallableObject
+     */
+    protected ?CallableObject $onCancel = null;
+
+    /**
+     * Current state
+     * @var string
+     */
+    protected string $state = self::PENDING;
 
     /**
      * Method to set client
@@ -79,6 +98,124 @@ abstract class AbstractPromise implements PromiseInterface
     public function hasClient(): bool
     {
         return ($this->client !== null);
+    }
+
+    /**
+     * Method to set success callable
+     *
+     * @param  mixed $onSuccess
+     * @throws Exception
+     * @return AbstractPromise
+     */
+    public function setOnSuccess(mixed $onSuccess): AbstractPromise
+    {
+        if (!($onSuccess instanceof CallableObject) && !is_callable($onSuccess)) {
+            throw new Exception('Error: The success callback must be an instance of CallableObject or a callable');
+        }
+        if (!($onSuccess instanceof CallableObject) && is_callable($onSuccess)) {
+            $onSuccess = new CallableObject($onSuccess);
+        }
+
+        $this->onSuccess = $onSuccess;
+        return $this;
+    }
+
+    /**
+     * Method to get success callable
+     *
+     * @return CallableObject|null
+     */
+    public function getOnSuccess(): CallableObject|null
+    {
+        return $this->onSuccess;
+    }
+
+    /**
+     * Method to check success callable
+     *
+     * @return bool
+     */
+    public function hasOnSuccess(): bool
+    {
+        return ($this->onSuccess !== null);
+    }
+
+    /**
+     * Method to set failure callable
+     *
+     * @param  mixed $onFailure
+     * @return AbstractPromise
+     */
+    public function setOnFailure(mixed $onFailure): AbstractPromise
+    {
+        if (!($onFailure instanceof CallableObject) && !is_callable($onFailure)) {
+            throw new Exception('Error: The failure callback must be an instance of CallableObject or a callable');
+        }
+        if (!($onFailure instanceof CallableObject) && is_callable($onFailure)) {
+            $onFailure = new CallableObject($onFailure);
+        }
+
+        $this->onFailure = $onFailure;
+        return $this;
+    }
+
+    /**
+     * Method to get failure callable
+     *
+     * @return CallableObject|null
+     */
+    public function getOnFailure(): CallableObject|null
+    {
+        return $this->onFailure;
+    }
+
+    /**
+     * Method to check failure callable
+     *
+     * @return bool
+     */
+    public function hasOnFailure(): bool
+    {
+        return ($this->onFailure !== null);
+    }
+
+    /**
+     * Method to set cancel callable
+     *
+     * @param  mixed $onCancel
+     * @return AbstractPromise
+     */
+    public function setOnCancel(mixed $onCancel): AbstractPromise
+    {
+        if (!($onCancel instanceof CallableObject) && !is_callable($onCancel)) {
+            throw new Exception('Error: The cancel callback must be an instance of CallableObject or a callable');
+        }
+        if (!($onCancel instanceof CallableObject) && is_callable($onCancel)) {
+            $onCancel = new CallableObject($onCancel);
+        }
+
+        $this->onCancel = $onCancel;
+        return $this;
+    }
+
+    /**
+     * Method to get cancel callable
+     *
+     * @return CallableObject|null
+     */
+    public function getOnCancel(): CallableObject|null
+    {
+        return $this->onCancel;
+    }
+
+    /**
+     * Method to check cancel callable
+     *
+     * @return bool
+     */
+    public function hasOnCancel(): bool
+    {
+        return ($this->onCancel !== null);
     }
 
     /**
@@ -158,11 +295,13 @@ abstract class AbstractPromise implements PromiseInterface
     /**
      * Then method
      *
-     * @param  callable $onSuccess
-     * @param  callable $onFailure
-     * @return void
+     * @param  mixed $onSuccess
+     * @param  mixed $onFailure
+     * @param  mixed $onCancel
+     * @param  bool  $resolve
+     * @return AbstractPromise
      */
-    abstract public function then(callable $onSuccess, callable $onFailure): void;
+    abstract public function then(mixed $onSuccess, mixed $onFailure, mixed $onCancel = null, bool $resolve = true): AbstractPromise;
 
     /**
      * Resolve method

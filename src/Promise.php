@@ -14,7 +14,7 @@
 namespace Pop\Http;
 
 use Pop\Http\Client\Response;
-use Pop\Utils\CallableObject;
+use Pop\Http\Promise\Exception;
 use ReflectionException;
 
 /**
@@ -78,28 +78,54 @@ class Promise extends Promise\AbstractPromise
     /**
      * Then method
      *
-     * @param  callable $onSuccess
-     * @param  callable $onFailure
-     * @throws Exception|Promise\Exception|ReflectionException|\Pop\Http\Client\Exception|\Pop\Utils\Exception
+     * @param  mixed $onSuccess
+     * @param  mixed $onFailure
+     * @param  mixed $onCancel
+     * @param  bool  $resolve
+     * @return Promise
+     *@throws Exception|Promise\Exception|ReflectionException|\Pop\Http\Client\Exception|\Pop\Utils\Exception|\Pop\Http\Exception
+     */
+    public function then(mixed $onSuccess, mixed $onFailure, mixed $onCancel = null, bool $resolve = true): Promise
+    {
+        $this->setOnSuccess($onSuccess);
+        $this->setOnFailure($onFailure);
+
+        if ($onCancel !== null) {
+            $this->setOnCancel($onCancel);
+        }
+
+        if ($resolve) {
+            $this->resolve();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Resolve method
+     *
+     * @throws Client\Exception|Exception|ReflectionException|\Pop\Utils\Exception|\Pop\Http\Exception
      * @return void
      */
-    public function then(callable $onSuccess, callable $onFailure): void
+    public function resolve(): void
     {
-        $this->setState(self::PENDING);
         $this->client->send();
-
-        $successCallback = new CallableObject($onSuccess);
-        $failureCallback = new CallableObject($onFailure);
 
         if ($this->client->isComplete()) {
             if ($this->client->isSuccess()) {
+                if (!$this->hasOnSuccess()) {
+                    throw new Exception('Error: The success callback has not been set.');
+                }
                 $this->setState(self::FULFILLED);
-                $successCallback->call([
+                $this->onSuccess->call([
                     'response' => $this->client->getResponse()
                 ]);
             } else if ($this->client->isError()) {
+                if (!$this->hasOnFailure()) {
+                    throw new Exception('Error: The success callback has not been set.');
+                }
                 $this->setState(self::REJECTED);
-                $failureCallback->call([
+                $this->onFailure->call([
                     'response' => $this->client->getResponse()
                 ]);
             }
@@ -107,23 +133,20 @@ class Promise extends Promise\AbstractPromise
     }
 
     /**
-     * Resolve method
-     *
-     * @return void
-     */
-    public function resolve(): void
-    {
-
-    }
-
-    /**
      * Cancel method
      *
+     * @throws Exception|ReflectionException|\Pop\Utils\Exception
      * @return void
      */
     public function cancel(): void
     {
-
+        if ($this->getState() !== self::PENDING) {
+            return;
+        }
+        if (!$this->hasOnCancel()) {
+            throw new Exception('Error: The cancel callback has not been set.');
+        }
+        $this->onCancel->call(['promise' => $this]);
     }
 
 }

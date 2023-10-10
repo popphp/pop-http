@@ -15,6 +15,7 @@ namespace Pop\Http\Promise;
 
 use Pop\Http\Client;
 use Pop\Http\Client\Response;
+use Pop\Utils\CallableObject;
 
 /**
  * HTTP promise interface
@@ -50,6 +51,72 @@ interface PromiseInterface
      * @return bool
      */
     public function hasClient(): bool;
+
+    /**
+     * Method to set success callable
+     *
+     * @param  mixed $onSuccess
+     * @return PromiseInterface
+     */
+    public function setOnSuccess(mixed $onSuccess): PromiseInterface;
+
+    /**
+     * Method to get success callable
+     *
+     * @return CallableObject|null
+     */
+    public function getOnSuccess(): CallableObject|null;
+
+    /**
+     * Method to check success callable
+     *
+     * @return bool
+     */
+    public function hasOnSuccess(): bool;
+
+    /**
+     * Method to set failure callable
+     *
+     * @param  mixed $onFailure
+     * @return PromiseInterface
+     */
+    public function setOnFailure(mixed $onFailure): PromiseInterface;
+
+    /**
+     * Method to get failure callable
+     *
+     * @return CallableObject|null
+     */
+    public function getOnFailure(): CallableObject|null;
+
+    /**
+     * Method to check failure callable
+     *
+     * @return bool
+     */
+    public function hasOnFailure(): bool;
+
+    /**
+     * Method to set cancel callable
+     *
+     * @param  mixed $onCancel
+     * @return PromiseInterface
+     */
+    public function setOnCancel(mixed $onCancel): PromiseInterface;
+
+    /**
+     * Method to get cancel callable
+     *
+     * @return CallableObject|null
+     */
+    public function getOnCancel(): CallableObject|null;
+
+    /**
+     * Method to check cancel callable
+     *
+     * @return bool
+     */
+    public function hasOnCancel(): bool;
 
     /**
      * Method to set current state
@@ -105,11 +172,13 @@ interface PromiseInterface
     /**
      * Then method
      *
-     * @param  callable $onSuccess
-     * @param  callable $onFailure
-     * @return void
+     * @param  mixed $onSuccess
+     * @param  mixed $onFailure
+     * @param  mixed $onCancel
+     * @param  bool  $resolve
+     * @return PromiseInterface
      */
-    public function then(callable $onSuccess, callable $onFailure): void;
+    public function then(mixed $onSuccess, mixed $onFailure, mixed $onCancel = null, bool $resolve = true): PromiseInterface;
 
     /**
      * Resolve method
