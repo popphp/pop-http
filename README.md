@@ -4,8 +4,16 @@ pop-http
 [![Build Status](https://github.com/popphp/pop-http/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-http/actions)
 [![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-http)](http://cc.popphp.org/pop-http/)
 
-OVERVIEW
+* [Overview](#overview)
+* [Install](#install)
+* [Client](#client)
+* [Promises](#promises)
+* [Server](#server)
+* [Uploads](#Uploads)
+
+Overview
 --------
+
 `pop-http` is the main HTTP component for the Pop PHP Framework. It provides a robust
 set of features to manage many aspects of HTTP connections. It provides functionality
 for the following:
@@ -21,12 +29,6 @@ for the following:
   - Easily handle file uploads and apply server-side settings and restrictions
 
 `pop-http` is a component of the [Pop PHP Framework](http://www.popphp.org/).
-
-* [Install](#install)
-* [Client](#client)
-* [Promises](#promises)
-* [Server](#server)
-* [Uploads](#Uploads)
 
 Install
 -------
