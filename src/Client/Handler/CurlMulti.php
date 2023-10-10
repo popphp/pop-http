@@ -282,14 +282,13 @@ class CurlMulti extends AbstractCurl
 
         if ($this->isComplete()) {
             $responses = $this->getAllResponses(false);
-            $result    = true;
             foreach ($responses as $response) {
                 if (isset($response['response']) && ($response['response'] instanceof Response)) {
-                    if (($strict) && ($response['response']->isError())) {
-                        $result = true;
-                        break;
-                    } else if ((!$strict) && (!$response['response']->isError())) {
+                    if (($strict) && (!$response['response']->isError())) {
                         $result = false;
+                        break;
+                    } else if ((!$strict) && ($response['response']->isError())) {
+                        $result = true;
                         break;
                     }
                 }
