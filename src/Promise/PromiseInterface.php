@@ -191,14 +191,6 @@ interface PromiseInterface
     public function isCancelled(): bool;
 
     /**
-     * Wait method
-     *
-     * @param  bool $unwrap
-     * @return Response|null
-     */
-    public function wait(bool $unwrap = true): Response|null;
-
-    /**
      * Then method
      *
      * @param  mixed $success
@@ -224,6 +216,14 @@ interface PromiseInterface
      * @return PromiseInterface
      */
     public function finally(mixed $finally, bool $resolve = false): PromiseInterface;
+
+    /**
+     * Wait method
+     *
+     * @param  bool $unwrap
+     * @return Response|null
+     */
+    public function wait(bool $unwrap = true): Response|null;
 
     /**
      * Resolve method

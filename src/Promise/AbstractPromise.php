@@ -341,14 +341,6 @@ abstract class AbstractPromise implements PromiseInterface
     }
 
     /**
-     * Wait method
-     *
-     * @param  bool $unwrap
-     * @return Response|null
-     */
-    abstract public function wait(bool $unwrap = true): Response|null;
-
-    /**
      * Then method
      *
      * @param  mixed $success
@@ -400,6 +392,14 @@ abstract class AbstractPromise implements PromiseInterface
 
         return $this;
     }
+
+    /**
+     * Wait method
+     *
+     * @param  bool $unwrap
+     * @return Response|null
+     */
+    abstract public function wait(bool $unwrap = true): Response|null;
 
     /**
      * Resolve method
