@@ -20,11 +20,11 @@ for the following:
 
 - **HTTP Client Transactions**
   - Create and manage outbound HTTP client requests and their responses
-    - Full control over request headers and different request and response data types
-    - Streams
-    - Curl (Single & Multi)
-    - Sync or Async Requests
-    - Promises
+    - Full control over request & response headers
+    - Manage and parse different request & response data types
+    - Use the request handler of your choice: curl, streams or curl-multi (defaults to curl)
+    - Send sync or async Requests
+    - Support for promises
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
   - Easily handle file uploads and apply server-side settings and restrictions
