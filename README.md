@@ -23,7 +23,7 @@ for the following:
     - Full control over request & response headers
     - Manage and parse different request & response data types
     - Use the request handler of your choice: curl, streams or curl-multi (defaults to curl)
-    - Send sync or async Requests
+    - Send sync or async requests
     - Support for promises
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
