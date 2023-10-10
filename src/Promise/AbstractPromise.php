@@ -37,6 +37,7 @@ abstract class AbstractPromise implements PromiseInterface
     const PENDING   = 'PENDING';
     const FULFILLED = 'FULFILLED';
     const REJECTED  = 'REJECTED';
+    const CANCELLED = 'CANCELLED';
 
     /**
      * Async client
@@ -48,19 +49,25 @@ abstract class AbstractPromise implements PromiseInterface
      * Success callable
      * @var ?CallableObject
      */
-    protected ?CallableObject $onSuccess = null;
+    protected ?CallableObject $success = null;
 
     /**
      * Failure callable
      * @var ?CallableObject
      */
-    protected ?CallableObject $onFailure = null;
+    protected ?CallableObject $failure = null;
 
     /**
      * Cancel callable
      * @var ?CallableObject
      */
-    protected ?CallableObject $onCancel = null;
+    protected ?CallableObject $cancel = null;
+
+    /**
+     * Cancel callable
+     * @var ?CallableObject
+     */
+    protected ?CallableObject $finally = null;
 
     /**
      * Current state
@@ -103,20 +110,20 @@ abstract class AbstractPromise implements PromiseInterface
     /**
      * Method to set success callable
      *
-     * @param  mixed $onSuccess
+     * @param  mixed $success
      * @throws Exception
      * @return AbstractPromise
      */
-    public function setOnSuccess(mixed $onSuccess): AbstractPromise
+    public function setSuccess(mixed $success): AbstractPromise
     {
-        if (!($onSuccess instanceof CallableObject) && !is_callable($onSuccess)) {
+        if (!($success instanceof CallableObject) && !is_callable($success)) {
             throw new Exception('Error: The success callback must be an instance of CallableObject or a callable');
         }
-        if (!($onSuccess instanceof CallableObject) && is_callable($onSuccess)) {
-            $onSuccess = new CallableObject($onSuccess);
+        if (!($success instanceof CallableObject) && is_callable($success)) {
+            $success = new CallableObject($success);
         }
 
-        $this->onSuccess = $onSuccess;
+        $this->success = $success;
         return $this;
     }
 
@@ -125,9 +132,9 @@ abstract class AbstractPromise implements PromiseInterface
      *
      * @return CallableObject|null
      */
-    public function getOnSuccess(): CallableObject|null
+    public function getSuccess(): CallableObject|null
     {
-        return $this->onSuccess;
+        return $this->success;
     }
 
     /**
@@ -135,27 +142,27 @@ abstract class AbstractPromise implements PromiseInterface
      *
      * @return bool
      */
-    public function hasOnSuccess(): bool
+    public function hasSuccess(): bool
     {
-        return ($this->onSuccess !== null);
+        return ($this->success !== null);
     }
 
     /**
      * Method to set failure callable
      *
-     * @param  mixed $onFailure
+     * @param  mixed $failure
      * @return AbstractPromise
      */
-    public function setOnFailure(mixed $onFailure): AbstractPromise
+    public function setFailure(mixed $failure): AbstractPromise
     {
-        if (!($onFailure instanceof CallableObject) && !is_callable($onFailure)) {
+        if (!($failure instanceof CallableObject) && !is_callable($failure)) {
             throw new Exception('Error: The failure callback must be an instance of CallableObject or a callable');
         }
-        if (!($onFailure instanceof CallableObject) && is_callable($onFailure)) {
-            $onFailure = new CallableObject($onFailure);
+        if (!($failure instanceof CallableObject) && is_callable($failure)) {
+            $failure = new CallableObject($failure);
         }
 
-        $this->onFailure = $onFailure;
+        $this->failure = $failure;
         return $this;
     }
 
@@ -164,9 +171,9 @@ abstract class AbstractPromise implements PromiseInterface
      *
      * @return CallableObject|null
      */
-    public function getOnFailure(): CallableObject|null
+    public function getFailure(): CallableObject|null
     {
-        return $this->onFailure;
+        return $this->failure;
     }
 
     /**
@@ -174,27 +181,27 @@ abstract class AbstractPromise implements PromiseInterface
      *
      * @return bool
      */
-    public function hasOnFailure(): bool
+    public function hasFailure(): bool
     {
-        return ($this->onFailure !== null);
+        return ($this->failure !== null);
     }
 
     /**
      * Method to set cancel callable
      *
-     * @param  mixed $onCancel
+     * @param  mixed $cancel
      * @return AbstractPromise
      */
-    public function setOnCancel(mixed $onCancel): AbstractPromise
+    public function setCancel(mixed $cancel): AbstractPromise
     {
-        if (!($onCancel instanceof CallableObject) && !is_callable($onCancel)) {
+        if (!($cancel instanceof CallableObject) && !is_callable($cancel)) {
             throw new Exception('Error: The cancel callback must be an instance of CallableObject or a callable');
         }
-        if (!($onCancel instanceof CallableObject) && is_callable($onCancel)) {
-            $onCancel = new CallableObject($onCancel);
+        if (!($cancel instanceof CallableObject) && is_callable($cancel)) {
+            $cancel = new CallableObject($cancel);
         }
 
-        $this->onCancel = $onCancel;
+        $this->cancel = $cancel;
         return $this;
     }
 
@@ -203,9 +210,9 @@ abstract class AbstractPromise implements PromiseInterface
      *
      * @return CallableObject|null
      */
-    public function getOnCancel(): CallableObject|null
+    public function getCancel(): CallableObject|null
     {
-        return $this->onCancel;
+        return $this->cancel;
     }
 
     /**
@@ -213,9 +220,48 @@ abstract class AbstractPromise implements PromiseInterface
      *
      * @return bool
      */
-    public function hasOnCancel(): bool
+    public function hasCancel(): bool
     {
-        return ($this->onCancel !== null);
+        return ($this->cancel !== null);
+    }
+
+    /**
+     * Method to set finally callable
+     *
+     * @param  mixed $finally
+     * @return PromiseInterface
+     */
+    public function setFinally(mixed $finally): AbstractPromise
+    {
+        if (!($finally instanceof CallableObject) && !is_callable($finally)) {
+            throw new Exception('Error: The cancel callback must be an instance of CallableObject or a callable');
+        }
+        if (!($finally instanceof CallableObject) && is_callable($finally)) {
+            $finally = new CallableObject($finally);
+        }
+
+        $this->finally = $finally;
+        return $this;
+    }
+
+    /**
+     * Method to get finally callable
+     *
+     * @return CallableObject|null
+     */
+    public function getFinally(): CallableObject|null
+    {
+        return $this->finally;
+    }
+
+    /**
+     * Method to check finally callable
+     *
+     * @return bool
+     */
+    public function hasFinally(): bool
+    {
+        return ($this->finally !== null);
     }
 
     /**
@@ -227,7 +273,7 @@ abstract class AbstractPromise implements PromiseInterface
      */
     public function setState(string $state): AbstractPromise
     {
-        if (($state !== static::PENDING) && ($state !== static::FULFILLED) && ($state !== static::REJECTED)) {
+        if (($state !== static::PENDING) && ($state !== static::FULFILLED) && ($state !== static::REJECTED) && ($state !== static::CANCELLED)) {
             throw new Exception('Error: That state is not allowed.');
         }
         $this->state = $state;
@@ -285,6 +331,16 @@ abstract class AbstractPromise implements PromiseInterface
     }
 
     /**
+     * Determine is the promise is cancelled
+     *
+     * @return bool
+     */
+    public function isCancelled(): bool
+    {
+        return ($this->state == static::CANCELLED);
+    }
+
+    /**
      * Wait method
      *
      * @param  bool $unwrap
@@ -295,13 +351,55 @@ abstract class AbstractPromise implements PromiseInterface
     /**
      * Then method
      *
-     * @param  mixed $onSuccess
-     * @param  mixed $onFailure
-     * @param  mixed $onCancel
+     * @param  mixed $success
      * @param  bool  $resolve
      * @return AbstractPromise
      */
-    abstract public function then(mixed $onSuccess, mixed $onFailure, mixed $onCancel = null, bool $resolve = true): AbstractPromise;
+    public function then(mixed $success, bool $resolve = false): AbstractPromise
+    {
+        $this->setSuccess($success);
+
+        if ($resolve) {
+            $this->resolve();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Method to set failure callable (alias)
+     *
+     * @param  mixed $failure
+     * @param  bool $resolve
+     * @return AbstractPromise
+     */
+    public function catch(mixed $failure, bool $resolve = false): AbstractPromise
+    {
+        $this->setFailure($failure);
+
+        if ($resolve) {
+            $this->resolve();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Method to set finally callable (alias)
+     *
+     * @param  mixed $finally
+     * @return AbstractPromise
+     */
+    public function finally(mixed $finally, bool $resolve = false): AbstractPromise
+    {
+        $this->setFinally($finally);
+
+        if ($resolve) {
+            $this->resolve();
+        }
+
+        return $this;
+    }
 
     /**
      * Resolve method

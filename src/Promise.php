@@ -46,7 +46,7 @@ class Promise extends Promise\AbstractPromise
      * Wait method
      *
      * @param  bool $unwrap
-     * @throws Exception|Promise\Exception|ReflectionException|\Pop\Http\Client\Exception|\Pop\Utils\Exception
+     * @throws Exception|Promise\Exception|ReflectionException|Client\Exception|\Pop\Utils\Exception|\Pop\Http\Exception
      * @return Response|null
      */
     public function wait(bool $unwrap = true): Response|null
@@ -76,32 +76,6 @@ class Promise extends Promise\AbstractPromise
     }
 
     /**
-     * Then method
-     *
-     * @param  mixed $onSuccess
-     * @param  mixed $onFailure
-     * @param  mixed $onCancel
-     * @param  bool  $resolve
-     * @return Promise
-     *@throws Exception|Promise\Exception|ReflectionException|\Pop\Http\Client\Exception|\Pop\Utils\Exception|\Pop\Http\Exception
-     */
-    public function then(mixed $onSuccess, mixed $onFailure, mixed $onCancel = null, bool $resolve = true): Promise
-    {
-        $this->setOnSuccess($onSuccess);
-        $this->setOnFailure($onFailure);
-
-        if ($onCancel !== null) {
-            $this->setOnCancel($onCancel);
-        }
-
-        if ($resolve) {
-            $this->resolve();
-        }
-
-        return $this;
-    }
-
-    /**
      * Resolve method
      *
      * @throws Client\Exception|Exception|ReflectionException|\Pop\Utils\Exception|\Pop\Http\Exception
@@ -109,26 +83,33 @@ class Promise extends Promise\AbstractPromise
      */
     public function resolve(): void
     {
+        if ($this->getState() !== self::PENDING) {
+            return;
+        }
         $this->client->send();
 
         if ($this->client->isComplete()) {
             if ($this->client->isSuccess()) {
-                if (!$this->hasOnSuccess()) {
+                if (!$this->hasSuccess()) {
                     throw new Exception('Error: The success callback has not been set.');
                 }
                 $this->setState(self::FULFILLED);
-                $this->onSuccess->call([
+                $this->success->call([
                     'response' => $this->client->getResponse()
                 ]);
             } else if ($this->client->isError()) {
-                if (!$this->hasOnFailure()) {
+                if (!$this->hasFailure()) {
                     throw new Exception('Error: The success callback has not been set.');
                 }
                 $this->setState(self::REJECTED);
-                $this->onFailure->call([
+                $this->failure->call([
                     'response' => $this->client->getResponse()
                 ]);
             }
+        }
+
+        if ($this->hasFinally()) {
+            $this->finally->call(['promise' => $this]);
         }
     }
 
@@ -143,10 +124,11 @@ class Promise extends Promise\AbstractPromise
         if ($this->getState() !== self::PENDING) {
             return;
         }
-        if (!$this->hasOnCancel()) {
+        if (!$this->hasCancel()) {
             throw new Exception('Error: The cancel callback has not been set.');
         }
-        $this->onCancel->call(['promise' => $this]);
+        $this->setState(self::CANCELLED);
+        $this->cancel->call(['promise' => $this]);
     }
 
 }

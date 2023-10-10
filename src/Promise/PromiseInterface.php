@@ -55,68 +55,90 @@ interface PromiseInterface
     /**
      * Method to set success callable
      *
-     * @param  mixed $onSuccess
+     * @param  mixed $success
      * @return PromiseInterface
      */
-    public function setOnSuccess(mixed $onSuccess): PromiseInterface;
+    public function setSuccess(mixed $success): PromiseInterface;
 
     /**
      * Method to get success callable
      *
      * @return CallableObject|null
      */
-    public function getOnSuccess(): CallableObject|null;
+    public function getSuccess(): CallableObject|null;
 
     /**
      * Method to check success callable
      *
      * @return bool
      */
-    public function hasOnSuccess(): bool;
+    public function hasSuccess(): bool;
 
     /**
      * Method to set failure callable
      *
-     * @param  mixed $onFailure
+     * @param  mixed $failure
      * @return PromiseInterface
      */
-    public function setOnFailure(mixed $onFailure): PromiseInterface;
+    public function setFailure(mixed $failure): PromiseInterface;
 
     /**
      * Method to get failure callable
      *
      * @return CallableObject|null
      */
-    public function getOnFailure(): CallableObject|null;
+    public function getFailure(): CallableObject|null;
 
     /**
      * Method to check failure callable
      *
      * @return bool
      */
-    public function hasOnFailure(): bool;
+    public function hasFailure(): bool;
 
     /**
      * Method to set cancel callable
      *
-     * @param  mixed $onCancel
+     * @param  mixed $cancel
      * @return PromiseInterface
      */
-    public function setOnCancel(mixed $onCancel): PromiseInterface;
+    public function setCancel(mixed $cancel): PromiseInterface;
 
     /**
      * Method to get cancel callable
      *
      * @return CallableObject|null
      */
-    public function getOnCancel(): CallableObject|null;
+    public function getCancel(): CallableObject|null;
 
     /**
      * Method to check cancel callable
      *
      * @return bool
      */
-    public function hasOnCancel(): bool;
+    public function hasCancel(): bool;
+
+    /**
+     * Method to set finally callable
+     *
+     * @param  mixed $finally
+     * @return PromiseInterface
+     */
+    public function setFinally(mixed $finally): PromiseInterface;
+
+    /**
+     * Method to get finally callable
+     *
+     * @return CallableObject|null
+     */
+    public function getFinally(): CallableObject|null;
+
+    /**
+     * Method to check finally callable
+     *
+     * @return bool
+     */
+    public function hasFinally(): bool;
 
     /**
      * Method to set current state
@@ -162,6 +184,13 @@ interface PromiseInterface
     public function isRejected(): bool;
 
     /**
+     * Determine is the promise is cancelled
+     *
+     * @return bool
+     */
+    public function isCancelled(): bool;
+
+    /**
      * Wait method
      *
      * @param  bool $unwrap
@@ -172,13 +201,29 @@ interface PromiseInterface
     /**
      * Then method
      *
-     * @param  mixed $onSuccess
-     * @param  mixed $onFailure
-     * @param  mixed $onCancel
+     * @param  mixed $success
      * @param  bool  $resolve
      * @return PromiseInterface
      */
-    public function then(mixed $onSuccess, mixed $onFailure, mixed $onCancel = null, bool $resolve = true): PromiseInterface;
+    public function then(mixed $success, bool $resolve = false): PromiseInterface;
+
+    /**
+     * Method to set failure callable
+     *
+     * @param  mixed $failure
+     * @param  bool $resolve
+     * @return PromiseInterface
+     */
+    public function catch(mixed $failure, bool $resolve = false): PromiseInterface;
+
+    /**
+     * Method to set finally callable
+     *
+     * @param  mixed $finally
+     * @param  bool $resolve
+     * @return PromiseInterface
+     */
+    public function finally(mixed $finally, bool $resolve = false): PromiseInterface;
 
     /**
      * Resolve method
