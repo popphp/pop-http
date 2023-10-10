@@ -18,13 +18,13 @@ Overview
 set of features to manage many aspects of HTTP connections. It provides functionality
 for the following:
 
-- HTTP Client Transactions
+- **HTTP Client Transactions**
   - Create and manage outbound HTTP client requests, headers and data
     - Streams
     - Curl (Single & Multi)
     - Sync or Async Requests
     - Promises
-- HTTP Server Transactions
+- **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
   - Easily handle file uploads and apply server-side settings and restrictions
 
