@@ -31,26 +31,26 @@ interface PromiseInterface
 {
 
     /**
-     * Method to set client
+     * Method to set client promiser
      *
-     * @param  Client $client
+     * @param  Client $promiser
      * @return PromiseInterface
      */
-    public function setClient(Client $client): PromiseInterface;
+    public function setPromiser(Client $promiser): PromiseInterface;
 
     /**
-     * Method to get client
+     * Method to get client promiser
      *
      * @return Client
      */
-    public function getClient(): Client;
+    public function getPromiser(): Client;
 
     /**
-     * Method to check client
+     * Method to check client promiser
      *
      * @return bool
      */
-    public function hasClient(): bool;
+    public function hasPromiser(): bool;
 
     /**
      * Method to set success callable

@@ -35,11 +35,11 @@ class Promise extends Promise\AbstractPromise
      *
      * Instantiate the Promise object
      *
-     * @param  Client $client
+     * @param  Client $promiser
      */
-    public function __construct(Client $client)
+    public function __construct(Client $promiser)
     {
-        $this->setClient($client);
+        $this->setPromiser($promiser);
     }
 
     /**
@@ -51,22 +51,22 @@ class Promise extends Promise\AbstractPromise
      */
     public function wait(bool $unwrap = true): Response|null
     {
-        if (($this->isFulfilled()) && ($this->client->isComplete())) {
-            return $this->client->getResponse();
+        if (($this->isFulfilled()) && ($this->promiser->isComplete())) {
+            return $this->promiser->getResponse();
         }
 
         $this->setState(self::PENDING);
-        $this->client->send();
+        $this->promiser->send();
 
-        if ($this->client->isComplete()) {
-            if ($this->client->isError()) {
+        if ($this->promiser->isComplete()) {
+            if ($this->promiser->isError()) {
                 $this->setState(self::REJECTED);
                 if ($unwrap) {
-                    throw new Exception('Error: ' . $this->client->getResponse()->getCode() . ' ' . $this->client->getResponse()->getMessage());
+                    throw new Exception('Error: ' . $this->promiser->getResponse()->getCode() . ' ' . $this->promiser->getResponse()->getMessage());
                 }
             } else {
                 $this->setState(self::FULFILLED);
-                return $this->client->getResponse();
+                return $this->promiser->getResponse();
             }
         } else if ($unwrap) {
             throw new Exception('Error: Unable to complete request.');
@@ -86,10 +86,10 @@ class Promise extends Promise\AbstractPromise
         if ($this->getState() !== self::PENDING) {
             return;
         }
-        $this->client->send();
+        $this->promiser->send();
 
-        if ($this->client->isComplete()) {
-            if ($this->client->isSuccess()) {
+        if ($this->promiser->isComplete()) {
+            if ($this->promiser->isSuccess()) {
                 if (!$this->hasSuccess()) {
                     throw new Exception('Error: The success callback has not been set.');
                 }
@@ -102,7 +102,7 @@ class Promise extends Promise\AbstractPromise
                         break;
                     // Else, execute callback
                     } else {
-                        $result = $success->call(['response' => $this->client->getResponse()]);
+                        $result = $success->call(['response' => $this->promiser->getResponse()]);
                     }
                 }
 
@@ -111,13 +111,13 @@ class Promise extends Promise\AbstractPromise
                 if ($result instanceof Promise) {
                     $result->resolve();
                 }
-            } else if ($this->client->isError()) {
+            } else if ($this->promiser->isError()) {
                 if (!$this->hasFailure()) {
                     throw new Exception('Error: The failure callback has not been set.');
                 }
                 $this->setState(self::REJECTED);
                 $this->failure->call([
-                    'response' => $this->client->getResponse()
+                    'response' => $this->promiser->getResponse()
                 ]);
             }
         }

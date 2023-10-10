@@ -40,10 +40,10 @@ abstract class AbstractPromise implements PromiseInterface
     const CANCELLED = 'CANCELLED';
 
     /**
-     * Async client
+     * Client Promiser
      * @var ?Client
      */
-    protected ?Client $client = null;
+    protected ?Client $promiser = null;
 
     /**
      * Success callables
@@ -76,35 +76,35 @@ abstract class AbstractPromise implements PromiseInterface
     protected string $state = self::PENDING;
 
     /**
-     * Method to set client
+     * Method to set client promiser
      *
-     * @param  Client $client
+     * @param  Client $promiser
      * @return PromiseInterface
      */
-    public function setClient(Client $client): AbstractPromise
+    public function setPromiser(Client $promiser): AbstractPromise
     {
-        $this->client = $client;
+        $this->promiser = $promiser;
         return $this;
     }
 
     /**
-     * Method to get client
+     * Method to get client promiser
      *
      * @return Client
      */
-    public function getClient(): Client
+    public function getPromiser(): Client
     {
-        return $this->client;
+        return $this->promiser;
     }
 
     /**
-     * Method to check client
+     * Method to check client promiser
      *
      * @return bool
      */
-    public function hasClient(): bool
+    public function hasPromiser(): bool
     {
-        return ($this->client !== null);
+        return ($this->promiser !== null);
     }
 
     /**
