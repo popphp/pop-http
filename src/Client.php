@@ -414,8 +414,13 @@ class Client extends AbstractHttp
                 }
             }
         }
-
-        return $client->send($arguments[0], strtoupper($methodName));
+        if (str_contains($methodName, 'Async')) {
+            $methodName = strtoupper(substr($methodName, 0, strpos($methodName, 'Async')));
+            $client->prepare($arguments[0], $methodName);
+            return $client->sendAsync();
+        } else {
+            return $client->send($arguments[0], strtoupper($methodName));
+        }
     }
 
 }

@@ -63,16 +63,18 @@ interface PromiseInterface
     /**
      * Method to get success callable
      *
-     * @return CallableObject|null
+     * @param  ?int $i
+     * @return array|CallableObject|null
      */
-    public function getSuccess(): CallableObject|null;
+    public function getSuccess(?int $i = null): array|CallableObject|null;
 
     /**
      * Method to check success callable
      *
+     * @param  ?int $i
      * @return bool
      */
-    public function hasSuccess(): bool;
+    public function hasSuccess(?int $i = null): bool;
 
     /**
      * Method to set failure callable
@@ -238,5 +240,14 @@ interface PromiseInterface
      * @return void
      */
     public function cancel(): void;
+
+    /**
+     * Forward method
+     *
+     * @param  PromiseInterface $nextPromise
+     * @param  int              $i
+     * @return PromiseInterface
+     */
+    public function forward(PromiseInterface $nextPromise, int $i = 0): PromiseInterface;
 
 }

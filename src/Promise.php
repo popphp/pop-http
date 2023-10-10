@@ -93,13 +93,27 @@ class Promise extends Promise\AbstractPromise
                 if (!$this->hasSuccess()) {
                     throw new Exception('Error: The success callback has not been set.');
                 }
+
+                $result = null;
+                foreach ($this->success as $i => $success) {
+                    // Forward success callbacks to next promise
+                    if ($result instanceof Promise) {
+                        $result = $this->forward($result, $i);
+                        break;
+                    // Else, execute callback
+                    } else {
+                        $result = $success->call(['response' => $this->client->getResponse()]);
+                    }
+                }
+
                 $this->setState(self::FULFILLED);
-                $this->success->call([
-                    'response' => $this->client->getResponse()
-                ]);
+
+                if ($result instanceof Promise) {
+                    $result->resolve();
+                }
             } else if ($this->client->isError()) {
                 if (!$this->hasFailure()) {
-                    throw new Exception('Error: The success callback has not been set.');
+                    throw new Exception('Error: The failure callback has not been set.');
                 }
                 $this->setState(self::REJECTED);
                 $this->failure->call([

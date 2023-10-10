@@ -46,10 +46,10 @@ abstract class AbstractPromise implements PromiseInterface
     protected ?Client $client = null;
 
     /**
-     * Success callable
-     * @var ?CallableObject
+     * Success callables
+     * @var array
      */
-    protected ?CallableObject $success = null;
+    protected array $success = [];
 
     /**
      * Failure callable
@@ -123,28 +123,38 @@ abstract class AbstractPromise implements PromiseInterface
             $success = new CallableObject($success);
         }
 
-        $this->success = $success;
+        $this->success[] = $success;
         return $this;
     }
 
     /**
      * Method to get success callable
      *
-     * @return CallableObject|null
+     * @param  ?int $i
+     * @return array|CallableObject|null
      */
-    public function getSuccess(): CallableObject|null
+    public function getSuccess(?int $i = null): array|CallableObject|null
     {
-        return $this->success;
+        if ($i !== null) {
+            return $this->success[$i] ?? null;
+        } else {
+            return $this->success;
+        }
     }
 
     /**
      * Method to check success callable
      *
+     * @param  ?int $i
      * @return bool
      */
-    public function hasSuccess(): bool
+    public function hasSuccess(?int $i = null): bool
     {
-        return ($this->success !== null);
+        if ($i !== null) {
+            return (isset($this->success[$i]));
+        } else {
+            return (!empty($this->success));
+        }
     }
 
     /**
@@ -391,6 +401,28 @@ abstract class AbstractPromise implements PromiseInterface
         }
 
         return $this;
+    }
+
+    /**
+     * Forward method
+     *
+     * @param  PromiseInterface $nextPromise
+     * @param  int              $i
+     * @return AbstractPromise
+     */
+    public function forward(PromiseInterface $nextPromise, int $i = 0): AbstractPromise
+    {
+        for ($j = $i; $j < count($this->success); $j++) {
+            $nextPromise->then($this->success[$j]);
+        }
+        if ($this->hasFailure()) {
+            $nextPromise->setFailure($this->failure);
+        }
+        if ($this->hasCancel()) {
+            $nextPromise->setCancel($this->cancel);
+        }
+
+        return $nextPromise;
     }
 
     /**
