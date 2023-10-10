@@ -6,13 +6,29 @@ pop-http
 
 OVERVIEW
 --------
-`pop-http` is the main HTTP component for the Pop PHP Framework. It provides the ability
-to manage and parse request and response objects. It also provides support for HTTP
-client transactions via cURL and streams.
+`pop-http` is the main HTTP component for the Pop PHP Framework. It provides a robust
+set of features to manage many aspects of HTTP connections. It provides functionality
+for the following:
+
+- HTTP Client Transactions
+  - Create and manage outbound HTTP client requests, headers and data
+    - Streams
+    - Curl (Single & Multi)
+    - Sync or Async Requests
+    - Promises
+- HTTP Server Transactions
+  - Manage inbound HTTP server requests, headers and data
+  - Easily handle file uploads and apply server-side settings and restrictions
 
 `pop-http` is a component of the [Pop PHP Framework](http://www.popphp.org/).
 
-INSTALL
+* [Install](#install)
+* [Client](#client)
+* [Promises](#promises)
+* [Server](#server)
+* [Uploads](#Uploads)
+
+Install
 -------
 
 Install `pop-http` using Composer.
@@ -25,221 +41,25 @@ Or, require it in your composer.json file
         "popphp/pop-http" : "5.0.*"
     }
 
+[Top](#pop-http)
 
-BASIC USAGE
------------
+Client
+------
 
-### The request object, GET example
+[Top](#pop-http)
 
-Let's use a GET request with the URL '/hello/world?var=123'
+Promises
+--------
 
-```php
-$request = new Pop\Http\Server\Request();
+[Top](#pop-http)
 
-// /hello/world
-$uri = $request->getRequestUri();
+Server
+------
 
-// 123
-$var = $request->getQuery('var');
-```
+[Top](#pop-http)
 
-The request object also allows you to trace down the different segments
-of the request URI like this:
-
-```php
-if ($request->getSegment(0) == 'hello') { } // Returns true
-if ($request->getSegment(1) == 'world') { } // Returns true
-```
-
-### The request object, POST example
-
-Let's use a POST request with the URL '/users/edit'
-
-```php
-$request = new Pop\Http\Server\Request();
-
-// /users/edit
-$uri = $request->getRequestUri();
-
-// Get the value of $_POST['id']
-if ($request->isPost()) {
-    $id = $request->getPost('id');
-}
-```
-
-### Using a base path
-
-In this example, the application exists in a folder '/home'
-and the full URL is '/home/hello/world'
-
-```php
-$request = new Pop\Http\Server\Request(null, '/home');
-
-// /home
-$basePath = $request->getBasePath();
-
-// /hello/world
-$uri = $request->getRequestUri();
-
-// /home/hello/world
-$fullUri = $request->getFullRequestUri();
-```
-
-### Creating a response object
-
-```php
-$config = [
-    'code'    => 200,
-    'headers' => [
-        'Content-Type' => 'text/plain'
-    ]
-];
-
-$response = new Pop\Http\Server\Response($config);
-$response->setBody('This is a plain text file.');
-
-$response->send();
-```
-
-The above script will output something like this when requested:
-
-    HTTP/1.1 200 OK
-    Content-Type: text/html
-
-    This is a plain text file.
-
-### Simple response redirect
-
-```php
-Pop\Http\Server\Response::redirect('http://www.newlocation.com/');
-```
-
-### Parsing a response
-
-```php
-$response = Pop\Http\Parser::parseResponseFromUri('http://www.mydomain.com/');
-
-if ($response->isSuccess()) { } // Returns true
-if ($response->isError())   { } // Returns false
-
-// 200
-echo $response->getCode();
-
-// OK
-echo $response->getMessage();
-
-// text/html
-echo $response->getHeader('Content-Type');
-
-// Display the body of the response
-echo $response->getBody();
-```
-
-### Using the cURL client
-
-```php
-$client = new Pop\Http\Client\Curl('http://www.mydomain.com/', 'POST');
-$client->setReturnHeader(true)
-       ->setReturnTransfer(true);
-
-$client->setFields([
-    'id'    => 1001,
-    'name'  => 'Test Person',
-    'email' => 'test@test.com'
-]);
-
-$client->send();
-
-// 200
-echo $client->getResponseCode();
-
-// Display the body of the returned response
-echo $client->getResponseBody();
-```
-
-### Using the Stream client
-
-```php
-$client = new Pop\Http\Client\Stream('http://www.mydomain.com/', 'POST');
-
-$client->setFields([
-    'id'    => 1001,
-    'name'  => 'Test Person',
-    'email' => 'test@test.com'
-]);
-
-$client->send();
-
-// 200
-echo $client->getResponseCode();
-
-// Display the body of the returned response
-echo $client->getResponseBody();
-```
-
-### Auth Header
-
-The `Pop\Http\Auth` class can assist with creating an authorization header for outbound HTTP client requests,
-or parsing an authorization header from an inbound request.
-
-##### Client Example, Using Basic Auth 
-
-```php
-// Automatically creates the base64 encoded basic auth header
-$client = new Pop\Http\Client\Stream('http://www.mydomain.com/auth', 'POST');
-$client->setAuth(Pop\Http\Auth::createBasic('username', 'password'));
-$client->send();
-
-// 200, if the credentials are valid
-echo $client->getResponseCode();
-```
-
-##### Client Example, Using Bearer Token
-
-```php
-// Automatically creates the auth header with the correct bearer token
-$client = new Pop\Http\Client\Curl('http://www.mydomain.com/auth', 'POST');
-$client->setAuth(Pop\Http\Auth::createBearer('AUTH_TOKEN'));
-$client->send();
-
-// 200, if the credentials are valid
-echo $client->getResponseCode();
-```
-
-##### Client Example, Using API Key with Custom Header
-
-```php
-// Automatically creates the auth header with the custom header name and API key value
-$client = new Pop\Http\Client\Stream('http://www.mydomain.com/auth', 'POST');
-$client->setAuth(Pop\Http\Auth::createKey('API_KEY', 'X-Api-Key'));
-$client->send();
-
-// 200, if the credentials are valid
-echo $client->getResponseCode();
-```
-
-##### Server Example
-
-```php
-$request = new Http\Server\Request();
-$auth    = Http\Auth::parse($request->getHeader('Authorization'));
-
-print_r($auth);
-```
-
-```text
-Pop\Http\Auth Object
-(
-    [header:protected] => Authorization
-    [scheme:protected] => Bearer
-    [token:protected] => AUTH_TOKEN
-    [username:protected] => 
-    [password:protected] => 
-    [authHeader:protected] => 
-)
-```
-
-### File uploads
+Uploads
+-------
 
 ##### Basic file upload
 
@@ -291,3 +111,6 @@ $filename = $upload->checkFilename('my-custom-filename.docx');
 
 // $filename is set to 'my-custom-filename_1.docx'
 $upload->upload($_FILES['file_upload'], $filename);
+```
+
+[Top](#pop-http)
