@@ -66,13 +66,6 @@ interface HandlerInterface
     public function send();
 
     /**
-     * Parse the response
-     *
-     * @return Response
-     */
-    public function parseResponse(): Response;
-
-    /**
      * Method to reset the handler
      *
      * @return HandlerInterface

@@ -81,13 +81,6 @@ abstract class AbstractHandler implements HandlerInterface
     abstract public function send();
 
     /**
-     * Parse the response
-     *
-     * @return Response
-     */
-    abstract public function parseResponse(): Response;
-
-    /**
      * Method to reset the handler
      *
      * @return AbstractHandler

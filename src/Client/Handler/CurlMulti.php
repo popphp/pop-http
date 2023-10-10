@@ -166,12 +166,12 @@ class CurlMulti extends AbstractCurl
     }
 
     /**
-     * Process Curl response content
+     * Get Curl response content
      *
      * @param  string|Client $curlClient
      * @return mixed
      */
-    public function processResponse(string|Client $curlClient): mixed
+    public function parseResponse(string|Client $curlClient): mixed
     {
         $response = $this->getClientContent($curlClient);
 
@@ -180,6 +180,33 @@ class CurlMulti extends AbstractCurl
         } else {
             return $response;
         }
+    }
+
+    /**
+     * Get all responses
+     *
+     * @param  bool $parsed
+     * @return array
+     */
+    public function getAllResponses(bool $parsed = true): array
+    {
+        $responses = [];
+
+        foreach ($this->clients as $curlClient) {
+            $response = $this->parseResponse($curlClient);
+            if ($response instanceof Response) {
+                $responses[] = [
+                    'client_uri' => $curlClient->getRequest()->getUriAsString(),
+                    'method'     => $curlClient->getRequest()->getMethod(),
+                    'code'       => $response->getCode(),
+                    'response'   => ($parsed) ? $response->getParsedResponse() : $response
+                ];
+            } else {
+                $responses[] = $response;
+            }
+        }
+
+        return $responses;
     }
 
     /**
@@ -226,22 +253,18 @@ class CurlMulti extends AbstractCurl
     }
 
     /**
-     * Parse the response
-     *
-     * @return Response
-     */
-    public function parseResponse(): Response
-    {
-
-    }
-
-    /**
      * Method to reset the handler
      *
      * @return CurlMulti
      */
     public function reset(): CurlMulti
     {
+        foreach ($this->clients as $key => $curlClient) {
+            $this->removeClient($key);
+        }
+
+        $this->clients = [];
+
         return $this;
     }
 
@@ -252,7 +275,12 @@ class CurlMulti extends AbstractCurl
      */
     public function disconnect(): void
     {
-
+        if ($this->hasResource()) {
+            curl_multi_close($this->resource);
+            $this->resource = null;
+            $this->options  = [];
+            $this->clients  = [];
+        }
     }
 
 }
