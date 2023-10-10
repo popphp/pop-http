@@ -296,14 +296,14 @@ class Client extends AbstractHttp
     }
 
     /**
-     * Send the client request
+     * Prepare the client request
      *
      * @param  ?string $uri
      * @param  string  $method
      * @throws Exception|Client\Exception
-     * @return Response
+     * @return Client
      */
-    public function send(?string $uri = null, string $method = 'GET'): Response
+    public function prepare(?string $uri = null, string $method = 'GET'): Client
     {
         if ((!$this->hasRequest()) && ($uri === null)) {
             throw new Exception('Error: There is no request URI to send.');
@@ -327,6 +327,20 @@ class Client extends AbstractHttp
             $this->setHandler(new Curl());
         }
 
+        return $this;
+    }
+
+    /**
+     * Send the client request
+     *
+     * @param  ?string $uri
+     * @param  string  $method
+     * @throws Exception|Client\Exception
+     * @return Response
+     */
+    public function send(?string $uri = null, string $method = 'GET'): Response
+    {
+        $this->prepare($uri, $method);
         $this->response = $this->handler->prepare($this->request, $this->auth)->send();
 
         return $this->response;
@@ -348,15 +362,19 @@ class Client extends AbstractHttp
      * @param  string $methodName
      * @param  array  $arguments
      * @throws Exception|Client\Exception
-     * @return Response
+     * @return Response|Promise
      */
-    public function __call(string $methodName, array $arguments): Response
+    public function __call(string $methodName, array $arguments): Response|Promise
     {
-        if (!isset($arguments[0])) {
-            throw new Exception('Error: You must pass a URI.');
+        if (str_contains($methodName, 'Async')) {
+            if (isset($arguments[0])) {
+                $methodName = strtoupper(substr($methodName, 0, strpos($methodName, 'Async')));
+                $this->prepare($arguments[0], $methodName);
+            }
+            return $this->sendAsync();
+        } else {
+            return (isset($arguments[0])) ? $this->send($arguments[0], strtoupper($methodName)) : $this->send();
         }
-
-        return $this->send($arguments[0], strtoupper($methodName));
     }
 
     /**
@@ -365,14 +383,10 @@ class Client extends AbstractHttp
      * @param  string $methodName
      * @param  array  $arguments
      * @throws Exception|Client\Exception
-     * @return Response
+     * @return Response|Promise
      */
-    public static function __callStatic(string $methodName, array $arguments): Response
+    public static function __callStatic(string $methodName, array $arguments): Response|Promise
     {
-        if (!isset($arguments[0])) {
-            throw new Exception('Error: You must pass a URI.');
-        }
-
         $client = new static();
 
         if (count($arguments) > 1) {
