@@ -19,7 +19,8 @@ set of features to manage many aspects of HTTP connections. It provides function
 for the following:
 
 - **HTTP Client Transactions**
-  - Create and manage outbound HTTP client requests, headers and data
+  - Create and manage outbound HTTP client requests and their responses
+    - Full control over request headers and different request and response data types
     - Streams
     - Curl (Single & Multi)
     - Sync or Async Requests
