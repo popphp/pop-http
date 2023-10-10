@@ -65,8 +65,8 @@ class Client extends AbstractHttp
     /**
      * Instantiate the client object
      *
-     * Optional parameters are a client request instance, a client response instance,
-     * a client handler instance, an auth instance, a base path string or an options array
+     * Optional parameters are a request URI string, client request instance, a client response instance,
+     * a client handler instance, an auth instance, or an options array
      */
     public function __construct()
     {
@@ -76,7 +76,9 @@ class Client extends AbstractHttp
         $handler  = null;
 
         foreach ($args as $arg) {
-            if ($arg instanceof Client\Request) {
+            if (is_string($arg)) {
+                $request = new Request($arg);
+            } else if ($arg instanceof Client\Request) {
                 $request = $arg;
             } else if ($arg instanceof Client\Response) {
                 $response = $arg;
@@ -84,8 +86,6 @@ class Client extends AbstractHttp
                 $handler = $arg;
             } else if ($arg instanceof Auth) {
                 $this->setAuth($arg);
-            } else if (is_string($arg)) {
-                $this->setBaseUri($arg);
             } else if (is_array($arg)) {
                 $this->setOptions($arg);
             }
@@ -138,6 +138,7 @@ class Client extends AbstractHttp
      * Set options
      *
      * Supported options
+     *  - 'base_uri'
      *  - 'headers'
      *  - 'query'
      *  - 'async'
@@ -148,6 +149,9 @@ class Client extends AbstractHttp
      */
     public function setOptions(array $options): Client
     {
+        if (isset($options['base_uri'])) {
+            $this->setBaseUri($options['base_uri']);
+        }
         $this->options = $options;
         return $this;
     }
@@ -308,7 +312,7 @@ class Client extends AbstractHttp
         if ((!$this->hasRequest()) && ($uri === null)) {
             throw new Exception('Error: There is no request URI to send.');
         }
-        if ((!$this->hasRequest()) && ($uri !== null)) {
+        if ($uri !== null) {
             $request = new Request(new Uri($uri), $method);
             $this->setRequest($request);
         }
@@ -325,6 +329,10 @@ class Client extends AbstractHttp
 
         if (!$this->hasHandler()) {
             $this->setHandler(new Curl());
+        }
+
+        if (($this->hasBaseUri()) && !str_starts_with($this->request->getUriAsString(), $this->getBaseUri())) {
+            $this->request->setUri($this->getBaseUri() . $this->request->getUriAsString());
         }
 
         return $this;
