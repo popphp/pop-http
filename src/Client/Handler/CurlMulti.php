@@ -17,6 +17,7 @@ use Pop\Http\Auth;
 use Pop\Http\Client;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
+use Pop\Http\Promise;
 
 /**
  * HTTP client curl multi handler class
@@ -230,15 +231,72 @@ class CurlMulti extends AbstractCurl
     }
 
     /**
-     * Method to prepare the handler
+     * Determine if the response is complete
      *
-     * @param  Request $request
-     * @param  ?Auth   $auth
-     * @return CurlMulti
+     * @return bool
      */
-    public function prepare(Request $request, ?Auth $auth = null): CurlMulti
+    public function isComplete(): bool
     {
-        return $this;
+        $info = $this->getInfo();
+        return (is_array($info) && isset($info['msg']) && ($info['msg'] == CURLMSG_DONE));
+    }
+
+    /**
+     * Determine if the response is a success
+     *
+     * @param  bool $strict
+     * @return bool|null
+     */
+    public function isSuccess(bool $strict = true): bool|null
+    {
+        $result = null;
+
+        if ($this->isComplete()) {
+            $responses = $this->getAllResponses(false);
+            $result    = true;
+            foreach ($responses as $response) {
+                if (isset($response['response']) && ($response['response'] instanceof Response)) {
+                    if (($strict) && (!$response['response']->isSuccess())) {
+                        $result = false;
+                        break;
+                    } else if ((!$strict) && ($response['response']->isSuccess())) {
+                        $result = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Determine if the response is an error
+     *
+     * @param  bool $strict
+     * @return bool|null
+     */
+    public function isError(bool $strict = false): bool|null
+    {
+        $result = null;
+
+        if ($this->isComplete()) {
+            $responses = $this->getAllResponses(false);
+            $result    = true;
+            foreach ($responses as $response) {
+                if (isset($response['response']) && ($response['response'] instanceof Response)) {
+                    if (($strict) && ($response['response']->isError())) {
+                        $result = true;
+                        break;
+                    } else if ((!$strict) && (!$response['response']->isError())) {
+                        $result = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -250,6 +308,16 @@ class CurlMulti extends AbstractCurl
     public function send(?int &$active = null): int
     {
         return curl_multi_exec($this->resource, $active);
+    }
+
+    /**
+     * Method to send the request asynchronously
+     *
+     * @return Promise
+     */
+    public function sendAsync(): Promise
+    {
+        return new Promise($this);
     }
 
     /**

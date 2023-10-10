@@ -13,6 +13,7 @@
  */
 namespace Pop\Http;
 
+use Pop\Http\Client\Handler\CurlMulti;
 use Pop\Http\Client\Response;
 use Pop\Http\Promise\Exception;
 use ReflectionException;
@@ -35,9 +36,9 @@ class Promise extends Promise\AbstractPromise
      *
      * Instantiate the Promise object
      *
-     * @param  Client $promiser
+     * @param  Client|CurlMulti $promiser
      */
-    public function __construct(Client $promiser)
+    public function __construct(Client|CurlMulti $promiser)
     {
         $this->setPromiser($promiser);
     }
@@ -47,26 +48,38 @@ class Promise extends Promise\AbstractPromise
      *
      * @param  bool $unwrap
      * @throws Exception|Promise\Exception|ReflectionException|Client\Exception|\Pop\Utils\Exception|\Pop\Http\Exception
-     * @return Response|null
+     * @return Response|array|null
      */
-    public function wait(bool $unwrap = true): Response|null
+    public function wait(bool $unwrap = true): Response|array|null
     {
         if (($this->isFulfilled()) && ($this->promiser->isComplete())) {
-            return $this->promiser->getResponse();
+            return ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
         }
 
         $this->setState(self::PENDING);
-        $this->promiser->send();
+
+        if ($this->promiser instanceof CurlMulti) {
+            $running = null;
+            do {
+                $this->promiser->send($running);
+            } while ($running);
+        } else {
+            $this->promiser->send();
+        }
 
         if ($this->promiser->isComplete()) {
             if ($this->promiser->isError()) {
                 $this->setState(self::REJECTED);
                 if ($unwrap) {
-                    throw new Exception('Error: ' . $this->promiser->getResponse()->getCode() . ' ' . $this->promiser->getResponse()->getMessage());
+                    if ($this->promiser instanceof CurlMulti) {
+                        throw new Exception('Error: There was an error with one of the multiple requests.');
+                    } else {
+                        throw new Exception('Error: ' . $this->promiser->getResponse()->getCode() . ' ' . $this->promiser->getResponse()->getMessage());
+                    }
                 }
             } else {
                 $this->setState(self::FULFILLED);
-                return $this->promiser->getResponse();
+                return ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
             }
         } else if ($unwrap) {
             throw new Exception('Error: Unable to complete request.');
@@ -86,7 +99,15 @@ class Promise extends Promise\AbstractPromise
         if ($this->getState() !== self::PENDING) {
             return;
         }
-        $this->promiser->send();
+
+        if ($this->promiser instanceof CurlMulti) {
+            $running = null;
+            do {
+                $this->promiser->send($running);
+            } while ($running);
+        } else {
+            $this->promiser->send();
+        }
 
         if ($this->promiser->isComplete()) {
             if ($this->promiser->isSuccess()) {
@@ -102,7 +123,9 @@ class Promise extends Promise\AbstractPromise
                         break;
                     // Else, execute callback
                     } else {
-                        $result = $success->call(['response' => $this->promiser->getResponse()]);
+                        $result = $success->call([
+                            'response' => ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse()
+                        ]);
                     }
                 }
 
@@ -117,7 +140,7 @@ class Promise extends Promise\AbstractPromise
                 }
                 $this->setState(self::REJECTED);
                 $this->failure->call([
-                    'response' => $this->promiser->getResponse()
+                    'response' => ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse()
                 ]);
             }
         }

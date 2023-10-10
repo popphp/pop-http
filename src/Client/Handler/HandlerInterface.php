@@ -52,15 +52,6 @@ interface HandlerInterface
     public function resource(): mixed;
 
     /**
-     * Method to prepare the handler
-     *
-     * @param  Request $request
-     * @param  ?Auth   $auth
-     * @return HandlerInterface
-     */
-    public function prepare(Request $request, ?Auth $auth = null): HandlerInterface;
-
-    /**
      * Method to send the request
      */
     public function send();

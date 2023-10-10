@@ -15,6 +15,7 @@ namespace Pop\Http\Promise;
 
 use Pop\Http\Client;
 use Pop\Http\Client\Response;
+use Pop\Http\Client\Handler\CurlMulti;
 use Pop\Utils\CallableObject;
 
 /**
@@ -41,9 +42,9 @@ abstract class AbstractPromise implements PromiseInterface
 
     /**
      * Client Promiser
-     * @var ?Client
+     * @var Client|CurlMulti|null
      */
-    protected ?Client $promiser = null;
+    protected Client|CurlMulti|null $promiser = null;
 
     /**
      * Success callables
@@ -78,10 +79,10 @@ abstract class AbstractPromise implements PromiseInterface
     /**
      * Method to set client promiser
      *
-     * @param  Client $promiser
+     * @param  Client|CurlMulti $promiser
      * @return PromiseInterface
      */
-    public function setPromiser(Client $promiser): AbstractPromise
+    public function setPromiser(Client|CurlMulti $promiser): AbstractPromise
     {
         $this->promiser = $promiser;
         return $this;
@@ -90,9 +91,9 @@ abstract class AbstractPromise implements PromiseInterface
     /**
      * Method to get client promiser
      *
-     * @return Client
+     * @return Client|CurlMulti
      */
-    public function getPromiser(): Client
+    public function getPromiser(): Client|CurlMulti
     {
         return $this->promiser;
     }
@@ -429,9 +430,9 @@ abstract class AbstractPromise implements PromiseInterface
      * Wait method
      *
      * @param  bool $unwrap
-     * @return Response|null
+     * @return Response|array|null
      */
-    abstract public function wait(bool $unwrap = true): Response|null;
+    abstract public function wait(bool $unwrap = true): Response|array|null;
 
     /**
      * Resolve method

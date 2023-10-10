@@ -15,6 +15,7 @@ namespace Pop\Http\Promise;
 
 use Pop\Http\Client;
 use Pop\Http\Client\Response;
+use Pop\Http\Client\Handler\CurlMulti;
 use Pop\Utils\CallableObject;
 
 /**
@@ -33,17 +34,17 @@ interface PromiseInterface
     /**
      * Method to set client promiser
      *
-     * @param  Client $promiser
+     * @param  Client|CurlMulti $promiser
      * @return PromiseInterface
      */
-    public function setPromiser(Client $promiser): PromiseInterface;
+    public function setPromiser(Client|CurlMulti $promiser): PromiseInterface;
 
     /**
      * Method to get client promiser
      *
-     * @return Client
+     * @return Client|CurlMulti
      */
-    public function getPromiser(): Client;
+    public function getPromiser(): Client|CurlMulti;
 
     /**
      * Method to check client promiser
@@ -223,9 +224,9 @@ interface PromiseInterface
      * Wait method
      *
      * @param  bool $unwrap
-     * @return Response|null
+     * @return Response|array|null
      */
-    public function wait(bool $unwrap = true): Response|null;
+    public function wait(bool $unwrap = true): Response|array|null;
 
     /**
      * Resolve method

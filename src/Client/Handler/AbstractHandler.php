@@ -67,15 +67,6 @@ abstract class AbstractHandler implements HandlerInterface
     }
 
     /**
-     * Method to prepare the handler
-     *
-     * @param  Request $request
-     * @param  ?Auth   $auth
-     * @return AbstractHandler
-     */
-    abstract public function prepare(Request $request, ?Auth $auth = null): AbstractHandler;
-
-    /**
      * Method to send the request
      */
     abstract public function send();
