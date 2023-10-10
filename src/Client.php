@@ -13,9 +13,11 @@
  */
 namespace Pop\Http;
 
-use Pop\Http\Client\Handler\HandlerInterface;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
+use Pop\Http\Client\Handler\Curl;
+use Pop\Http\Client\Handler\CurlMulti;
+use Pop\Http\Client\Handler\HandlerInterface;
 
 /**
  * HTTP client class
@@ -49,6 +51,12 @@ class Client extends AbstractHttp
     protected ?HandlerInterface $handler = null;
 
     /**
+     * Request multi-handler
+     * @var ?CurlMulti
+     */
+    protected ?CurlMulti $multiHandler = null;
+
+    /**
      * HTTP auth object
      * @var ?Auth
      */
@@ -65,6 +73,7 @@ class Client extends AbstractHttp
         $args     = func_get_args();
         $request  = null;
         $response = null;
+        $handler  = null;
 
         foreach ($args as $arg) {
             if ($arg instanceof Client\Request) {
@@ -72,7 +81,7 @@ class Client extends AbstractHttp
             } else if ($arg instanceof Client\Response) {
                 $response = $arg;
             } else if ($arg instanceof Client\Handler\HandlerInterface) {
-                $this->setHandler($arg);
+                $handler = $arg;
             } else if ($arg instanceof Auth) {
                 $this->setAuth($arg);
             } else if (is_string($arg)) {
@@ -83,6 +92,14 @@ class Client extends AbstractHttp
         }
 
         parent::__construct($request, $response);
+
+        if ($handler !== null) {
+            if ($handler instanceof CurlMulti) {
+                $this->setMultiHandler($handler);
+            } else {
+                $this->setHandler($handler);
+            }
+        }
     }
 
     /**
@@ -209,6 +226,44 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Set multi-handler
+     *
+     * @param  CurlMulti $multiHandler
+     * @return Client
+     */
+    public function setMultiHandler(CurlMulti $multiHandler): Client
+    {
+        $this->multiHandler = $multiHandler;
+
+        if (!($this->handler instanceof Curl)) {
+            $this->handler = new Curl();
+            $this->multiHandler->addClient($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get multi-handler
+     *
+     * @return CurlMulti
+     */
+    public function getMultiHandler(): CurlMulti
+    {
+        return $this->multiHandler;
+    }
+
+    /**
+     * Has multi-handler
+     *
+     * @return bool
+     */
+    public function hasMultiHandler(): bool
+    {
+        return ($this->multiHandler !== null);
+    }
+
+    /**
      * Set auth
      *
      * @param  Auth $auth
@@ -223,9 +278,9 @@ class Client extends AbstractHttp
     /**
      * Get auth
      *
-     * @return Auth $auth
+     * @return Auth|null
      */
-    public function getAuth(): Auth
+    public function getAuth(): Auth|null
     {
         return $this->auth;
     }
@@ -269,7 +324,7 @@ class Client extends AbstractHttp
         }
 
         if (!$this->hasHandler()) {
-            $this->setHandler(new Client\Handler\Curl());
+            $this->setHandler(new Curl());
         }
 
         $this->response = $this->handler->prepare($this->request, $this->auth)->send();
@@ -278,11 +333,21 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Method to send the request asynchronously
+     *
+     * @return Promise
+     */
+    public function sendAsync(): Promise
+    {
+        return new Promise($this);
+    }
+
+    /**
      * Magic method to send requests by the method name, i.e. $client->get('http://localhost/');
      *
      * @param  string $methodName
      * @param  array  $arguments
-     * @throws Exception
+     * @throws Exception|Client\Exception
      * @return Response
      */
     public function __call(string $methodName, array $arguments): Response
@@ -299,7 +364,7 @@ class Client extends AbstractHttp
      *
      * @param  string $methodName
      * @param  array  $arguments
-     * @throws Exception
+     * @throws Exception|Client\Exception
      * @return Response
      */
     public static function __callStatic(string $methodName, array $arguments): Response

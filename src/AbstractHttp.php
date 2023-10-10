@@ -119,6 +119,128 @@ abstract class AbstractHttp implements HttpInterface
     }
 
     /**
+     * Determine if the response is complete
+     *
+     * @return bool
+     */
+    public function isComplete(): bool
+    {
+        return ($this->response !== null);
+    }
+
+    /**
+     * Determine if the response is a success
+     *
+     * @return bool|null
+     */
+    public function isSuccess(): bool|null
+    {
+        $code = $this->response?->getCode();
+        if (!empty($code)) {
+            $type = floor($code / 100);
+            return (($type == 1) || ($type == 2) || ($type == 3));
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Determine if the response is an error
+     *
+     * @return bool|null
+     */
+    public function isError(): bool|null
+    {
+        $code = $this->response?->getCode();
+        if (!empty($code)) {
+            $type = floor($code / 100);
+            return (($type == 4) || ($type == 5));
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Determine if the response is continue
+     *
+     * @return bool|null
+     */
+    public function isContinue(): bool|null
+    {
+        $code = $this->response?->getCode();
+        if (!empty($code)) {
+            $type = floor($code / 100);
+            return ($type == 1);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Determine if the response is OK
+     *
+     * @return bool|null
+     */
+    public function isOk(): bool|null
+    {
+        $code = $this->response?->getCode();
+        if (!empty($code)) {
+            $type = floor($code / 100);
+            return ($type == 2);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Determine if the response is a redirect
+     *
+     * @return bool|null
+     */
+    public function isRedirect(): bool|null
+    {
+        $code = $this->response?->getCode();
+        if (!empty($code)) {
+            $type = floor($code / 100);
+            return ($type == 3);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Determine if the response is a client error
+     *
+     * @return bool|null
+     */
+    public function isClientError(): bool|null
+    {
+        $code = $this->response?->getCode();
+        if (!empty($code)) {
+            $type = floor($code / 100);
+            return ($type == 4);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Determine if the response is a server error
+     *
+     * @return bool|null
+     */
+    public function isServerError(): bool|null
+    {
+        $code = $this->response?->getCode();
+        if (!empty($code)) {
+            $type = floor($code / 100);
+            return ($type == 5);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Send the request/response
      */
     abstract public function send();

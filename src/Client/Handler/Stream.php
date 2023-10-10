@@ -397,22 +397,16 @@ class Stream extends AbstractHandler
     }
 
     /**
-     * Method to send the request asynchronously
-     *
-     * @return mixed
-     */
-    public function sendAsync(): mixed
-    {
-        return null;
-    }
-
-    /**
      * Method to reset the handler
      *
      * @return Stream
      */
     public function reset(): Stream
     {
+        $this->context             = null;
+        $this->contextOptions      = [];
+        $this->contextParams       = [];
+        $this->httpResponseHeaders = null;
         return $this;
     }
 
@@ -423,7 +417,12 @@ class Stream extends AbstractHandler
      */
     public function disconnect(): void
     {
-
+        $this->uri                 = null;
+        $this->resource            = null;
+        $this->context             = null;
+        $this->contextOptions      = [];
+        $this->contextParams       = [];
+        $this->httpResponseHeaders = null;
     }
 
 }

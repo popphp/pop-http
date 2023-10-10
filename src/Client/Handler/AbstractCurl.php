@@ -52,14 +52,29 @@ abstract class AbstractCurl extends AbstractHandler
             throw new Exception('Error: Curl is not available.');
         }
 
-        $this->resource = (str_contains(get_class($this), 'Multi')) ? curl_multi_init() : curl_init();
-
-        $this->setOption(CURLOPT_HEADER, true);
-        $this->setOption(CURLOPT_RETURNTRANSFER, true);
+        if (str_contains(get_class($this), 'Multi')) {
+            $this->resource = curl_multi_init();
+        } else {
+            $this->resource = curl_init();
+            $this->setOption(CURLOPT_HEADER, true);
+            $this->setOption(CURLOPT_RETURNTRANSFER, true);
+        }
 
         if ($opts !== null) {
             $this->setOptions($opts);
         }
+    }
+
+    /**
+     * Get Curl response
+     *
+     * @param  mixed $response
+     * @return AbstractCurl
+     */
+    public function setResponse(mixed $response): AbstractCurl
+    {
+        $this->response = $response;
+        return $this;
     }
 
     /**

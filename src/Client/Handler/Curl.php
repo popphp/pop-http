@@ -76,7 +76,6 @@ class Curl extends AbstractCurl
         return ($opt !== null) ? curl_getinfo($this->resource, $opt) : curl_getinfo($this->resource);
     }
 
-
     /**
      * Method to prepare the handler
      *
@@ -188,22 +187,13 @@ class Curl extends AbstractCurl
     }
 
     /**
-     * Method to send the request asynchronously
-     *
-     * @return mixed
-     */
-    public function sendAsync(): mixed
-    {
-        return null;
-    }
-
-    /**
      * Method to reset the handler
      *
      * @return Curl
      */
     public function reset(): Curl
     {
+        $this->response = null;
         return $this;
     }
 
@@ -214,7 +204,12 @@ class Curl extends AbstractCurl
      */
     public function disconnect(): void
     {
-
+        if ($this->hasResource()) {
+            curl_close($this->resource);
+            $this->resource = null;
+            $this->response = null;
+            $this->options  = [];
+        }
     }
 
 }
