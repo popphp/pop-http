@@ -24,6 +24,10 @@ class ServerTest extends TestCase
         $this->assertTrue($server->hasResponse());
         $this->assertInstanceOf('Pop\Http\Server\Request', $server->getRequest());
         $this->assertInstanceOf('Pop\Http\Server\Response', $server->getResponse());
+        $this->assertInstanceOf('Pop\Http\Server\Request', $server->request());
+        $this->assertInstanceOf('Pop\Http\Server\Response', $server->response());
+        $this->assertInstanceOf('Pop\Http\Server\Request', $server->request);
+        $this->assertInstanceOf('Pop\Http\Server\Response', $server->response);
     }
 
     public function testGetHeadersAsString()

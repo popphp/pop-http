@@ -125,7 +125,7 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function isComplete(): bool
     {
-        return ($this->response !== null);
+        return (($this->response !== null) && ($this->response->hasCode()));
     }
 
     /**

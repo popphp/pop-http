@@ -348,7 +348,7 @@ class Client extends AbstractHttp
      */
     public function send(?string $uri = null, string $method = 'GET'): Response|Promise
     {
-        if (isset($options['async']) && ($options['async'] === true)) {
+        if (isset($this->options['async']) && ($this->options['async'] === true)) {
             return $this->sendAsync();
         } else {
             $this->prepare($uri, $method);
@@ -399,10 +399,13 @@ class Client extends AbstractHttp
     public static function __callStatic(string $methodName, array $arguments): Response|Promise
     {
         $client = new static();
+        $uri    = null;
 
         if (count($arguments) > 1) {
             foreach ($arguments as $arg) {
-                if ($arg instanceof Client\Request) {
+                if (is_string($arg)) {
+                    $client->setRequest(new Client\Request($arg));
+                } else if ($arg instanceof Client\Request) {
                     $client->setRequest($arg);
                 } else if ($arg instanceof Client\Response) {
                     $client->setResponse($arg);
@@ -410,19 +413,22 @@ class Client extends AbstractHttp
                     $client->setHandler($arg);
                 } else if ($arg instanceof Auth) {
                     $client->setAuth($arg);
-                } else if (is_string($arg)) {
-                    $client->setBaseUri($arg);
                 } else if (is_array($arg)) {
                     $client->setOptions($arg);
                 }
             }
         }
+
+        if ((!$client->hasRequest()) && isset($arguments[0])) {
+            $uri = ($arguments[0]);
+        }
+
         if (str_contains($methodName, 'Async')) {
             $methodName = strtoupper(substr($methodName, 0, strpos($methodName, 'Async')));
-            $client->prepare($arguments[0], $methodName);
+            $client->prepare($uri, $methodName);
             return $client->sendAsync();
         } else {
-            return $client->send($arguments[0], strtoupper($methodName));
+            return $client->send($uri, strtoupper($methodName));
         }
     }
 

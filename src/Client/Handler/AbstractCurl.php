@@ -134,7 +134,7 @@ abstract class AbstractCurl extends AbstractHandler
     }
 
     /**
-     * Get a Curl multi option
+     * Get a Curl option
      *
      * @param  int $opt
      * @return mixed
@@ -145,7 +145,27 @@ abstract class AbstractCurl extends AbstractHandler
     }
 
     /**
-     * Has a Curl multi option
+     * Remove Curl option
+     *
+     * @param  int $opt
+     * @return AbstractCurl
+     */
+    public function removeOption(int $opt): AbstractCurl
+    {
+        if (isset($this->options[$opt])) {
+            if (str_contains(get_class($this), 'Multi')) {
+                curl_multi_setopt($this->resource, $opt, null);
+            } else {
+                curl_setopt($this->resource, $opt, null);
+            }
+
+            unset($this->options[$opt]);
+        }
+        return $this;
+    }
+
+    /**
+     * Has a Curl option
      *
      * @param  int $opt
      * @return bool

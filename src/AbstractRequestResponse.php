@@ -89,6 +89,17 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
     }
 
     /**
+     * Get a header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getHeaderAsString(string $name): mixed
+    {
+        return (string)$this->headers[$name] ?? null;
+    }
+
+    /**
      * Get header value
      *
      * @param  string $name
@@ -98,6 +109,18 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
     public function getHeaderValue(string $name, int $i = 0): mixed
     {
         return (isset($this->headers[$name])) ? $this->headers[$name]?->getValue($i) : null;
+    }
+
+    /**
+     * Get header value as string
+     *
+     * @param  string $name
+     * @param  int    $i
+     * @return string|null
+     */
+    public function getHeaderValueAsString(string $name, int $i = 0): string|null
+    {
+        return (isset($this->headers[$name])) ? $this->headers[$name]?->getValueAsString($i) : null;
     }
 
     /**

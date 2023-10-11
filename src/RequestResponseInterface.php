@@ -55,6 +55,14 @@ interface RequestResponseInterface
     public function getHeader(string $name): mixed;
 
     /**
+     * Get a header
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function getHeaderAsString(string $name): mixed;
+
+    /**
      * Get header value
      *
      * @param  string $name
@@ -62,6 +70,15 @@ interface RequestResponseInterface
      * @return mixed
      */
     public function getHeaderValue(string $name, int $i = 0): mixed;
+
+    /**
+     * Get header value as string
+     *
+     * @param  string $name
+     * @param  int    $i
+     * @return string|null
+     */
+    public function getHeaderValueAsString(string $name, int $i = 0): string|null;
 
     /**
      * Get all headers

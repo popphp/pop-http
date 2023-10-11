@@ -3,6 +3,7 @@
 namespace Pop\Http\Test\Server;
 
 use Pop\Filter\Filter;
+use Pop\Http\Client\Data;
 use Pop\Http\Server\Request;
 use PHPUnit\Framework\TestCase;
 use Pop\Http\Uri;
@@ -493,7 +494,7 @@ class RequestTest extends TestCase
         $request = new Request(null, null, '/bad/dir');
     }
 
-    public function testFilter()
+    public function testFilter1()
     {
         $_SERVER['HTTP_HOST']  = 'localhost';
         $_SERVER['SERVER_PORT']  = 8000;
@@ -506,7 +507,13 @@ class RequestTest extends TestCase
 
         $request = new Request(null, new Filter('strip_tags'));
         $this->assertEquals(123, $request->getQuery('var'));
+    }
 
+    public function testFilter2()
+    {
+        $data = new Data();
+        $data->addFilter('strip_tags');
+        $this->assertEquals('Hello', $data->filter('<b>Hello</b>'));
     }
 
     public function testGetMagicMethod()

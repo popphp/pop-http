@@ -46,13 +46,15 @@ class Curl extends AbstractCurl
     }
 
     /**
-     * Check if Curl is set to return header
+     * Set Curl option to return the headers (set to true by default)
      *
-     * @return bool
+     * @param  bool $header
+     * @return Curl
      */
-    public function isReturnHeader(): bool
+    public function setReturnHeader(bool $header = true): Curl
     {
-        return (isset($this->options[CURLOPT_HEADER]) && ($this->options[CURLOPT_HEADER] == true));
+        $this->setOption(CURLOPT_HEADER, (bool)$header);
+        return $this;
     }
 
     /**
@@ -64,6 +66,17 @@ class Curl extends AbstractCurl
     {
         return (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER] == true));
     }
+
+    /**
+     * Check if Curl is set to return header
+     *
+     * @return bool
+     */
+    public function isReturnHeader(): bool
+    {
+        return (isset($this->options[CURLOPT_HEADER]) && ($this->options[CURLOPT_HEADER] == true));
+    }
+
 
     /**
      * Return the Curl last info

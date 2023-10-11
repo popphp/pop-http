@@ -192,6 +192,16 @@ abstract class AbstractResponse extends AbstractRequestResponse
     }
 
     /**
+     * Has the response HTTP version
+     *
+     * @return bool
+     */
+    public function hasVersion(): bool
+    {
+        return ($this->version !== null);
+    }
+
+    /**
      * Set the response code
      *
      * @param  int $code
@@ -221,6 +231,16 @@ abstract class AbstractResponse extends AbstractRequestResponse
     }
 
     /**
+     * Has the response code
+     *
+     * @return bool
+     */
+    public function hasCode(): bool
+    {
+        return ($this->code !== null);
+    }
+
+    /**
      * Set the response message
      *
      * @param  ?string $message
@@ -240,6 +260,16 @@ abstract class AbstractResponse extends AbstractRequestResponse
     public function getMessage(): string
     {
         return $this->message;
+    }
+
+    /**
+     * Has the response message
+     *
+     * @return bool
+     */
+    public function hasMessage(): bool
+    {
+        return ($this->message !== null);
     }
 
     /**
