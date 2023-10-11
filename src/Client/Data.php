@@ -111,11 +111,16 @@ class Data
     /**
      * Get data
      *
-     * @return array
+     * @param  ?string $key
+     * @return mixed
      */
-    public function getData(): array
+    public function getData(?string $key = null): mixed
     {
-        return $this->data;
+        if ($key !== null) {
+            return $this->data[$key] ?? null;
+        } else {
+            return $this->data;
+        }
     }
 
     /**

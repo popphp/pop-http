@@ -324,7 +324,7 @@ class Client extends AbstractHttp
             $this->request->setData($this->options['query']);
         }
         if ($this->hasOption('type')) {
-            $this->request->setType($this->options['type']);
+            $this->request->setRequestType($this->options['type']);
         }
 
         if (!$this->hasHandler()) {

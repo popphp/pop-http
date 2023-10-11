@@ -30,6 +30,15 @@ class Request extends AbstractRequest
 {
 
     /**
+     * Request type constants
+     * @var string
+     */
+    const JSON      = 'application/json';
+    const XML       = 'application/xml';
+    const URLFORM   = 'application/x-www-form-urlencoded';
+    const MULTIPART = 'multipart/form-data';
+  
+    /**
      * Request method
      * @var ?string
      */
@@ -69,21 +78,23 @@ class Request extends AbstractRequest
             $this->setData($data);
         }
         if ($type !== null) {
-            $this->setType($type);
+            $this->setRequestType($type);
         }
     }
 
     /**
      * Factory method to create a Request object
      *
-     * @param  ?Uri $uri
+     * @param  Uri|string|null $uri
      * @param  string $method
      * @param  array|Data|null $data
      * @param  ?string $type
      * @throws Exception
      * @return Request
      */
-    public static function create(?Uri $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null): Request
+    public static function create(
+        Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null
+    ): Request
     {
         return new self($uri, $method, $data, $type);
     }
@@ -159,24 +170,34 @@ class Request extends AbstractRequest
      * @param  string $type
      * @return Request
      */
-    public function setType(string $type): Request
+    public function setRequestType(string $type): Request
     {
         switch ($type) {
-            case 'application/json':
+            case self::JSON:
                 $this->createAsJson();
                 break;
-            case 'application/xml':
+            case self::XML:
                 $this->createAsXml();
                 break;
-            case 'application/x-www-form-urlencoded':
+            case self::URLFORM:
                 $this->createUrlEncodedForm();
                 break;
-            case 'multipart/form-data':
+            case self::MULTIPART:
                 $this->createMultipartForm();
                 break;
         }
 
         return $this;
+    }
+
+    /**
+     * Get request type
+     *
+     * @return string
+     */
+    public function getRequestType(): string
+    {
+        return $this->requestType;
     }
 
     /**
@@ -186,7 +207,7 @@ class Request extends AbstractRequest
      */
     public function createAsJson(): Request
     {
-        $this->requestType = 'application/json';
+        $this->requestType = self::JSON;
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
@@ -203,7 +224,7 @@ class Request extends AbstractRequest
      */
     public function isJson(): bool
     {
-        return ($this->requestType == 'application/json');
+        return ($this->requestType == self::JSON);
     }
 
     /**
@@ -213,7 +234,7 @@ class Request extends AbstractRequest
      */
     public function createAsXml(): Request
     {
-        $this->requestType = 'application/xml';
+        $this->requestType = self::XML;
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
@@ -230,7 +251,7 @@ class Request extends AbstractRequest
      */
     public function isXml(): bool
     {
-        return ($this->requestType == 'application/xml');
+        return ($this->requestType == self::XML);
     }
 
     /**
@@ -240,7 +261,7 @@ class Request extends AbstractRequest
      */
     public function createUrlEncodedForm(): Request
     {
-        $this->requestType = 'application/x-www-form-urlencoded';
+        $this->requestType = self::URLFORM;
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
@@ -257,7 +278,7 @@ class Request extends AbstractRequest
      */
     public function isUrlEncodedForm(): bool
     {
-        return ($this->requestType == 'application/x-www-form-urlencoded');
+        return ($this->requestType == self::URLFORM);
     }
 
     /**
@@ -267,7 +288,7 @@ class Request extends AbstractRequest
      */
     public function createMultipartForm(): Request
     {
-        $this->requestType = 'multipart/form-data';
+        $this->requestType = self::MULTIPART;
         return $this;
     }
 
@@ -278,17 +299,7 @@ class Request extends AbstractRequest
      */
     public function isMultipartForm(): bool
     {
-        return ($this->requestType == 'multipart/form-data');
-    }
-
-    /**
-     * Get form type
-     *
-     * @return string
-     */
-    public function getRequestType(): string
-    {
-        return $this->requestType;
+        return ($this->requestType == self::MULTIPART);
     }
 
     /**
