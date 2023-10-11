@@ -51,6 +51,12 @@ class AuthTest extends TestCase
         $this->assertEquals('sd0c98sdc-fhygn9b90f-fgb90fgb', $header->getToken());
     }
 
+    public function testParseMulti()
+    {
+        $header = Auth::parse("Authorization: Bearer 123456\r\nAuthorization: Bearer 456789");
+        $this->assertEquals('Authorization', $header->getHeader());
+    }
+
     public function testGetters1()
     {
         $auth = Auth::createBasic('username', 'password');

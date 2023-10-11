@@ -120,7 +120,7 @@ class CurlMultiTest extends TestCase
     {
         $multiHandler = new CurlMulti();
         $client1      = new Client(new Client\Request('http://localhost/'), $multiHandler);
-        $client2      = new Client(new Client\Request('https://www.popphp.org/bar-url'), $multiHandler);
+        $client2      = new Client(new Client\Request('https://www.popphp.org/bad-url'), $multiHandler);
         $multiHandler->setWait();
         $running  = null;
         $progress = 0;
@@ -146,6 +146,16 @@ class CurlMultiTest extends TestCase
         $response     = $promise->wait();
         $this->assertInstanceOf('Pop\Http\Promise', $promise);
         $this->assertCount(2, $response);
+    }
+
+    public function testSendAsyncWaitException()
+    {
+        $this->expectException('Pop\Http\Promise\Exception');
+        $multiHandler = new CurlMulti();
+        $client1      = new Client(new Client\Request('http://localhost/'), $multiHandler);
+        $client2      = new Client(new Client\Request('https://www.popphp.org/bad-url'), $multiHandler);
+        $promise      = $multiHandler->sendAsync();
+        $response     = $promise->wait();
     }
 
     public function testSendAsyncResolve()

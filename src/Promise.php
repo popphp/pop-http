@@ -64,7 +64,8 @@ class Promise extends Promise\AbstractPromise
     public function wait(bool $unwrap = true): Response|array|null
     {
         if (($this->isFulfilled()) && ($this->promiser->isComplete())) {
-            return ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
+            return ($this->promiser instanceof CurlMulti) ?
+                $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
         }
 
         $this->setState(self::PENDING);
@@ -85,12 +86,16 @@ class Promise extends Promise\AbstractPromise
                     if ($this->promiser instanceof CurlMulti) {
                         throw new Exception('Error: There was an error with one of the multiple requests.');
                     } else {
-                        throw new Exception('Error: ' . $this->promiser->getResponse()->getCode() . ' ' . $this->promiser->getResponse()->getMessage());
+                        throw new Exception(
+                            'Error: ' . $this->promiser->getResponse()->getCode() . ' ' .
+                            $this->promiser->getResponse()->getMessage()
+                        );
                     }
                 }
             } else {
                 $this->setState(self::FULFILLED);
-                return ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
+                return ($this->promiser instanceof CurlMulti) ?
+                    $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
             }
         } else if ($unwrap) {
             throw new Exception('Error: Unable to complete request.');

@@ -56,17 +56,37 @@ class PromiseTest extends TestCase
 
     public function testCancel()
     {
+        $var = null;
         $promise = new Promise(new Client());
-        $promise->setCancel(function($value) { });
+        $promise->setCancel(function($value) use (&$var) {
+            $var = 123;
+        });
         $this->assertTrue($promise->hasCancel());
         $this->assertInstanceOf('Pop\Utils\CallableObject', $promise->getCancel());
+        $promise->cancel();
+        $this->assertEquals(123, $var);
     }
 
-    public function testCancelException()
+    public function testCancelException1()
     {
         $this->expectException('Pop\Http\Promise\Exception');
         $promise = new Promise(new Client());
         $promise->setCancel('####');
+    }
+
+    public function testCancelException2()
+    {
+        $this->expectException('Pop\Http\Promise\Exception');
+        $promise = new Promise(new Client());
+        $promise->cancel();
+    }
+
+    public function testCancelWrongState()
+    {
+        $promise = new Promise(new Client());
+        $promise->setState(Promise::FULFILLED);
+        $var = $promise->cancel();
+        $this->assertNull($var);
     }
 
     public function testFinally()
@@ -113,6 +133,14 @@ class PromiseTest extends TestCase
         $this->assertTrue(str_contains($response->getParsedResponse(), '<html'));
     }
 
+    public function testWaitError()
+    {
+        $this->expectException('Pop\Http\Promise\Exception');
+        $client  = new Client(new Client\Request('https://www.popphp.org/bad-url'));
+        $promise = new Promise($client);
+        $response = $promise->wait();
+    }
+
     public function testResolve()
     {
         $client  = new Client(new Client\Request('http://localhost/'));
@@ -123,6 +151,78 @@ class PromiseTest extends TestCase
         }, true);
 
         $this->assertTrue(str_contains($var, '<html'));
+    }
+
+    public function testResolveError()
+    {
+        $client  = new Client(new Client\Request('https://www.popphp.org/bad-url'));
+        $var     = null;
+        $promise = new Promise($client);
+        $promise->then(function(Client\Response $response) {
+            echo 123;
+        })->catch(function(Client\Response $response) use (&$var) {
+            $var = $response->getCode();
+        }, true);
+
+        $this->assertEquals(404, $var);
+    }
+
+    public function testResolveException1()
+    {
+        $this->expectException('Pop\Http\Promise\Exception');
+        $client  = new Client(new Client\Request('http://localhost/'));
+        $promise = new Promise($client);
+        $promise->resolve();
+    }
+
+    public function testResolveException2()
+    {
+        $this->expectException('Pop\Http\Promise\Exception');
+        $client  = new Client(new Client\Request('https://www.popphp.org/bad-url'));
+        $promise = new Promise($client);
+        $promise->resolve();
+    }
+
+    public function testResolveWrongState()
+    {
+        $promise = new Promise(new Client());
+        $promise->setState(Promise::FULFILLED);
+        $var = $promise->resolve();
+        $this->assertNull($var);
+    }
+
+    public function testResolveWithFinally()
+    {
+        $client  = new Client(new Client\Request('http://localhost/'));
+        $var     = null;
+        $promise = new Promise($client);
+        $promise->then(function(Client\Response $response) {
+            $test = 123;
+        })->finally(function(Promise $promise) use (&$var) {
+            $var = 456;
+        }, true);
+
+        $this->assertEquals(456, $var);
+    }
+
+    public function testForward()
+    {
+        $promise1 = Client::getAsync('http://localhost/');
+        $promise2 = Client::getAsync('http://localhost/');
+
+        $promise1->then(function(Client\Response $response) use ($promise2) {
+            $test = 456;
+            return $promise2;
+        })->then(function(Client\Response $response) use (&$var) {
+            $var = 123;
+        })->catch(function(Client\Response $response) {
+            $test = 789;
+        })->finally(function() {});
+
+        $promise1->setCancel(function(){});
+
+        $promise1->resolve();
+        $this->assertEquals(123, $var);
     }
 
 }
