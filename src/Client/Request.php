@@ -175,6 +175,8 @@ class Request extends AbstractRequest
                 $this->createMultipartForm();
                 break;
         }
+
+        return $this;
     }
 
     /**

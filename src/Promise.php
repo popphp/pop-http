@@ -44,6 +44,17 @@ class Promise extends Promise\AbstractPromise
     }
 
     /**
+     * Factory to create a Promise object
+     *
+     * @param  Client|CurlMulti $promiser
+     * @return static
+     */
+    public static function create(Client|CurlMulti $promiser): static
+    {
+        return new static($promiser);
+    }
+
+    /**
      * Wait method
      *
      * @param  bool $unwrap

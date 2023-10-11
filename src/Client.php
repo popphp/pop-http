@@ -344,14 +344,17 @@ class Client extends AbstractHttp
      * @param  ?string $uri
      * @param  string  $method
      * @throws Exception|Client\Exception
-     * @return Response
+     * @return Response|Promise
      */
-    public function send(?string $uri = null, string $method = 'GET'): Response
+    public function send(?string $uri = null, string $method = 'GET'): Response|Promise
     {
-        $this->prepare($uri, $method);
-        $this->response = $this->handler->prepare($this->request, $this->auth)->send();
-
-        return $this->response;
+        if (isset($options['async']) && ($options['async'] === true)) {
+            return $this->sendAsync();
+        } else {
+            $this->prepare($uri, $method);
+            $this->response = $this->handler->prepare($this->request, $this->auth)->send();
+            return $this->response;
+        }
     }
 
     /**
