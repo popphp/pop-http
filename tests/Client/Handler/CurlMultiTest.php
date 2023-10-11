@@ -137,11 +137,28 @@ class CurlMultiTest extends TestCase
         $this->assertTrue($multiHandler->isError());
     }
 
-    public function testSendAsync()
+    public function testSendAsyncWait()
     {
         $multiHandler = new CurlMulti();
         $client1      = new Client(new Client\Request('http://localhost/'), $multiHandler);
         $client2      = new Client(new Client\Request('http://localhost/'), $multiHandler);
-        $this->assertInstanceOf('Pop\Http\Promise', $multiHandler->sendAsync());
+        $promise      = $multiHandler->sendAsync();
+        $response     = $promise->wait();
+        $this->assertInstanceOf('Pop\Http\Promise', $promise);
+        $this->assertCount(2, $response);
+    }
+
+    public function testSendAsyncResolve()
+    {
+        $multiHandler = new CurlMulti();
+        $client1      = new Client(new Client\Request('http://localhost/'), $multiHandler);
+        $client2      = new Client(new Client\Request('http://localhost/'), $multiHandler);
+        $var          = null;
+        $promise      = $multiHandler->sendAsync();
+        $promise->then(function ($responses) use (&$var) {
+            $var = $responses;
+        }, true);
+        $this->assertInstanceOf('Pop\Http\Promise', $promise);
+        $this->assertCount(2, $var);
     }
 }

@@ -103,4 +103,26 @@ class PromiseTest extends TestCase
         $promise->setState('BAD_STATE');
     }
 
+    public function testWait()
+    {
+        $client = new Client(new Client\Request('http://localhost/'));
+        $promise = new Promise($client);
+        $response = $promise->wait();
+        $this->assertTrue(str_contains($response->getParsedResponse(), '<html'));
+        $response = $promise->wait();
+        $this->assertTrue(str_contains($response->getParsedResponse(), '<html'));
+    }
+
+    public function testResolve()
+    {
+        $client  = new Client(new Client\Request('http://localhost/'));
+        $var     = null;
+        $promise = new Promise($client);
+        $promise->then(function(Client\Response $response) use (&$var){
+            $var = $response->getParsedResponse();
+        }, true);
+
+        $this->assertTrue(str_contains($var, '<html'));
+    }
+
 }
