@@ -460,7 +460,8 @@ class Data
          * $_SERVER['X_POP_HTTP_RAW_DATA'] is for testing purposes only
          */
         if (!empty($this->streamToFileLocation)) {
-            file_put_contents($this->streamToFileLocation, ($_SERVER['X_POP_HTTP_RAW_DATA'] ?? file_get_contents('php://input')));
+            $this->rawData = ($_SERVER['X_POP_HTTP_RAW_DATA'] ?? file_get_contents('php://input'));
+            file_put_contents($this->streamToFileLocation, $this->rawData);
 
             clearstatcache();
 

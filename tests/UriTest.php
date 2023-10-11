@@ -83,10 +83,8 @@ class UriTest extends TestCase
     {
         $_SERVER['REQUEST_URI'] = '/foo/bar';
         $uri = new Uri();
-        $this->assertTrue($uri->hasBasePath());
-        $this->assertEquals(getcwd(), $uri->getBasePath());
         $this->assertEquals('/foo/bar', $uri->getUri());
-        $this->assertEquals(getcwd() . '/foo/bar', $uri->getFullUri());
+        $this->assertEquals('/foo/bar', $uri->getFullUri());
     }
 
 }

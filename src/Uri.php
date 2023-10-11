@@ -511,8 +511,6 @@ class Uri
             $isServerRequest = true;
         }
 
-
-
         if (!empty($basePath)) {
             if (substr($uri, 0, (strlen($basePath) + 1)) == $basePath . '/') {
                 $uri = substr($uri, (strpos($uri, $basePath) + strlen($basePath)));
