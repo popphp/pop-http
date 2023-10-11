@@ -54,6 +54,20 @@ class CurlTest extends TestCase
         $this->assertTrue($curl->isReturnHeader());
     }
 
+    public function testVerifyPeer()
+    {
+        $curl = new Curl();
+        $curl->setVerifyPeer(true);
+        $this->assertTrue($curl->isVerifyPeer());
+    }
+
+    public function testAllowSelfSigned()
+    {
+        $curl = new Curl();
+        $curl->allowSelfSigned(false);
+        $this->assertFalse($curl->isAllowSelfSigned());
+    }
+
     public function testRemoveOption()
     {
         $curl = new Curl();

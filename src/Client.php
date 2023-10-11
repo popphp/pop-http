@@ -143,6 +143,8 @@ class Client extends AbstractHttp
      *  - 'query'
      *  - 'async'
      *  - 'type'
+     *  - 'verify_peer'
+     *  - 'allow_self_signed'
      *
      * @param  array $options
      * @return Client
@@ -331,6 +333,15 @@ class Client extends AbstractHttp
 
         if (!$this->hasHandler()) {
             $this->setHandler(new Curl());
+        }
+
+        if (!($this->handler instanceof CurlMulti)) {
+            if ($this->hasOption('verify_peer')) {
+                $this->handler->setVerifyPeer((bool)$this->options['verify_peer']);
+            }
+            if ($this->hasOption('allow_self_signed')) {
+                $this->handler->allowSelfSigned((bool)$this->options['allow_self_signed']);
+            }
         }
 
         if (($this->hasBaseUri()) && !str_starts_with($this->request->getUriAsString(), $this->getBaseUri())) {

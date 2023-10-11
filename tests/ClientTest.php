@@ -53,10 +53,12 @@ class ClientTest extends TestCase
     {
         $client = new Client(
             [
-                'base_uri' => 'http://localhost',
-                'headers'  => ['Authorization' => 'Bearer 123456'],
-                'query'    => ['filter' => '123'],
-                'type'     => 'application/x-www-form-urlencoded'
+                'base_uri'          => 'http://localhost',
+                'headers'           => ['Authorization' => 'Bearer 123456'],
+                'query'             => ['filter' => '123'],
+                'type'              => 'application/x-www-form-urlencoded',
+                'verify_peer'       => true,
+                'allow_self_signed' => false
             ]
         );
         $client->prepare('/foo/bar');

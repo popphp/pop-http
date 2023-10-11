@@ -189,6 +189,33 @@ class Stream extends AbstractHandler
     }
 
     /**
+     * Set Stream context option to set verify peer (verifies the domain's SSL cert)
+     *
+     * @param  bool $verify
+     * @return Stream
+     */
+    public function setVerifyPeer(bool $verify = true): Stream
+    {
+        $this->addContextOption('ssl', ['verify_peer' => (bool)$verify]);
+        return $this;
+    }
+
+    /**
+     * Set Stream context option to set to allow self-signed certs (verify host)
+     *
+     * @param  bool $allow
+     * @return Stream
+     */
+    public function allowSelfSigned(bool $allow = true): Stream
+    {
+        $this->addContextOption('ssl', ['allow_self_signed' => (bool)$allow]);
+        if (!$allow) {
+            $this->addContextOption('ssl', ['verify_peer' => false]);
+        }
+        return $this;
+    }
+
+    /**
      * Get the context resource
      *
      * @return mixed
@@ -270,6 +297,28 @@ class Stream extends AbstractHandler
     public function getMode(): string
     {
         return $this->mode;
+    }
+
+    /**
+     * Check if Stream is set to verify peer
+     *
+     * @return bool
+     */
+    public function isVerifyPeer(): bool
+    {
+        return (isset($this->contextOptions['ssl']) && isset($this->contextOptions['ssl']['verify_peer']) &&
+            ($this->contextOptions['ssl']['verify_peer'] == true));
+    }
+
+    /**
+     * Check if Stream is set to allow self-signed certs
+     *
+     * @return bool
+     */
+    public function isAllowSelfSigned(): bool
+    {
+        return (isset($this->contextOptions['ssl']) && isset($this->contextOptions['ssl']['allow_self_signed']) &&
+            ($this->contextOptions['ssl']['allow_self_signed'] == true));
     }
 
     /**

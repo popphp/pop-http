@@ -52,6 +52,20 @@ class StreamTest extends TestCase
         $this->assertNotNull($stream->getContext());
     }
 
+    public function testVerifyPeer()
+    {
+        $stream = new Stream();
+        $stream->setVerifyPeer(true);
+        $this->assertTrue($stream->isVerifyPeer());
+    }
+
+    public function testAllowSelfSigned()
+    {
+        $stream = new Stream();
+        $stream->allowSelfSigned(false);
+        $this->assertFalse($stream->isAllowSelfSigned());
+    }
+
     public function testPrepareWithGetData()
     {
         $stream  = new Stream();

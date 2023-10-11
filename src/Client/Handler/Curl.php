@@ -33,7 +33,7 @@ class Curl extends AbstractCurl
 {
 
     /**
-     * Set Curl option to return the transfer
+     * Set Curl option to return the transfer (set to true by default)
      *
      * @param  bool $transfer
      * @return Curl
@@ -57,6 +57,30 @@ class Curl extends AbstractCurl
     }
 
     /**
+     * Set Curl option to set verify peer (verifies the domain's SSL cert)
+     *
+     * @param  bool $verify
+     * @return Curl
+     */
+    public function setVerifyPeer(bool $verify = true): Curl
+    {
+        $this->setOption(CURLOPT_SSL_VERIFYPEER, (bool)$verify);
+        return $this;
+    }
+
+    /**
+     * Set Curl option to set to allow self-signed certs
+     *
+     * @param  bool $allow
+     * @return Curl
+     */
+    public function allowSelfSigned(bool $allow = true): Curl
+    {
+        $this->setOption(CURLOPT_SSL_VERIFYHOST, (bool)$allow);
+        return $this;
+    }
+
+    /**
      * Check if Curl is set to return transfer
      *
      * @return bool
@@ -76,6 +100,25 @@ class Curl extends AbstractCurl
         return (isset($this->options[CURLOPT_HEADER]) && ($this->options[CURLOPT_HEADER] == true));
     }
 
+    /**
+     * Check if Curl is set to verify peer
+     *
+     * @return bool
+     */
+    public function isVerifyPeer(): bool
+    {
+        return (isset($this->options[CURLOPT_SSL_VERIFYPEER]) && ($this->options[CURLOPT_SSL_VERIFYPEER] == true));
+    }
+
+    /**
+     * Check if Curl is set to allow self-signed certs
+     *
+     * @return bool
+     */
+    public function isAllowSelfSigned(): bool
+    {
+        return (isset($this->options[CURLOPT_SSL_VERIFYHOST]) && ($this->options[CURLOPT_SSL_VERIFYHOST] == true));
+    }
 
     /**
      * Return the Curl last info
