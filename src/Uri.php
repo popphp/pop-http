@@ -58,9 +58,9 @@ class Uri
 
     /**
      * Port
-     * @var ?string
+     * @var string|int|null
      */
-    protected ?string $port = null;
+    protected string|int|null $port = null;
 
     /**
      * Query
@@ -97,10 +97,11 @@ class Uri
      */
     public function __construct(?string $uri = null, ?string $basePath = null)
     {
+        $path = null;
         if ($uri !== null) {
             $uriInfo = parse_url($uri);
 
-            if (($uriInfo === false) || !isset($uriInfo['path'])) {
+            if ($uriInfo === false) {
                 throw new Exception('Error: Unable to parse the URI value.');
             }
 
@@ -125,9 +126,12 @@ class Uri
             if (!empty($uriInfo['fragment'])) {
                 $this->setFragment($uriInfo['fragment']);
             }
-
-            $this->setUri($uriInfo['path'], $basePath);
+            if (!empty($uriInfo['path'])) {
+                $path = $uriInfo['path'];
+            }
         }
+
+        $this->setUri($path, $basePath);
     }
 
     /**
@@ -196,9 +200,9 @@ class Uri
     /**
      * Get the port
      *
-     * @return string
+     * @return string|int|null
      */
-    public function getPort(): string
+    public function getPort(): string|int|null
     {
         return $this->port;
     }
@@ -456,10 +460,10 @@ class Uri
     /**
      * Set the port
      *
-     * @param  string $port
+     * @param  string|int $port
      * @return Uri
      */
-    public function setPort(string $port): Uri
+    public function setPort(string|int $port): Uri
     {
         $this->port = $port;
         return $this;
@@ -507,6 +511,8 @@ class Uri
             $isServerRequest = true;
         }
 
+
+
         if (!empty($basePath)) {
             if (substr($uri, 0, (strlen($basePath) + 1)) == $basePath . '/') {
                 $uri = substr($uri, (strpos($uri, $basePath) + strlen($basePath)));
@@ -533,7 +539,9 @@ class Uri
                 }
             }
 
-            $this->basePath = ($basePath === null) ? str_replace($docRoot, '', $dir) : $basePath;
+            $this->setBasePath((($basePath === null) ? str_replace($docRoot, '', $dir) : $basePath));
+        } else {
+            $this->setBasePath($basePath);
         }
 
         // Get segments

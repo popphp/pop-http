@@ -9,13 +9,64 @@ use PHPUnit\Framework\TestCase;
 class ParserTest extends TestCase
 {
 
-    public function testParseDataByContentType1()
+    public function testParseHeaders()
+    {
+        $headerString = <<<HEADERS
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Bearer 123456
+HEADERS;
+        $headers = Parser::parseHeaders($headerString);
+        $this->assertEquals('1.1', $headers['version']);
+        $this->assertEquals('200', $headers['code']);
+        $this->assertEquals('OK', $headers['message']);
+        $this->assertCount(2, $headers['headers']);
+    }
+
+    public function testParseBase64Data()
     {
         $str = base64_encode('Hello World');
         $this->assertEquals('Hello World', Parser::parseDataByContentType($str, null, Parser::BASE64));
     }
 
-    public function testParseDataByContentType2()
+    public function testParseJsonData()
+    {
+        $json = json_encode(['foo' => 'bar']);
+        $data = Parser::parseDataByContentType($json, 'application/json');
+        $this->assertEquals('bar', $data['foo']);
+    }
+
+    public function testParseXmlData()
+    {
+        $xml = <<<XML
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <foo>bar</foo>
+    <test><![CDATA[This is a string]]></test>
+</root>
+XML;
+
+        $data = Parser::parseDataByContentType($xml, 'application/xml');
+        $this->assertEquals('bar', $data['foo']);
+        $this->assertEquals('This is a string', $data['test']);
+    }
+
+    public function testParseUrlFormData()
+    {
+        $formData = [
+            'username' => 'admin',
+            'password' => '123456',
+            'colors'   => ['Red', 'Green']
+        ];
+
+        $content     = Parser::parseDataByContentType(http_build_query($formData), 'application/x-www-form-urlencoded');
+        $this->assertEquals('admin', $content['username']);
+        $this->assertEquals('123456', $content['password']);
+        $this->assertEquals('Red', $content['colors'][0]);
+        $this->assertEquals('Green', $content['colors'][1]);
+    }
+
+    public function testParseMultipartFormData()
     {
         $formData = [
             'username' => 'admin',
@@ -29,6 +80,39 @@ class ParserTest extends TestCase
         $this->assertEquals('123456', $content['password']);
         $this->assertEquals('Red', $content['colors'][0]);
         $this->assertEquals('Green', $content['colors'][1]);
+    }
+
+    public function testParseResponseFromUri()
+    {
+        $response = Parser::parseResponseFromUri('http://localhost/');
+        $this->assertEquals('200', $response->getCode());
+        $this->assertEquals('OK', $response->getMessage());
+    }
+
+    public function testParseResponseFromString2()
+    {
+        $headers = <<<HEADERS
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Bearer 123456
+HEADERS;
+
+        $http = <<<HTTP
+<html><body><h1>Hello World!</h1></body></html>
+HTTP;
+
+
+        $response = Parser::parseResponseFromString($headers . "\r\n\r\n" . $http);
+        $this->assertEquals('200', $response->getCode());
+        $this->assertEquals('OK', $response->getMessage());
+    }
+
+    public function testParseResponseFromString1()
+    {
+        $http = str_replace("\n", "\r\n", file_get_contents(__DIR__ . '/tmp/response-encoded.txt'));
+        $response = Parser::parseResponseFromString($http);
+        $this->assertEquals('200', $response->getCode());
+        $this->assertEquals('OK', $response->getMessage());
     }
 
     public function testEncodeData()
