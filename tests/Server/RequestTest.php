@@ -3,6 +3,7 @@
 namespace Pop\Http\Test\Server;
 
 use Pop\Filter\Filter;
+use Pop\Http\Auth;
 use Pop\Http\Client\Data;
 use Pop\Http\Server\Request;
 use PHPUnit\Framework\TestCase;
@@ -14,8 +15,40 @@ class RequestTest extends TestCase
 
     public function testConstructor()
     {
+        $request1 = new Request();
+        $this->assertInstanceOf('Pop\Http\Server\Request', $request1);
+        $request2 = Request::create();
+        $this->assertInstanceOf('Pop\Http\Server\Request', $request2);
+    }
+
+    public function testAuth1()
+    {
         $request = new Request();
-        $this->assertInstanceOf('Pop\Http\Server\Request', $request);
+        $request->setAuth(Auth::createBearer('123456'));
+        $this->assertTrue($request->hasAuth());
+        $this->assertInstanceOf('Pop\Http\Auth', $request->getAuth());
+    }
+
+    public function testAuth2()
+    {
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer 123456';
+        $request = new Request();
+        $this->assertTrue($request->hasAuth());
+        $this->assertInstanceOf('Pop\Http\Auth', $request->getAuth());
+        $this->assertEquals('Authorization: Bearer 123456', $request->getAuth()->getAuthHeaderAsString());
+    }
+
+    public function testUriString()
+    {
+        $request = new Request(new Uri('http://localhost/'));
+        $this->assertEquals('/', $request->getUriString());
+    }
+
+    public function testSetBasePath()
+    {
+        $request = new Request(new Uri('/'));
+        $request->setBasePath('/my-folder');
+        $this->assertEquals('/my-folder', $request->getBasePath());
     }
 
     public function testParseData()
@@ -62,6 +95,7 @@ class RequestTest extends TestCase
         $this->assertFalse($request->hasFiles());
         $this->assertTrue($request->hasQueryData());
         $this->assertTrue($request->hasParsedData());
+        $this->assertTrue($request->hasData());
     }
 
     public function testGetHostFromServerName()

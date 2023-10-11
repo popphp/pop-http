@@ -470,7 +470,9 @@ class Request extends AbstractRequest
      */
     public function setBasePath(?string $path = null): Request
     {
-        $this->uri->setBasePath($path);
+        if ($this->uri !== null) {
+            $this->uri->setBasePath($path);
+        }
         return $this;
     }
 
