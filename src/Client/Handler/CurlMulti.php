@@ -47,15 +47,17 @@ class CurlMulti extends AbstractCurl
      */
     public function addClient(Client $curlClient, ?string $name = null): CurlMulti
     {
-        if ($name !== null) {
-            $this->clients[$name] = $curlClient;
-        } else {
-            $this->clients[] = $curlClient;
+        if (!in_array($curlClient, $this->clients) && ($curlClient->hasHandler())) {
+            if ($name !== null) {
+                $this->clients[$name] = $curlClient;
+            } else {
+                $this->clients[] = $curlClient;
+            }
+
+            $curlClient->getHandler()->prepare($curlClient->getRequest(), $curlClient->getAuth());
+
+            curl_multi_add_handle($this->resource, $curlClient->getHandler()->resource());
         }
-
-        $curlClient->getHandler()->prepare($curlClient->getRequest(), $curlClient->getAuth());
-
-        curl_multi_add_handle($this->resource, $curlClient->getHandler()->resource());
 
         return $this;
     }
@@ -196,6 +198,7 @@ class CurlMulti extends AbstractCurl
         foreach ($this->clients as $curlClient) {
             $response = $this->parseResponse($curlClient);
             if ($response instanceof Response) {
+                $r = $response->getParsedResponse();
                 $responses[] = [
                     'client_uri' => $curlClient->getRequest()->getUriAsString(),
                     'method'     => $curlClient->getRequest()->getMethod(),
@@ -255,11 +258,12 @@ class CurlMulti extends AbstractCurl
             $responses = $this->getAllResponses(false);
             $result    = true;
             foreach ($responses as $response) {
-                if (isset($response['response']) && ($response['response'] instanceof Response)) {
-                    if (($strict) && (!$response['response']->isSuccess())) {
+                if (!empty($response['code'])) {
+                    $codeResult = floor($response['code'] / 100);
+                    if (($strict) && (!(($codeResult == 1) || ($codeResult == 2) || ($codeResult == 3)))) {
                         $result = false;
                         break;
-                    } else if ((!$strict) && ($response['response']->isSuccess())) {
+                    } else if ((!$strict) && ((($codeResult == 1) || ($codeResult == 2) || ($codeResult == 3)))) {
                         $result = true;
                         break;
                     }
@@ -283,11 +287,12 @@ class CurlMulti extends AbstractCurl
         if ($this->isComplete()) {
             $responses = $this->getAllResponses(false);
             foreach ($responses as $response) {
-                if (isset($response['response']) && ($response['response'] instanceof Response)) {
-                    if (($strict) && (!$response['response']->isError())) {
+                if (!empty($response['code'])) {
+                    $codeResult = floor($response['code'] / 100);
+                    if (($strict) && (!(($codeResult == 4) || ($codeResult == 5)))) {
                         $result = false;
                         break;
-                    } else if ((!$strict) && ($response['response']->isError())) {
+                    } else if ((!$strict) && ((($codeResult == 4) || ($codeResult == 5)))) {
                         $result = true;
                         break;
                     }

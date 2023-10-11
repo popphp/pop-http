@@ -14,7 +14,6 @@
 namespace Pop\Http\Client\Handler;
 
 use Pop\Http\Auth;
-use Pop\Http\Exception;
 use Pop\Http\Parser;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
@@ -94,7 +93,7 @@ class Curl extends AbstractCurl
      *
      * @param Request $request
      * @param  ?Auth $auth
-     * @throws Exception
+     * @throws Exception|\Pop\Http\Exception
      * @return Curl
      */
     public function prepare(Request $request, ?Auth $auth = null): Curl

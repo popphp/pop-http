@@ -212,9 +212,9 @@ class Client extends AbstractHttp
     /**
      * Get handler
      *
-     * @return HandlerInterface
+     * @return HandlerInterface|null
      */
-    public function getHandler(): HandlerInterface
+    public function getHandler(): HandlerInterface|null
     {
         return $this->handler;
     }
@@ -303,18 +303,20 @@ class Client extends AbstractHttp
      * Prepare the client request
      *
      * @param  ?string $uri
-     * @param  string  $method
+     * @param  ?string  $method
      * @throws Exception|Client\Exception
      * @return Client
      */
-    public function prepare(?string $uri = null, string $method = 'GET'): Client
+    public function prepare(?string $uri = null, string $method = null): Client
     {
         if ((!$this->hasRequest()) && ($uri === null)) {
             throw new Exception('Error: There is no request URI to send.');
         }
         if ($uri !== null) {
-            $request = new Request(new Uri($uri), $method);
+            $request = new Request(new Uri($uri), ($method ?? 'GET'));
             $this->setRequest($request);
+        } else if ($method !== null) {
+            $this->request->setMethod($method);
         }
 
         if (($this->hasOption('headers')) && is_array($this->options['headers'])) {

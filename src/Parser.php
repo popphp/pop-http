@@ -133,6 +133,8 @@ class Parser
                 'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
             $parsedResult = Message::parseForm($formContent);
             // Fallback to just the encoding
+        } else if (($contentType !== null) && (str_contains($contentType, 'text/html') || str_contains($contentType, 'text/plain'))) {
+            $parsedResult = $rawData;
         } else if ($encoding !== null) {
             $parsedResult = self::decodeData($rawData, $encoding, $chunked);
         }

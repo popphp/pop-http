@@ -15,7 +15,6 @@ namespace Pop\Http\Client\Handler;
 
 use Pop\Http\Auth;
 use Pop\Http\Parser;
-use Pop\Http\Exception;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
 use Pop\Mime\Message;
@@ -279,7 +278,7 @@ class Stream extends AbstractHandler
      * @param  Request $request
      * @param  ?Auth   $auth
      * @param  bool    $clear
-     * @throws Exception
+     * @throws Exception|\Pop\Http\Exception
      * @return Stream
      */
     public function prepare(Request $request, ?Auth $auth = null, bool $clear = true): Stream
@@ -342,6 +341,7 @@ class Stream extends AbstractHandler
     /**
      * Method to send the request
      *
+     * @throws Exception
      * @return Response
      */
     public function send(): Response

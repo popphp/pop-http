@@ -13,7 +13,7 @@ class ResponseTest extends TestCase
         $client = new Http\Client('http://localhost/');
         $client->send();
         $response = $client->getResponse()->getParsedResponse();
-        $this->assertFalse($response);
+        $this->assertTrue(str_contains($response, '<html'));
     }
 
 }

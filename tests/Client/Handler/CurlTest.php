@@ -163,4 +163,11 @@ class CurlTest extends TestCase
         $this->assertEquals('foo=bar', $curl->getOption(CURLOPT_POSTFIELDS));
     }
 
+    public function testSendException()
+    {
+        $this->expectException('Pop\Http\Client\Handler\Exception');
+        $curl = new Curl([CURLOPT_URL => '$%#%$^#$%$$#']);
+        $curl->send();
+    }
+
 }
