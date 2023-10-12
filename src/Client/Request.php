@@ -165,6 +165,24 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Get full URI as string
+     *
+     * @param  bool $query
+     * @return string
+     */
+    public function getFullUriAsString(bool $query = true): string
+    {
+        $uri = $this->getUriAsString();
+
+        if (($this->method == 'GET') && ($this->data !== null) &&
+            (($this->requestType === null) || ($this->requestType == self::URLFORM))) {
+            $uri .= $this->data->prepareQueryString(true);
+        }
+
+        return $uri;
+    }
+
+    /**
      * Set request type
      *
      * @param  string $type
