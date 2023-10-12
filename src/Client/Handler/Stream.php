@@ -384,6 +384,30 @@ class Stream extends AbstractHandler
             $this->contextOptions['http']['content'] = $request->getBodyContent();
         }
 
+        if ($request->hasHeaders()) {
+            $headers = [];
+
+            foreach ($request->getHeaders() as $header => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $hdr => $val) {
+                        $headers[] = (string)$val;
+                    }
+                } else {
+                    $headers[] = (string)$value;
+                }
+            }
+
+            if (isset($this->contextOptions['http']['header'])) {
+                $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers) . "\r\n";
+            } else {
+                $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
+            }
+        }
+
+        if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {
+            $this->createContext();
+        }
+
         return $this;
     }
 

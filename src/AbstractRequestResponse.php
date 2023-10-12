@@ -44,16 +44,21 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
     /**
      * Add a header
      *
-     * @param  Header|string $header
+     * @param  Header|string|int $header
      * @param  ?string       $value
      * @return AbstractRequestResponse
      */
-    public function addHeader(Header|string$header, ?string $value = null): AbstractRequestResponse
+    public function addHeader(Header|string|int $header, ?string $value = null): AbstractRequestResponse
     {
         if ($header instanceof Header) {
             $this->headers[$header->getName()] = $header;
         } else {
-            $this->headers[$header] = new Header($header, $value);
+            if (is_numeric($header) && str_contains($value, ':')) {
+                $header = Header::parse($value);
+                $this->headers[$header->getName()] = $header;
+            } else {
+                $this->headers[$header] = new Header($header, $value);
+            }
         }
 
         return $this;

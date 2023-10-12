@@ -135,7 +135,6 @@ class StreamTest extends TestCase
     {
         $stream  = new Stream('r', ['http' => ['header' => 'X-Header: test']]);
         $request = new Request('http://localhost/', 'POST');
-        $request->setBody('foo=bar');
         $this->assertEquals('X-Header: test', $stream->getContextOption('http')['header']);
         $client  = new Client($request, $stream);
         $client->getHandler()->prepare($client->getRequest(), null, true);

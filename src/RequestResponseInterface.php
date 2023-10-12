@@ -32,11 +32,11 @@ interface RequestResponseInterface
     /**
      * Set a header
      *
-     * @param  Header|string $header
-     * @param  ?string       $value
+     * @param  Header|string|int $header
+     * @param  ?string           $value
      * @return RequestResponseInterface
      */
-    public function addHeader(Header|string $header, ?string $value = null): RequestResponseInterface;
+    public function addHeader(Header|string|int $header, ?string $value = null): RequestResponseInterface;
 
     /**
      * Set all headers

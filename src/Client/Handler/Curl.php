@@ -15,6 +15,7 @@ namespace Pop\Http\Client\Handler;
 
 use Pop\Http\Auth;
 use Pop\Http\Parser;
+use Pop\Http\Client;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
 use Pop\Mime\Message;
@@ -186,6 +187,14 @@ class Curl extends AbstractCurl
         } else if ($request->hasBodyContent()) {
             $request->addHeader('Content-Length', strlen($request->getBodyContent()));
             $this->setOption(CURLOPT_POSTFIELDS, $request->getBodyContent());
+        }
+
+        if ($request->hasHeaders()) {
+            $headers = [];
+            foreach ($request->getHeaders() as $header) {
+                $headers[] = $header->render();
+            }
+            $this->setOption(CURLOPT_HTTPHEADER, $headers);
         }
 
         $this->setOption(CURLOPT_URL, $uri);
