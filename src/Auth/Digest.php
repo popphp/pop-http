@@ -13,7 +13,6 @@
  */
 namespace Pop\Http\Auth;
 
-use Pop\Http\Uri;
 use Pop\Mime\Part\Header;
 use Pop\Mime\Part\Header\Value;
 
@@ -159,7 +158,9 @@ class Digest
      * @param  string $nonce
      * @return Digest
      */
-    public static function create(string $realm, string $username, string $password, string $uri, string $nonce): Digest
+    public static function create(
+        string $realm, string $username, string $password, string $uri, string $nonce
+    ): Digest
     {
         return new static($realm, $username, $password, $uri, $nonce);
     }
@@ -174,7 +175,9 @@ class Digest
      * @throws Exception
      * @return Digest
      */
-    public static function createFromWwwAuth(string|Header $wwwAuth, string $username, string $password, string $uri): Digest
+    public static function createFromWwwAuth(
+        string|Header $wwwAuth, string $username, string $password, string $uri
+    ): Digest
     {
         if (is_string($wwwAuth)) {
             $wwwAuth = Header::parse($wwwAuth);
@@ -665,8 +668,10 @@ class Digest
         $result = true;
 
         // Check basic required parameters
-        if (($this->realm === null) || ($this->username === null) || ($this->password === null) || ($this->nonce === null)) {
-            $this->errors[] = 'Error: One or more of the basic requirement parameters were not set (realm, username, password or nonce).';
+        if (($this->realm === null) || ($this->username === null) ||
+            ($this->password === null) || ($this->nonce === null)) {
+            $this->errors[] =
+                'Error: One or more of the basic requirement parameters were not set (realm, username, password or nonce).';
             $result = false;
         }
         // Check client nonce for MD5-sess algorithm
@@ -717,7 +722,10 @@ class Digest
     public function createDigestString(Value $value = new Value()): string
     {
         $a1 = ($this->algorithm == self::ALGO_MD5_SESS) ?
-            md5(md5($this->username . ':' . $this->realm . ':' . $this->password) . ':' . $this->nonce . ':' . $this->clientNonce) :
+            md5(
+                md5($this->username . ':' . $this->realm . ':' . $this->password) .
+                ':' . $this->nonce . ':' . $this->clientNonce
+            ) :
             md5($this->username . ':' . $this->realm . ':' . $this->password);
 
         $a2 = ($this->qop == self::QOP_AUTH_INT) ?
