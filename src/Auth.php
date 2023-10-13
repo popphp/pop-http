@@ -16,7 +16,7 @@ namespace Pop\Http;
 use Pop\Mime\Part\Header;
 
 /**
- * HTTP auth class
+ * HTTP auth header class
  *
  * @category   Pop
  * @package    Pop\Http
@@ -59,6 +59,12 @@ class Auth
     protected ?string $password = null;
 
     /**
+     * Digest
+     * @var ?Auth\Digest
+     */
+    protected ?Auth\Digest $digest = null;
+
+    /**
      * Auth header object
      * @var ?Header
      */
@@ -69,15 +75,16 @@ class Auth
      *
      * Instantiate the auth object
      *
-     * @param string $header
-     * @param  ?string $scheme
-     * @param  ?string $token
-     * @param  ?string $username
-     * @param  ?string $password
+     * @param string       $header
+     * @param ?string      $scheme
+     * @param ?string      $token
+     * @param ?string      $username
+     * @param ?string      $password
+     * @param ?Auth\Digest $digest
      */
     public function __construct(
         string $header = 'Authorization', ?string $scheme = null, ?string $token = null,
-        ?string $username = null, ?string $password = null
+        ?string $username = null, ?string $password = null, ?Auth\Digest $digest = null
     )
     {
         $this->setHeader($header);
@@ -92,6 +99,9 @@ class Auth
         }
         if ($password !== null) {
             $this->setPassword($password);
+        }
+        if ($digest !== null) {
+            $this->setDigest($digest);
         }
     }
 
@@ -129,6 +139,21 @@ class Auth
     public static function createKey(string $token, string $header = 'Authorization', ?string $scheme = null): Auth
     {
         return new static($header, $scheme, $token);
+    }
+
+    /**
+     * Create digest auth
+     *
+     * @param  string $username
+     * @param  string $password
+     * @param  array  $digest
+     * @return Auth
+     */
+    public static function createDigest(Auth\Digest $digest): Auth
+    {
+        $auth = new static('Authorization', null, null, $digest->getUsername(), $digest->getPassword());
+        $auth->setDigest($digest);
+        return $auth;
     }
 
     /**
@@ -237,6 +262,18 @@ class Auth
     }
 
     /**
+     * Set digest
+     *
+     * @param  Auth\Digest $digest
+     * @return Auth
+     */
+    public function setDigest(Auth\Digest $digest): Auth
+    {
+        $this->digest = $digest;
+        return $this;
+    }
+
+    /**
      * Get the header
      *
      * @return string
@@ -287,6 +324,16 @@ class Auth
     }
 
     /**
+     * Get digest
+     *
+     * @return Auth\Digest
+     */
+    public function getDigest(): Auth\Digest
+    {
+        return $this->digest;
+    }
+
+    /**
      * Has scheme
      *
      * @return bool
@@ -327,6 +374,16 @@ class Auth
     }
 
     /**
+     * Has digest
+     *
+     * @return bool
+     */
+    public function hasDigest(): bool
+    {
+        return ($this->digest !== null);
+    }
+
+    /**
      * Has auth header
      *
      * @return bool
@@ -354,6 +411,16 @@ class Auth
     public function isBearer(): bool
     {
         return (strtolower($this->scheme) == 'bearer');
+    }
+
+    /**
+     * Determine if the auth is digest
+     *
+     * @return bool
+     */
+    public function isDigest(): bool
+    {
+        return $this->hasDigest();
     }
 
     /**
@@ -415,7 +482,13 @@ class Auth
     {
         if (($this->isBasic()) && (($this->username === null) || ($this->password === null))) {
             throw new Exception('Error: The username and password values must be set for basic authorization');
-        } else if (!($this->isBasic()) && ($this->token === null)) {
+        } else if (($this->isDigest()) && ((!$this->hasDigest()) || (!$this->digest->isValid()))) {
+            if ($this->digest->hasErrors()) {
+                throw new Exception(implode('\n', $this->digest->getErrors()));
+            } else {
+                throw new Exception('Error: The digest is either not set or is not valid.');
+            }
+        } else if (!($this->isBasic()) && !($this->isDigest()) && ($this->token === null)) {
             throw new Exception('Error: The token is not set');
         }
 
@@ -425,6 +498,8 @@ class Auth
             $value->setScheme('Basic ');
             $value->setValue(base64_encode($this->username . ':' . $this->password));
             $value = 'Basic ' . base64_encode($this->username . ':' . $this->password);
+        } else if ($this->isDigest()) {
+            $this->digest->createDigestString($value);
         } else if ($this->isBearer()) {
             $value->setScheme('Bearer ');
             $value->setValue($this->token);
@@ -434,7 +509,6 @@ class Auth
         }
 
         $this->authHeader = new Header($this->header, $value);
-
         return $this->authHeader;
     }
 
