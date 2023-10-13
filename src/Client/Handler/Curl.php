@@ -33,34 +33,21 @@ class Curl extends AbstractCurl
 {
 
     /**
-     * Constructor
-     *
-     * Instantiate the Curl handler object
-     *
-     * @param  string $method
-     * @param  ?array $opts
-     * @throws Exception
-     */
-    public function __construct(string $method = 'GET', ?array $opts = null)
-    {
-        parent::__construct($opts);
-    }
-
-    /**
      * Factory method to create a Curl handler
      *
      * @param  string $method
-     * @param  ?array $opts
+     * @param  ?array $options
      * @throws Exception
      * @return Curl
      *
      */
-    public static function create(string $method = 'GET', ?array $opts = null): Curl
+    public static function create(string $method = 'GET', ?array $options = null): Curl
     {
-        $handler = new self($opts);
+        $handler = new self($options);
         $handler->setMethod($method);
         return $handler;
     }
+
     /**
      * Set the method
      *

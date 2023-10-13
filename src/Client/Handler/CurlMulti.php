@@ -39,6 +39,17 @@ class CurlMulti extends AbstractCurl
     protected array $clients = [];
 
     /**
+     * Factory method to create a Curl multi handler
+     *
+     * @param  ?array $options
+     * @return CurlMulti
+     */
+    public static function create(?array $options = null): CurlMulti
+    {
+        return new self($options);
+    }
+
+    /**
      * Add Curl client
      *
      * @param  Client $curlClient
