@@ -145,7 +145,7 @@ class Client extends AbstractHttp
      *  - 'type'
      *  - 'verify_peer'
      *  - 'allow_self_signed'
-     *  - 'force_custom_method' (Curl only)
+     *  - 'force_custom_method' (Curl only - forces CURLOPT_CUSTOMREQUEST)
      *
      * @param  array $options
      * @return Client
