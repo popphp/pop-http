@@ -74,8 +74,8 @@ class Stream extends AbstractHandler
      * Instantiate the stream handler object
      *
      * @param string $mode
-     * @param array $options
-     * @param array $params
+     * @param array  $options
+     * @param array  $params
      */
     public function __construct(string $mode = 'r', array $options = [], array $params = [])
     {
@@ -88,6 +88,23 @@ class Stream extends AbstractHandler
             $this->setContextParams($params);
         }
     }
+
+
+    /**
+     * Factory method to create a Curl client
+     *
+     * @param  string $mode
+     * @param  array  $options
+     * @param  array  $params
+     * @return Stream
+     */
+    public static function create(string $method = 'GET', string $mode = 'r', array $options = [], array $params = []): Stream
+    {
+        $handler = new self($mode, $options, $params);
+        $handler->setMethod($method);
+        return $handler;
+    }
+
 
     /**
      * Set the method

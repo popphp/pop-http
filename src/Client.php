@@ -356,8 +356,8 @@ class Client extends AbstractHttp
      * Send the client request
      *
      * @param  ?string $uri
-     * @param  string  $method
-     * @throws Exception|Client\Exception
+     * @param  ?string $method
+     * @throws Exception|Client\Exception|Client\Handler\Exception
      * @return Response|Promise
      */
     public function send(?string $uri = null, string $method = null): Response|Promise
