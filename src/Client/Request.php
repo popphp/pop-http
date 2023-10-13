@@ -219,6 +219,16 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Has request type
+     *
+     * @return bool
+     */
+    public function hasRequestType(): bool
+    {
+        return ($this->requestType !== null);
+    }
+
+    /**
      * Create request as JSON
      *
      * @return Request

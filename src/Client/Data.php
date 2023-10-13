@@ -31,6 +31,11 @@ class Data
     use HttpFilterableTrait;
 
     /**
+     * Raw data constant
+     */
+    const POP_CLIENT_REQUEST_RAW_DATA = 'POP_CLIENT_REQUEST_RAW_DATA';
+
+    /**
      * Data fields (form fields and files)
      *    $data = [
      *      'username' => 'admin'
@@ -77,13 +82,19 @@ class Data
     /**
      * Set data
      *
-     * @param  array $data
+     * @param  array|string $data
      * @return Data
      */
-    public function setData(array $data): Data
+    public function setData(array|string $data): Data
     {
-        $this->data = $data;
-        $this->prepareQueryString();
+        if (is_string($data)) {
+            $this->data = [self::POP_CLIENT_REQUEST_RAW_DATA => $data];
+        } else if (is_array($data) && (count($data) == 1) && isset($data[0])) {
+            $this->data = [self::POP_CLIENT_REQUEST_RAW_DATA => $data[0]];
+        } else {
+            $this->data = $data;
+            $this->prepareQueryString();
+        }
 
         return $this;
     }
@@ -126,11 +137,16 @@ class Data
     /**
      * Has data
      *
+     * @param  ?string $key
      * @return bool
      */
-    public function hasData(): bool
+    public function hasData(?string $key = null): bool
     {
-        return !empty($this->data);
+        if ($key !== null) {
+            return (isset($this->data[$key]));
+        } else {
+            return !empty($this->data);
+        }
     }
 
     /**
@@ -171,7 +187,7 @@ class Data
      */
     public function prepareQueryString(bool $withQuestionMark = false): string|null
     {
-        if (!empty($this->data)) {
+        if (!empty($this->data) && !array_key_exists(self::POP_CLIENT_REQUEST_RAW_DATA, $this->data)) {
             if ($this->hasFilters()) {
                 $this->data = $this->filter($this->data);
             }
@@ -196,11 +212,12 @@ class Data
     /**
      * Get the query string
      *
+     * @param  bool $withQuestionMark
      * @return string
      */
-    public function getQueryString(): string
+    public function getQueryString(bool $withQuestionMark = false): string
     {
-        return $this->queryString;
+        return $this->prepareQueryString($withQuestionMark);
     }
 
     /**
@@ -212,6 +229,37 @@ class Data
     public function getQueryStringLength(bool $mb = false): int
     {
         return ($mb) ? mb_strlen($this->queryString) : strlen($this->queryString);
+    }
+
+    /**
+     * Has raw data
+     *
+     * @return bool
+     */
+    public function hasRawData(): bool
+    {
+        return (isset($this->data[self::POP_CLIENT_REQUEST_RAW_DATA]));
+    }
+
+    /**
+     * Get the raw data
+     *
+     * @return string|null
+     */
+    public function getRawData(): string|null
+    {
+        return $this->data[self::POP_CLIENT_REQUEST_RAW_DATA] ?? null;
+    }
+
+    /**
+     * Get raw data length
+     *
+     * @param  bool $mb
+     * @return int
+     */
+    public function getRawDataLength(bool $mb = false): int
+    {
+        return ($mb) ? mb_strlen((string)$this->getRawData()) : strlen((string)$this->getRawData());
     }
 
 }

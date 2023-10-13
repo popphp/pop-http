@@ -140,7 +140,7 @@ class Client extends AbstractHttp
      * Supported options
      *  - 'base_uri'
      *  - 'headers'
-     *  - 'query'
+     *  - 'data'
      *  - 'async'
      *  - 'type'
      *  - 'verify_peer'
@@ -324,8 +324,8 @@ class Client extends AbstractHttp
         if (($this->hasOption('headers')) && is_array($this->options['headers'])) {
             $this->request->addHeaders($this->options['headers']);
         }
-        if (($this->hasOption('query')) && is_array($this->options['query'])) {
-            $this->request->setData($this->options['query']);
+        if ($this->hasOption('data')) {
+            $this->request->setData($this->options['data']);
         }
         if ($this->hasOption('type')) {
             $this->request->setRequestType($this->options['type']);

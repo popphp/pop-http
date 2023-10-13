@@ -349,7 +349,8 @@ class Stream extends AbstractHandler
             // Append GET query string to URL
             if (($request->isGet()) && ((!$request->hasHeader('Content-Type')) ||
                     ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
-                $this->uri .= $request->getData()->prepareQueryString(true);
+                $this->uri .= ($request->getData()->hasRawData()) ?
+                    $request->getData()->getRawData() : $request->getData()->prepareQueryString(true);
             // Else, prepare request data for transmission
             } else {
                 // If request is JSON
@@ -357,7 +358,7 @@ class Stream extends AbstractHandler
                     $content = json_encode($request->getData(true), JSON_PRETTY_PRINT);
                     $request->addHeader('Content-Length', strlen($content));
                     $this->contextOptions['http']['content'] = $content;
-                // If request is a URL-encoded form
+                // Else, if request is a URL-encoded form
                 } else if ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded') {
                     $request->addHeader('Content-Length', $request->getData()->getQueryStringLength());
                     $this->contextOptions['http']['content'] = $request->getData()->prepareQueryString();
@@ -370,6 +371,10 @@ class Stream extends AbstractHandler
                     $request->addHeader($header)
                         ->addHeader('Content-Length', strlen($content));
                     $this->contextOptions['http']['content'] = $content;
+                // Else, if request has raw data
+                } else if ($request->getData()->hasRawData()) {
+                    $request->addHeader('Content-Length', $request->getData()->getRawDataLength());
+                    $this->contextOptions['http']['content'] = $request->getData()->getRawData();
                 // Else, basic request with data
                 } else {
                     $this->contextOptions['http']['content'] = $request->getData(true);

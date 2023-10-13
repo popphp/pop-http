@@ -921,8 +921,21 @@ class Options
             }
         }
 
-        if (($method !== 'GET') && ($client->getRequest()->hasData())) {
-            $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
+        /**
+         * TO-DO: Need to handle files
+         */
+        if ($client->getRequest()->hasData()) {
+            if ($client->getRequest()->isMultipartForm()) {
+                $data = $client->getRequest()->getData(true);
+                foreach ($data as $key => $value) {
+                    $command .= ' -F ' . http_build_query([$key => $value]);
+                }
+            } else if ($client->getRequest()->isJson()) {
+                $command .= " --data '" . json_encode($client->getRequest()->getData(true)) . "'";
+            } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncodedForm()) ||
+                !($client->getRequest()->hasRequestType())) {
+                $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
+            }
         }
 
         /**
@@ -1016,7 +1029,19 @@ class Options
 
         foreach ($optionValues as $option => $value) {
             foreach (self::$phpOptions as $phpOption => $curlOption) {
-                if ((str_starts_with($option, '--') && str_contains($curlOption, $option)) || str_starts_with($curlOption, $option)) {
+                if (is_array($curlOption)) {
+                    foreach ($curlOption as $cOpt) {
+                        if ((str_starts_with($option, '--') && str_contains($cOpt, $option)) || str_starts_with($cOpt, $option)) {
+                            if (self::isValueOption($option)) {
+                                $optionValue = self::$valueOptions[$option] ?? $value;
+                            } else {
+                                $optionValue = true;
+                            }
+                            $curl->setOption(constant($phpOption), $optionValue);
+                            break;
+                        }
+                    }
+                } else if ((str_starts_with($option, '--') && str_contains($curlOption, $option)) || str_starts_with($curlOption, $option)) {
                     if (self::isValueOption($option)) {
                         $optionValue = self::$valueOptions[$option] ?? $value;
                     } else {

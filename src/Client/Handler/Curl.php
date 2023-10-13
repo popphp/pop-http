@@ -153,7 +153,8 @@ class Curl extends AbstractCurl
             // Append GET query string to URL
             if (($request->isGet()) && ((!$request->hasHeader('Content-Type')) ||
                     ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
-                $uri .= $request->getData()->prepareQueryString(true);
+                $this->uri .= ($request->getData()->hasRawData()) ?
+                    $request->getData()->getRawData() : $request->getData()->prepareQueryString(true);
             // Else, prepare request data for transmission
             } else {
                 // If request is JSON
@@ -161,7 +162,7 @@ class Curl extends AbstractCurl
                     $content = json_encode($request->getData(true), JSON_PRETTY_PRINT);
                     $request->addHeader('Content-Length', strlen($content));
                     $this->setOption(CURLOPT_POSTFIELDS, $content);
-                // If request is a URL-encoded form
+                // Else, if request is a URL-encoded form
                 } else if ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded') {
                     $request->addHeader('Content-Length', $request->getData()->getQueryStringLength());
                     $this->setOption(CURLOPT_POSTFIELDS, $request->getData()->prepareQueryString());
@@ -174,6 +175,10 @@ class Curl extends AbstractCurl
                     $request->addHeader($header)
                         ->addHeader('Content-Length', strlen($content));
                     $this->setOption(CURLOPT_POSTFIELDS, $content);
+                // Else, if request has raw data
+                } else if ($request->getData()->hasRawData()) {
+                    $request->addHeader('Content-Length', $request->getData()->getRawDataLength());
+                    $this->setOption(CURLOPT_POSTFIELDS, $request->getData()->getRawData());
                 // Else, basic request with data
                 } else {
                     $this->setOption(CURLOPT_POSTFIELDS, $request->getData(true));
