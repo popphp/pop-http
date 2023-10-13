@@ -145,6 +145,7 @@ class Client extends AbstractHttp
      *  - 'type'
      *  - 'verify_peer'
      *  - 'allow_self_signed'
+     *  - 'force_custom_method' (Curl only)
      *
      * @param  array $options
      * @return Client
@@ -365,7 +366,10 @@ class Client extends AbstractHttp
             return $this->sendAsync();
         } else {
             $this->prepare($uri, $method);
-            $this->response = $this->handler->prepare($this->request, $this->auth)->send();
+            $this->response = (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) ?
+                $this->handler->prepare($this->request, $this->auth, (bool)$this->options['force_custom_method'])->send() :
+                $this->handler->prepare($this->request, $this->auth)->send();
+
             return $this->response;
         }
     }

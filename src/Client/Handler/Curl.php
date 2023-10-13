@@ -33,6 +33,38 @@ class Curl extends AbstractCurl
 {
 
     /**
+     * Constructor
+     *
+     * Instantiate the Curl handler object
+     *
+     * @param  string $method
+     * @param  ?array $opts
+     * @throws Exception
+     */
+    public function __construct(string $method = 'GET', ?array $opts = null)
+    {
+        parent::__construct($opts);
+    }
+
+    /**
+     * Set the method
+     *
+     * @param  string $method
+     * @param  bool   $forceCustom
+     * @return Curl
+     */
+    public function setMethod(string $method, bool $forceCustom = false): Curl
+    {
+        if (($method == 'POST') && (!$forceCustom)) {
+            $this->setOption(CURLOPT_POST, true);
+        } else if ($method != 'GET') {
+            $this->setOption(CURLOPT_CUSTOMREQUEST, $method);
+        }
+
+        return $this;
+    }
+
+    /**
      * Set Curl option to return the transfer (set to true by default)
      *
      * @param  bool $transfer
@@ -136,12 +168,14 @@ class Curl extends AbstractCurl
      *
      * @param Request $request
      * @param  ?Auth $auth
+     * @parma  bool
      * @throws Exception|\Pop\Http\Exception
      * @return Curl
      */
-    public function prepare(Request $request, ?Auth $auth = null): Curl
+    public function prepare(Request $request, ?Auth $auth = null, bool $forceCustom = false): Curl
     {
         $uri = $request->getUriAsString();
+        $this->setMethod($request->getMethod(), $forceCustom);
 
         // Add auth header
         if ($auth !== null) {

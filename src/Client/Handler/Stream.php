@@ -90,6 +90,23 @@ class Stream extends AbstractHandler
     }
 
     /**
+     * Set the method
+     *
+     * @param  string $method
+     * @return Stream
+     */
+    public function setMethod(string $method): Stream
+    {
+        if (!isset($this->contextOptions['http'])) {
+            $this->contextOptions['http'] = [];
+        }
+
+        $this->contextOptions['http']['method'] = $method;
+
+        return $this;
+    }
+
+    /**
      * Return stream resource (alias to $this->getResource())
      *
      * @return mixed
@@ -333,6 +350,7 @@ class Stream extends AbstractHandler
     public function prepare(Request $request, ?Auth $auth = null, bool $clear = true): Stream
     {
         $this->uri = $request->getUriAsString();
+        $this->setMethod($request->getMethod());
 
         // Clear headers for a fresh request based on the headers in the request object,
         // else fall back to pre-defined headers in the stream context
