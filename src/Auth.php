@@ -159,11 +159,12 @@ class Auth
     /**
      * Parse header
      *
-     * @param  mixed   $header
-     * @param  ?string $scheme
+     * @param  mixed $header
+     * @param  array $options
+     * @throws Exception|Auth\Exception
      * @return Auth
      */
-    public static function parse(mixed $header, ?string $scheme = null): Auth
+    public static function parse(mixed $header, array $options = []): Auth
     {
         $auth = new static();
 
@@ -171,7 +172,8 @@ class Auth
             $header = Header::parse($header);
         }
 
-        $auth->setHeader($header->getName());
+        $headerName = (strtolower($header->getName()) == 'www-authenticate') ? 'Authorization' : $header->getName();
+        $auth->setHeader($headerName);
 
         if (count($header->getValues()) == 1) {
             $value = $header->getValue();
@@ -179,7 +181,19 @@ class Auth
             $value = $header->getValuesAsStrings('; ');
         }
 
-        if (str_starts_with($value, 'Basic')) {
+        if (trim($value->getScheme()) == 'Digest') {
+            if (!isset($options['password'])) {
+                throw new Exception('Error: The password option must be passed.');
+            }
+            if (strtolower($header->getName()) == 'www-authenticate') {
+                if (!isset($options['username']) || !isset($options['uri'])) {
+                    throw new Exception('Error: The username and URI options must be passed.');
+                }
+                $auth->setDigest(Auth\Digest::createFromWwwAuth($header, $options['username'], $options['password'], $options['uri']));
+            } else {
+                $auth->setDigest(Auth\Digest::createFromHeader($header, $options['password']));
+            }
+        } else if (str_starts_with($value, 'Basic')) {
             $auth->setScheme('Basic');
             $creds = base64_decode(trim(substr($value, 5)));
             if (($creds !== false) && (str_contains($creds, ':'))) {
@@ -191,9 +205,9 @@ class Auth
             $auth->setScheme('Bearer');
             $auth->setToken(trim(substr($value, 6)));
         } else {
-            if (($scheme !== null) && (str_starts_with($value, $scheme))) {
-                $value = substr($value, strlen($scheme));
-                $auth->setScheme($scheme);
+            if (isset($options['scheme']) && (str_starts_with($value, $options['scheme']))) {
+                $value = substr($value, strlen($options['scheme']));
+                $auth->setScheme($options['scheme']);
             }
             $auth->setToken($value);
         }
@@ -258,6 +272,9 @@ class Auth
     public function setPassword(string $password): Auth
     {
         $this->password = $password;
+        if ($this->digest !== null) {
+            $this->digest->setPassword($password);
+        }
         return $this;
     }
 

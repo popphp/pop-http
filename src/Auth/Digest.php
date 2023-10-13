@@ -166,7 +166,45 @@ class Digest
     }
 
     /**
-     * Create digest from WWW-auth header
+     * Create digest from client header
+     *
+     * @param  string|Header $header
+     * @return Digest
+     */
+    public static function createFromHeader(string|Header $header, $password)
+    {
+        if (is_string($header)) {
+            $header = Header::parse($header);
+            if (trim($header->getValue()->getScheme()) != 'Digest') {
+                throw new Exception('Error: The auth header is not digest.');
+            }
+        }
+
+        $params = $header->getValue()->getParameters();
+
+        $realm    = $params['realm'] ?? null;
+        $nonce    = $params['nonce'] ?? null;
+        $uri      = $params['uri'] ?? null;
+        $username = $params['username'] ?? null;
+
+        if ($realm === null) {
+            throw new Exception('Error: The realm is not set.');
+        }
+        if ($username === null) {
+            throw new Exception('Error: The username is not set.');
+        }
+        if ($nonce === null) {
+            throw new Exception('Error: The nonce is not set.');
+        }
+        if ($uri === null) {
+            throw new Exception('Error: The URI is not set.');
+        }
+
+        return new static($realm, $username, $password, $uri, $nonce);
+    }
+
+    /**
+     * Create digest from WWW-auth server header
      *
      * @param  string|Header $wwwAuth
      * @param  string $username
@@ -669,7 +707,7 @@ class Digest
 
         // Check basic required parameters
         if (($this->realm === null) || ($this->username === null) ||
-            ($this->password === null) || ($this->nonce === null)) {
+            empty($this->password) || ($this->nonce === null)) {
             $this->errors[] =
                 'Error: One or more of the basic requirement parameters were not set (realm, username, password or nonce).';
             $result = false;
