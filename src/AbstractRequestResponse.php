@@ -45,7 +45,7 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
      * Add a header
      *
      * @param  Header|string|int $header
-     * @param  ?string       $value
+     * @param  ?string           $value
      * @return AbstractRequestResponse
      */
     public function addHeader(Header|string|int $header, ?string $value = null): AbstractRequestResponse

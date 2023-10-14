@@ -54,7 +54,9 @@ class Command
 
         if ($client->getRequest()->hasHeaders()) {
             foreach ($client->getRequest()->getHeaders() as $header) {
-                $command .= ' --header "' . $header  . '"';
+                if ($header->getName() != 'Content-Length') {
+                    $command .= ' --header "' . $header  . '"';
+                }
             }
         }
 
@@ -70,7 +72,11 @@ class Command
              * TO-DO: Handle data from @file
              */
             } else if ($client->getRequest()->isJson()) {
-                $command .= " --data '" . json_encode($client->getRequest()->getData(true)) . "'";
+                $json = json_encode($client->getRequest()->getData(true));
+                if (str_contains($json, "'")) {
+                    $json = str_replace("'", "\\'", $json);
+                }
+                $command .= " --data '" . $json . "'";
             } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncodedForm()) ||
                 !($client->getRequest()->hasRequestType())) {
                 $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
@@ -94,6 +100,8 @@ class Command
      */
     public static function commandToClient(string $command): Client
     {
+        $command = trim($command);
+
         if (!str_starts_with($command, 'curl')) {
             throw new Exception("Error: The command isn't a valid cURL command.");
         }
@@ -182,8 +190,11 @@ class Command
                 }
             }
 
-            if ((($opt == '-d') || ($opt == '--data') || ($opt == '-F') || ($opt == '--form')) && str_contains($val, '=')) {
-                parse_str(self::trimQuotes($val), $val);
+            if (($opt == '-d') || ($opt == '--data') || ($opt == '-F') || ($opt == '--form')) {
+                $val = self::trimQuotes($val);
+                if (str_contains($val, '=')) {
+                    parse_str(self::trimQuotes($val), $val);
+                }
             }
 
             if (isset($optionValues[$opt])) {
@@ -215,6 +226,7 @@ class Command
     {
         $optionValues = self::extractCommandOptionValues($options);
 
+        // Handle method
         if (isset($optionValues['-X']) || isset($optionValues['--request'])) {
             $request->setMethod(($optionValues['-X'] ?? $optionValues['--request']));
             if (isset($optionValues['-X'])) {
@@ -223,11 +235,42 @@ class Command
                 unset($optionValues['--request']);
             }
         }
+
+        // Handle headers
+        if (isset($optionValues['-H']) || isset($optionValues['--header'])) {
+            $headerOpts = ($optionValues['-H'] ?? $optionValues['--header']);
+            if (is_array($headerOpts)) {
+                $headers = array_map(function ($value) {
+                    return Command::trimQuotes($value);
+                }, $headerOpts);
+            } else {
+                $headers = [Command::trimQuotes($headerOpts)];
+            }
+
+            $request->addHeaders($headers);
+
+            if (isset($optionValues['-H'])) {
+                unset($optionValues['-H']);
+            } else {
+                unset($optionValues['--header']);
+            }
+        }
+
         /**
          * TO-DO: Handle --data from @file
          */
         if (isset($optionValues['-d']) || isset($optionValues['--data'])) {
-            $request->setData(($optionValues['-d'] ?? $optionValues['--data']));
+            $data = ($optionValues['-d'] ?? $optionValues['--data']);
+
+            if ($request->hasHeader('Content-Type') && is_string($data)) {
+                $contentType = $request->getHeaderValueAsString('Content-Type');
+                if ($contentType ==  Request::JSON) {
+                    $data = json_decode($data, true);
+                } else if ($contentType == Request::URLFORM) {
+                    parse_str($data, $data);
+                }
+            }
+            $request->setData($data);
             if (isset($optionValues['-d'])) {
                 unset($optionValues['-d']);
             } else {
@@ -255,18 +298,6 @@ class Command
                 unset($optionValues['-F']);
             } else {
                 unset($optionValues['--form']);
-            }
-        }
-        if (isset($optionValues['-H']) || isset($optionValues['--header'])) {
-            $headers = array_map(function ($value) {
-                return Command::trimQuotes($value);
-            }, ($optionValues['-H'] ?? $optionValues['--header']));
-
-            $request->addHeaders($headers);
-            if (isset($optionValues['-H'])) {
-                unset($optionValues['-H']);
-            } else {
-                unset($optionValues['--header']);
             }
         }
 

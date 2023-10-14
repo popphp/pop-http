@@ -15,6 +15,7 @@ namespace Pop\Http\Client;
 
 use Pop\Http\Uri;
 use Pop\Http\AbstractRequest;
+use Pop\Mime\Part\Header;
 
 /**
  * HTTP client request class
@@ -129,6 +130,64 @@ class Request extends AbstractRequest
     public function getMethod(): string
     {
         return $this->method;
+    }
+
+
+    /**
+     * Add a header
+     *
+     * @param  Header|string|int $header
+     * @param  ?string           $value
+     * @return Request
+     */
+    public function addHeader(Header|string|int $header, ?string $value = null): Request
+    {
+        $contentType = null;
+        if (is_numeric($header) && ($value !== null)) {
+            $header = Header::parse($value);
+            $value  = null;
+        }
+        if (is_string($header) && ($header == 'Content-Type')) {
+            $contentType = $value;
+        } else if (($header instanceof Header) && ($header->getName() == 'Content-Type')) {
+            $contentType = $header->getValueAsString();
+        }
+
+        switch ($contentType) {
+            case Request::JSON:
+                $this->requestType = Request::JSON;
+                break;
+            case Request::XML:
+                $this->requestType = Request::XML;
+                break;
+            case Request::URLFORM:
+                $this->requestType = Request::URLFORM;
+                break;
+            case Request::MULTIPART:
+                $this->requestType = Request::MULTIPART;
+                break;
+        }
+
+        parent::addHeader($header, $value);
+        return $this;
+    }
+
+    /**
+     * Add all headers
+     *
+     * @param  array $headers
+     * @return Request
+     */
+    public function addHeaders(array $headers): Request
+    {
+        foreach ($headers as $header => $value) {
+            if ($value instanceof Header) {
+                $this->addHeader($value);
+            } else {
+                $this->addHeader($header, $value);
+            }
+        }
+        return $this;
     }
 
     /**
