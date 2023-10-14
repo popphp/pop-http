@@ -13,10 +13,6 @@
  */
 namespace Pop\Http\Client\Handler\Curl;
 
-use Pop\Http\Client;
-use Pop\Http\Client\Request;
-use Pop\Http\Client\Handler\Curl;
-
 /**
  * HTTP client curl options class
  *
@@ -34,7 +30,7 @@ class Options
      * Curl CLI-to-PHP options
      * @var array
      */
-    protected static $cliOptions = [
+    protected static array $cliOptions = [
         '--abstract-unix-socket'      => 'CURLOPT_ABSTRACT_UNIX_SOCKET',                                   // --abstract-unix-socket <path>
         '--alt-svc'                   => 'CURLOPT_ALTSVC',                                                 // --alt-svc <filename>
         '-a'                          => 'CURLOPT_APPEND',
@@ -214,7 +210,7 @@ class Options
      *  Curl PHP-to-CLI options
      * @var array
      */
-    protected static $phpOptions = [
+    protected static array $phpOptions = [
         'CURLOPT_ABSTRACT_UNIX_SOCKET'       => '--abstract-unix-socket',                               // --abstract-unix-socket <path>
         'CURLOPT_ALTSVC'                     => '--alt-svc',                                            // --alt-svc <filename>
         'CURLOPT_APPEND'                     => '-a',
@@ -367,7 +363,7 @@ class Options
      * Curl special options
      * @var array
      */
-    protected static $specialOptions = [
+    protected static array $specialOptions = [
         '--basic',          //                             Use basic auth
         '--digest',         //                             Use digest auth
         '--data-ascii',     // --data-ascii <data>         This is just an alias for -d, --data.
@@ -391,7 +387,7 @@ class Options
      * Curl options that require a value
      * @var array
      */
-    protected static $valueOptions = [
+    protected static array $valueOptions = [
         '--abstract-unix-socket'             => null, // --abstract-unix-socket <path>
         '--alt-svc'                          => null, // --alt-svc <filename>
         '--aws-sigv4'                        => null, // --aws-sigv4 <provider1[:provider2[:region[:service]]]>[
@@ -622,9 +618,12 @@ class Options
 
     /**
      * Unresolved Curl options
+     *
+     *   These are Curl options in PHP that have not yet been mapped to a CLI option
+     *
      * @var array
      */
-    protected static $unresolvedOptions = [
+    protected static array $unresolvedOptions = [
         'CURLOPT_ACCEPTTIMEOUT_MS',
         'CURLOPT_ACCEPT_ENCODING',
         'CURLOPT_ADDRESS_SCOPE',
@@ -813,302 +812,83 @@ class Options
     }
 
     /**
-     * Parse the CLI command options string
+     * Get the CLI options
      *
-     * @param  string $optionString
      * @return array
      */
-    public static function parseCliOptions(string $optionString): array
+    public static function getCliOptions(): array
     {
-        $options = [];
-        $matches = [];
-
-        preg_match_all('/\s[\-]{1,2}/', $optionString, $matches, PREG_OFFSET_CAPTURE);
-
-        if (isset($matches[0]) && isset($matches[0][0])) {
-            foreach ($matches[0] as $i => $match) {
-                if (isset($matches[0][$i + 1])) {
-                    $length    = ($matches[0][$i + 1][1]) - $match[1] - 1;
-                    $options[] = substr($optionString, $match[1] + 1, $length);
-                } else {
-                    $options[] = substr($optionString, $match[1] + 1);
-                }
-            }
-        }
-
-        return $options;
+        return self::$cliOptions;
     }
 
     /**
-     * Extract CLI option values
+     * Get CLI option
      *
-     * @param  array $options
+     * @return string|array|null
+     */
+    public static function getCliOption(string $option): string|array|null
+    {
+        return self::$cliOptions[$option] ?? null;
+    }
+
+    /**
+     * Get the PHP options
+     *
      * @return array
      */
-    public static function extractCliOptionValues(array $options): array
+    public static function getPhpOptions(): array
     {
-        $optionValues = [];
-
-        foreach ($options as $option) {
-            $opt = null;
-            $val = null;
-            if (str_starts_with($option, '--')) {
-                if (str_contains($option, ' ')) {
-                    $opt = substr($option, 0, strpos($option, ' '));
-                    $val = substr($option, (strpos($option, ' ') + 1));
-                } else {
-                    $opt = $option;
-                }
-            } else {
-                if (strlen($option) > 2) {
-                    if (substr($option, 2, 1) == ' ') {
-                        $opt = substr($option, 0, 2);
-                        $val = substr($option, 3);
-                    } else {
-                        $opt = substr($option, 0, 2);
-                        $val = substr($option, 2);
-                    }
-                } else {
-                    $opt = $option;
-                }
-            }
-
-            if ((($opt == '-d') || ($opt == '--data') || ($opt == '-F') || ($opt == '--form')) && str_contains($val, '=')) {
-                parse_str(self::trimQuotes($val), $val);
-            }
-
-            if (isset($optionValues[$opt])) {
-                if (!is_array($optionValues[$opt])) {
-                    $optionValues[$opt] = [$optionValues[$opt]];
-                }
-                if (is_array($val)) {
-                    $optionValues[$opt] = array_merge($optionValues[$opt], $val);
-                } else {
-                    $optionValues[$opt][] = $val;
-                }
-            } else {
-                $optionValues[$opt] = $val;
-            }
-        }
-
-        return $optionValues;
+        return self::$phpOptions;
     }
 
     /**
-     * Create a compatible string to execute with the curl CLI application
+     * Get Php option
      *
-     * @param  Client $client
-     * @return string
+     * @return string|array|null
      */
-    public static function clientToCli(Client $client): string
+    public static function getPhpOption(string $option): string|array|null
     {
-        $command = 'curl';
-        $client->prepare();
-
-        if (!($client->getHandler() instanceof Curl)) {
-            throw new Exception('Error: The client object must use a Curl handler.');
-        }
-
-        if ($client->getHandler()->isReturnHeader()) {
-            $command .= ' -i';
-        }
-
-        $method   = $client->getRequest()->getMethod();
-        $command .= ' -X ' . $method;
-
-        if ($client->getRequest()->hasHeaders()) {
-            foreach ($client->getRequest()->getHeaders() as $header) {
-                $command .= ' --header "' . $header  . '"';
-            }
-        }
-
-        if ($client->getRequest()->hasData()) {
-            if ($client->getRequest()->isMultipartForm()) {
-                $data = $client->getRequest()->getData(true);
-                foreach ($data as $key => $value) {
-                    $command .= (isset($value['filename']) && file_exists($value['filename'])) ?
-                        ' -F "' . $key . '=@' . $value['filename'] . '"' :
-                        ' -F "' . http_build_query([$key => $value]) . '"';
-                }
-            /**
-             * TO-DO: Handle data from @file
-             */
-            } else if ($client->getRequest()->isJson()) {
-                $command .= " --data '" . json_encode($client->getRequest()->getData(true)) . "'";
-            } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncodedForm()) ||
-                !($client->getRequest()->hasRequestType())) {
-                $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
-            }
-        }
-
-        /**
-         * TO-DO: handle other options
-         */
-
-        $command .= ' "' . $client->getRequest()->getFullUriAsString()  . '"';
-
-        return $command;
+        return self::$phpOptions[$option] ?? null;
     }
 
     /**
-     * Create a client object from a command string from the Curl CLI application
+     * Get the special options
      *
-     * @param  string $command
-     * @return Client
+     * @return array
      */
-    public static function cliToClient(string $command): Client
+    public static function getSpecialOptions(): array
     {
-        if (!str_starts_with($command, 'curl')) {
-            throw new Exception("Error: The command isn't a valid cURL command.");
-        }
-
-        $command = substr($command, 4);
-        $options = [];
-
-        // No options
-        if (!str_contains($command, '-')) {
-            $requestUri = trim($command);
-        // Else, parse options
-        } else {
-            $optionString = substr($command, 0, strrpos($command, ' '));
-            $requestUri   = substr($command, (strrpos($command, ' ') + 1));
-            $options      = self::parseCliOptions($optionString);
-        }
-
-        $request = new Request(self::trimQuotes($requestUri));
-        $curl    = new Curl();
-
-        if (!empty($options)) {
-            self::convertCliOptions($options, $curl, $request);
-        }
-
-        return new Client($request, $curl);
+        return self::$specialOptions;
     }
 
     /**
-     * Convert CLI options to usable values for the Curl handler and request
+     * Get special option
      *
-     * @param  array   $options
-     * @param  Curl    $curl
-     * @param  Request $request
-     * @return void
+     * @return string|null
      */
-    public static function convertCliOptions(array $options, Curl $curl, Request $request): void
+    public static function getSpecialOption(string $option): string|null
     {
-        $optionValues = self::extractCliOptionValues($options);
-
-        if (isset($optionValues['-X']) || isset($optionValues['--request'])) {
-            $request->setMethod(($optionValues['-X'] ?? $optionValues['--request']));
-            if (isset($optionValues['-X'])) {
-                unset($optionValues['-X']);
-            } else {
-                unset($optionValues['--request']);
-            }
-        }
-        /**
-         * TO-DO: Handle --data from @file
-         */
-        if (isset($optionValues['-d']) || isset($optionValues['--data'])) {
-            $request->setData(($optionValues['-d'] ?? $optionValues['--data']));
-            if (isset($optionValues['-d'])) {
-                unset($optionValues['-d']);
-            } else {
-                unset($optionValues['--data']);
-            }
-        }
-        if (isset($optionValues['-F']) || isset($optionValues['--form'])) {
-            $data     = [];
-            $formData = ($optionValues['-F'] ?? $optionValues['--form']);
-            foreach ($formData as $key => $formDatum) {
-                if (str_starts_with($formDatum, '@')) {
-                    $data[$key] = [
-                        'filename'    => getcwd() . DIRECTORY_SEPARATOR . substr($formDatum, 1),
-                        'contentType' => Client\Data::getMimeTypeFromFilename(substr($formDatum, 1))
-                    ];
-                } else {
-                    $data[$key] = $formDatum;
-                }
-            }
-
-            $request->setData($data)
-                ->setRequestType(Request::MULTIPART);
-
-            if (isset($optionValues['-F'])) {
-                unset($optionValues['-F']);
-            } else {
-                unset($optionValues['--form']);
-            }
-        }
-        if (isset($optionValues['-H']) || isset($optionValues['--header'])) {
-            $headers = array_map(function ($value) {
-                return Options::trimQuotes($value);
-            }, ($optionValues['-H'] ?? $optionValues['--header']));
-
-            $request->addHeaders($headers);
-            if (isset($optionValues['-H'])) {
-                unset($optionValues['-H']);
-            } else {
-                unset($optionValues['--header']);
-            }
-        }
-
-        foreach ($optionValues as $option => $value) {
-            foreach (self::$phpOptions as $phpOption => $curlOption) {
-                if (is_array($curlOption)) {
-                    foreach ($curlOption as $cOpt) {
-                        if ((str_starts_with($option, '--') && str_contains($cOpt, $option)) || str_starts_with($cOpt, $option)) {
-                            if (self::isValueOption($option)) {
-                                $optionValue = self::$valueOptions[$option] ?? $value;
-                            } else {
-                                $optionValue = true;
-                            }
-                            $curl->setOption(constant($phpOption), $optionValue);
-                            break;
-                        }
-                    }
-                } else if ((str_starts_with($option, '--') && str_contains($curlOption, $option)) || str_starts_with($curlOption, $option)) {
-                    if (self::isValueOption($option)) {
-                        $optionValue = self::$valueOptions[$option] ?? $value;
-                    } else {
-                        $optionValue = true;
-                    }
-                    $curl->setOption(constant($phpOption), $optionValue);
-                    break;
-                }
-            }
-        }
+        return self::$specialOptions[$option] ?? null;
     }
 
     /**
-     * Trim quotes from value
+     * Get the value options
      *
-     * @param  string  $value
-     * @return string
+     * @return array
      */
-    public static function trimQuotes(string $value): string
+    public static function getValueOptions(): array
     {
-        if ((str_starts_with($value, '"') && str_ends_with($value, '"')) || (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
-            $value = substr($value, 1);
-            $value = substr($value, 0, -1);
-        }
-
-        return $value;
+        return self::$valueOptions;
     }
 
     /**
-     * Trim quotes from value
+     * Get value option
      *
-     * @param  string $value
-     * @param  string $quote
-     * @return string
+     * @return mixed
      */
-    public static function addQuotes(string $value, string $quote = '"'): string
+    public static function getValueOption(string $option): mixed
     {
-        if (!str_starts_with($value, '"') && !str_ends_with($value, '"') && !str_starts_with($value, "'") && !str_ends_with($value, "'")) {
-            $value = $quote . $value . $quote;
-        }
-
-        return $value;
+        return self::$valueOptions[$option] ?? null;
     }
 
 }
