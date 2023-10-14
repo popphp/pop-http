@@ -903,6 +903,7 @@ class Options
     public static function clientToCli(Client $client): string
     {
         $command = 'curl';
+        $client->prepare();
 
         if (!($client->getHandler() instanceof Curl)) {
             throw new Exception('Error: The client object must use a Curl handler.');
@@ -921,15 +922,17 @@ class Options
             }
         }
 
-        /**
-         * TO-DO: Need to handle files
-         */
         if ($client->getRequest()->hasData()) {
             if ($client->getRequest()->isMultipartForm()) {
                 $data = $client->getRequest()->getData(true);
                 foreach ($data as $key => $value) {
-                    $command .= ' -F ' . http_build_query([$key => $value]);
+                    $command .= (isset($value['filename']) && file_exists($value['filename'])) ?
+                        ' -F "' . $key . '=@' . $value['filename'] . '"' :
+                        ' -F "' . http_build_query([$key => $value]) . '"';
                 }
+            /**
+             * TO-DO: Handle data from @file
+             */
             } else if ($client->getRequest()->isJson()) {
                 $command .= " --data '" . json_encode($client->getRequest()->getData(true)) . "'";
             } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncodedForm()) ||
@@ -962,8 +965,10 @@ class Options
         $command = substr($command, 4);
         $options = [];
 
+        // No options
         if (!str_contains($command, '-')) {
             $requestUri = trim($command);
+        // Else, parse options
         } else {
             $optionString = substr($command, 0, strrpos($command, ' '));
             $requestUri   = substr($command, (strrpos($command, ' ') + 1));
@@ -1000,6 +1005,9 @@ class Options
                 unset($optionValues['--request']);
             }
         }
+        /**
+         * TO-DO: Handle --data from @file
+         */
         if (isset($optionValues['-d']) || isset($optionValues['--data'])) {
             $request->setData(($optionValues['-d'] ?? $optionValues['--data']));
             if (isset($optionValues['-d'])) {
@@ -1009,8 +1017,22 @@ class Options
             }
         }
         if (isset($optionValues['-F']) || isset($optionValues['--form'])) {
-            $request->setData(($optionValues['-F'] ?? $optionValues['--form']))
+            $data     = [];
+            $formData = ($optionValues['-F'] ?? $optionValues['--form']);
+            foreach ($formData as $key => $formDatum) {
+                if (str_starts_with($formDatum, '@')) {
+                    $data[$key] = [
+                        'filename'    => getcwd() . DIRECTORY_SEPARATOR . substr($formDatum, 1),
+                        'contentType' => Client\Data::getMimeTypeFromFilename(substr($formDatum, 1))
+                    ];
+                } else {
+                    $data[$key] = $formDatum;
+                }
+            }
+
+            $request->setData($data)
                 ->setRequestType(Request::MULTIPART);
+
             if (isset($optionValues['-F'])) {
                 unset($optionValues['-F']);
             } else {
