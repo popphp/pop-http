@@ -60,6 +60,49 @@ class Data
     protected ?string $queryString = null;
 
     /**
+     * Common mime types
+     * @var array
+     */
+    protected static array $mimeTypes = [
+        'bmp'    => 'image/x-ms-bmp',
+        'bz2'    => 'application/bzip2',
+        'csv'    => 'text/csv',
+        'doc'    => 'application/msword',
+        'docx'   => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'gif'    => 'image/gif',
+        'gz'     => 'application/gzip',
+        'jpe'    => 'image/jpeg',
+        'jpg'    => 'image/jpeg',
+        'jpeg'   => 'image/jpeg',
+        'json'   => 'text/plain',
+        'log'    => 'text/plain',
+        'pdf'    => 'application/pdf',
+        'png'    => 'image/png',
+        'ppt'    => 'application/msword',
+        'pptx'   => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'psd'    => 'image/x-photoshop',
+        'svg'    => 'image/svg+xml',
+        'tar'    => 'application/x-tar',
+        'tbz'    => 'application/bzip2',
+        'tbz2'   => 'application/bzip2',
+        'tgz'    => 'application/gzip',
+        'tif'    => 'image/tiff',
+        'tiff'   => 'image/tiff',
+        'tsv'    => 'text/tsv',
+        'txt'    => 'text/plain',
+        'xls'    => 'application/msword',
+        'xlsx'   => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'xml'    => 'application/xml',
+        'zip'    => 'application/zip'
+    ];
+
+    /**
+     * Default mime type
+     * @var string
+     */
+    protected static string $defaultMimeType = 'application/octet-stream';
+
+    /**
      * Constructor
      *
      * Instantiate the request data object
@@ -260,6 +303,62 @@ class Data
     public function getRawDataLength(bool $mb = false): int
     {
         return ($mb) ? mb_strlen((string)$this->getRawData()) : strlen((string)$this->getRawData());
+    }
+
+    /**
+     * Get common mime types
+     *
+     * @return array
+     */
+    public static function getMimeTypes(): array
+    {
+        return static::$mimeTypes;
+    }
+
+    /**
+     * Has mime type
+     *
+     * @param  string $ext
+     * @return bool
+     */
+    public static function hasMimeType(string $ext): bool
+    {
+        return isset(static::$mimeTypes[$ext]);
+    }
+
+    /**
+     * Get mime type
+     *
+     * @param  string $ext
+     * @return string|null
+     */
+    public static function getMimeType(string $ext): string|null
+    {
+        return static::$mimeTypes[$ext] ?? null;
+    }
+
+    /**
+     * Get mime type
+     *
+     * @param  string $filename
+     * @return string
+     */
+    public static function getMimeTypeFromFilename(string $filename): string
+    {
+        $info = pathinfo($filename);
+
+        return (isset($info['extension']) && isset(self::$mimeTypes[$info['extension']])) ?
+            self::$mimeTypes[$info['extension']] : self::$defaultMimeType;
+    }
+
+    /**
+     * Get default mime type
+     *
+     * @return string
+     */
+    public static function getDefaultMimeType(): string
+    {
+        return static::$defaultMimeType;
     }
 
 }

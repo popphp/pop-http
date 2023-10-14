@@ -874,7 +874,7 @@ class Options
             }
 
             if ((($opt == '-d') || ($opt == '--data') || ($opt == '-F') || ($opt == '--form')) && str_contains($val, '=')) {
-                parse_str($val, $val);
+                parse_str(self::trimQuotes($val), $val);
             }
 
             if (isset($optionValues[$opt])) {
@@ -970,7 +970,7 @@ class Options
             $options      = self::parseCliOptions($optionString);
         }
 
-        $request = new Request($requestUri);
+        $request = new Request(self::trimQuotes($requestUri));
         $curl    = new Curl();
 
         if (!empty($options)) {
@@ -1019,11 +1019,7 @@ class Options
         }
         if (isset($optionValues['-H']) || isset($optionValues['--header'])) {
             $headers = array_map(function ($value) {
-                if (str_starts_with($value, '"') && str_ends_with($value, '"')) {
-                    $value = substr($value, 1);
-                    $value = substr($value, 0, -1);
-                }
-                return $value;
+                return Options::trimQuotes($value);
             }, ($optionValues['-H'] ?? $optionValues['--header']));
 
             $request->addHeaders($headers);
@@ -1059,6 +1055,38 @@ class Options
                 }
             }
         }
+    }
+
+    /**
+     * Trim quotes from value
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public static function trimQuotes(string $value): string
+    {
+        if ((str_starts_with($value, '"') && str_ends_with($value, '"')) || (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
+            $value = substr($value, 1);
+            $value = substr($value, 0, -1);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Trim quotes from value
+     *
+     * @param  string $value
+     * @param  string $quote
+     * @return string
+     */
+    public static function addQuotes(string $value, string $quote = '"'): string
+    {
+        if (!str_starts_with($value, '"') && !str_ends_with($value, '"') && !str_starts_with($value, "'") && !str_ends_with($value, "'")) {
+            $value = $quote . $value . $quote;
+        }
+
+        return $value;
     }
 
 }

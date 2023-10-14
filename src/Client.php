@@ -33,12 +33,6 @@ class Client extends AbstractHttp
 {
 
     /**
-     * Base URI
-     * @var ?string
-     */
-    protected ?string $baseUri = null;
-
-    /**
      * Client options
      * @var array
      */
@@ -103,44 +97,14 @@ class Client extends AbstractHttp
     }
 
     /**
-     * Set base URI
-     *
-     * @param  ?string $baseUri
-     * @return Client
-     */
-    public function setBaseUri(?string $baseUri = null): Client
-    {
-        $this->baseUri = $baseUri;
-        return $this;
-    }
-
-    /**
-     * Get base URI
-     *
-     * @return string
-     */
-    public function getBaseUri(): string
-    {
-        return $this->baseUri;
-    }
-
-    /**
-     * Has base URI
-     *
-     * @return bool
-     */
-    public function hasBaseUri(): bool
-    {
-        return ($this->baseUri !== null);
-    }
-
-    /**
      * Set options
      *
      * Supported options
      *  - 'base_uri'
+     *  - 'method'
      *  - 'headers'
      *  - 'data'
+     *  - 'files'
      *  - 'async'
      *  - 'type'
      *  - 'verify_peer'
@@ -152,9 +116,6 @@ class Client extends AbstractHttp
      */
     public function setOptions(array $options): Client
     {
-        if (isset($options['base_uri'])) {
-            $this->setBaseUri($options['base_uri']);
-        }
         $this->options = $options;
         return $this;
     }
@@ -303,6 +264,229 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Set data
+     *
+     * @param  array $data
+     * @return Client
+     */
+    public function setData(array $data): Client
+    {
+        $this->options['data'] = $data;
+        return $this;
+    }
+
+    /**
+     * Add data
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return Client
+     */
+    public function addData(string $name, mixed $value): Client
+    {
+        if (!isset($this->options['data'])) {
+            $this->options['data'] = [];
+        }
+        $this->options['data'][$name] = $value;
+        return $this;
+    }
+    /**
+     * Get data
+     *
+     * @param  ?string $key
+     * @return mixed
+     */
+    public function getData(?string $key = null): mixed
+    {
+        if ($key !== null) {
+            return (isset($this->options['data']) && isset($this->options['data'][$key])) ?
+                $this->options['data'][$key] : null;
+        } else {
+            return $this->options['data'] ?? null;
+        }
+    }
+
+    /**
+     * Has data
+     *
+     * @param  ?string $key
+     * @return bool
+     */
+    public function hasData(?string $key = null): bool
+    {
+        if ($key !== null) {
+            return (isset($this->options['data']) && isset($this->options['data'][$key]));
+        } else {
+            return isset($this->options['data']);
+        }
+    }
+
+    /**
+     * Remove data
+     *
+     * @param  string $key
+     * @return Client
+     */
+    public function removeData(string $key): Client
+    {
+        if (isset($this->options['data']) && isset($this->options['data'][$key])) {
+            unset($this->options['data'][$key]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove all data
+     *
+     * @return Client
+     */
+    public function removeAllData(): Client
+    {
+        if (isset($this->options['data'])) {
+            unset($this->options['data']);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Set files
+     *
+     * @param  array|string $files
+     * @param  bool         $multipart
+     * @throws Exception
+     * @return Client
+     */
+    public function setFiles(array|string $files, bool $multipart = true): Client
+    {
+        if (is_string($files)) {
+            $files = [$files];
+        }
+
+        $filenames = [];
+
+        foreach ($files as $i => $file) {
+            if (!file_exists($file)) {
+                throw new Exception("Error: The file '" . $file . "' does not exist.");
+            }
+
+            $name = (is_numeric($i)) ? 'file' . ($i + 1) : $i;
+            $filenames[$name] = $file;
+        }
+
+        $this->options['files'] = $filenames;
+
+        if ($multipart) {
+            $this->options['type'] = Request::MULTIPART;
+        }
+        return $this;
+    }
+
+    /**
+     * Add file
+     *
+     * @param  string  $file
+     * @param  ?string $name
+     * @throws Exception
+     * @return Client
+     */
+    public function addFile(string $file, ?string $name = null): Client
+    {
+        if (!file_exists($file)) {
+            throw new Exception("Error: The file '" . $file . "' does not exist.");
+        }
+
+        if (!isset($this->options['files'])) {
+            $this->options['files'] = [];
+        }
+
+        if ($name === null) {
+            $i = 1;
+            $name = 'file' . $i;
+            while (isset($this->options['files'][$name])) {
+                $i++;
+                $name = 'file' . $i;
+            }
+        }
+
+        $this->options['files'][$name] = $file;
+        return $this;
+    }
+
+    /**
+     * Get files
+     *
+     * @return array|null
+     */
+    public function getFiles(): array|null
+    {
+        return $this->options['files'] ?? null;
+    }
+
+    /**
+     * Get file
+     *
+     * @param  string $key
+     * @return string|null
+     */
+    public function getFile(string $key): string|null
+    {
+        return (isset($this->options['files']) && isset($this->options['files'][$key])) ?
+                $this->options['files'][$key] : null;
+    }
+
+    /**
+     * Has files
+     *
+     * @return bool
+     */
+    public function hasFiles(): bool
+    {
+        return isset($this->options['files']);
+    }
+
+    /**
+     * Has file
+     *
+     * @param  string $key
+     * @return bool
+     */
+    public function hasFile(string $key): bool
+    {
+        return (isset($this->options['files']) && isset($this->options['files'][$key]));
+    }
+
+    /**
+     * Remove file
+     *
+     * @param  string $key
+     * @return Client
+     */
+    public function removeFile(string $key): Client
+    {
+        if (isset($this->options['files']) && isset($this->options['files'][$key])) {
+            unset($this->options['files'][$key]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove all files
+     *
+     * @return Client
+     */
+    public function removeFiles(): Client
+    {
+        if (isset($this->options['files'])) {
+            unset($this->options['files']);
+        }
+
+        return $this;
+    }
+
+    /**
      * Prepare the client request
      *
      * @param  ?string $uri
@@ -315,6 +499,12 @@ class Client extends AbstractHttp
         if ((!$this->hasRequest()) && ($uri === null)) {
             throw new Exception('Error: There is no request URI to send.');
         }
+
+        if (($method === null) && isset($this->options['method'])) {
+            $method = $this->options['method'];
+        }
+
+        // Set request URI
         if ($uri !== null) {
             $request = new Request(new Uri($uri), ($method ?? 'GET'));
             $this->setRequest($request);
@@ -322,20 +512,43 @@ class Client extends AbstractHttp
             $this->request->setMethod($method);
         }
 
+        // Add headers
         if (($this->hasOption('headers')) && is_array($this->options['headers'])) {
             $this->request->addHeaders($this->options['headers']);
         }
+
+        // Add data and files
+        $data = [];
         if ($this->hasOption('data')) {
-            $this->request->setData($this->options['data']);
+            $data = $this->options['data'];
         }
+
+        if ($this->hasOption('files')) {
+            $files = $this->options['files'];
+            foreach ($files as $file => $value) {
+                $file = (is_numeric($file)) ? 'file' . ($file + 1) : $file;
+                $data[$file] = [
+                    'filename'    => $value,
+                    'contentType' => Client\Data::getMimeTypeFromFilename($value)
+                ];
+            }
+        }
+
+        if (!empty($data)) {
+            $this->request->setData($data);
+        }
+
+        // Set request type
         if ($this->hasOption('type')) {
             $this->request->setRequestType($this->options['type']);
         }
 
+        // Set handler
         if (!$this->hasHandler()) {
             $this->setHandler(new Curl());
         }
 
+        // Handle SSL options
         if (!($this->handler instanceof CurlMulti)) {
             if ($this->hasOption('verify_peer')) {
                 $this->handler->setVerifyPeer((bool)$this->options['verify_peer']);
@@ -345,8 +558,9 @@ class Client extends AbstractHttp
             }
         }
 
-        if (($this->hasBaseUri()) && !str_starts_with($this->request->getUriAsString(), $this->getBaseUri())) {
-            $this->request->setUri($this->getBaseUri() . $this->request->getUriAsString());
+        // Adjust for base_uri
+        if (($this->hasOption('base_uri')) && !str_starts_with($this->request->getUriAsString(), $this->getOption('base_uri'))) {
+            $this->request->setUri($this->getOption('base_uri') . $this->request->getUriAsString());
         }
 
         return $this;
