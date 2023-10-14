@@ -45,7 +45,7 @@ class AuthTest extends TestCase
 
     public function testParseKey()
     {
-        $header = Auth::parse('X-Api-Key: api:sd0c98sdc-fhygn9b90f-fgb90fgb', 'api:');
+        $header = Auth::parse('X-Api-Key: api:sd0c98sdc-fhygn9b90f-fgb90fgb', ['scheme' => 'api:']);
         $this->assertEquals('X-Api-Key', $header->getHeader());
         $this->assertEquals('api:', $header->getScheme());
         $this->assertEquals('sd0c98sdc-fhygn9b90f-fgb90fgb', $header->getToken());

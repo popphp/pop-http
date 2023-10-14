@@ -787,7 +787,7 @@ class Options
      */
     public static function isSpecialOption(string $option): bool
     {
-        return array_key_exists($option, self::$specialOptions);
+        return in_array($option, self::$specialOptions);
     }
 
     /**

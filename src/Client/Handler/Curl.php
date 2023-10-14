@@ -189,7 +189,7 @@ class Curl extends AbstractCurl
             // Append GET query string to URL
             if (($request->isGet()) && ((!$request->hasHeader('Content-Type')) ||
                     ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
-                $this->uri .= ($request->getData()->hasRawData()) ?
+                $uri .= ($request->getData()->hasRawData()) ?
                     $request->getData()->getRawData() : $request->getData()->prepareQueryString(true);
             // Else, prepare request data for transmission
             } else {
