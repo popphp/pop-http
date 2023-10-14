@@ -873,7 +873,7 @@ class Options
                 }
             }
 
-            if (($opt == '-d') || ($opt == '--data') && str_contains($val, '=')) {
+            if ((($opt == '-d') || ($opt == '--data') || ($opt == '-F') || ($opt == '--form')) && str_contains($val, '=')) {
                 parse_str($val, $val);
             }
 
@@ -959,10 +959,8 @@ class Options
             throw new Exception("Error: The command isn't a valid cURL command.");
         }
 
-        $command      = substr($command, 4);
-        $optionString = null;
-        $requestUri   = null;
-        $options      = [];
+        $command = substr($command, 4);
+        $options = [];
 
         if (!str_contains($command, '-')) {
             $requestUri = trim($command);
@@ -1008,6 +1006,15 @@ class Options
                 unset($optionValues['-d']);
             } else {
                 unset($optionValues['--data']);
+            }
+        }
+        if (isset($optionValues['-F']) || isset($optionValues['--form'])) {
+            $request->setData(($optionValues['-F'] ?? $optionValues['--form']))
+                ->setRequestType(Request::MULTIPART);
+            if (isset($optionValues['-F'])) {
+                unset($optionValues['-F']);
+            } else {
+                unset($optionValues['--form']);
             }
         }
         if (isset($optionValues['-H']) || isset($optionValues['--header'])) {

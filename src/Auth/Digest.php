@@ -709,7 +709,7 @@ class Digest
         if (($this->realm === null) || ($this->username === null) ||
             empty($this->password) || ($this->nonce === null)) {
             $this->errors[] =
-                'Error: One or more of the basic requirement parameters were not set (realm, username, password or nonce).';
+                'Error: One or more of the basic parameters were not set (realm, username, password or nonce).';
             $result = false;
         }
         // Check client nonce for MD5-sess algorithm

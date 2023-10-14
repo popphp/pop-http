@@ -274,7 +274,7 @@ class Curl extends AbstractCurl
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER])) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
-            if ($this->options[CURLOPT_HEADER]) {
+            if (isset($this->options[CURLOPT_HEADER])) {
                 $parsedHeaders = Parser::parseHeaders(substr($this->response, 0, $headerSize));
                 $response->setVersion($parsedHeaders['version']);
                 $response->setCode($parsedHeaders['code']);

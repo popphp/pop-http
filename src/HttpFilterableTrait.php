@@ -27,6 +27,7 @@ use Pop\Filter\FilterableTrait;
  */
 trait HttpFilterableTrait
 {
+
     use FilterableTrait;
 
     /**
