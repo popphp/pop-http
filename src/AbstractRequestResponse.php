@@ -260,6 +260,21 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
     }
 
     /**
+     * Get body content length
+     *
+     * @param  bool $mb
+     * @return int
+     */
+    public function getBodyContentLength(bool $mb = false): int
+    {
+        if ($this->body !== null) {
+            return ($mb) ? mb_strlen($this->body->getContent()) : strlen($this->body->getContent());
+        } else {
+            return 0;
+        }
+    }
+
+    /**
      * Has a body
      *
      * @return bool

@@ -15,7 +15,7 @@ class ClientTest extends TestCase
             new Client\Request(),
             new Client\Response(),
             new Client\Handler\Stream(),
-            new Auth(),
+            Auth::createBearer('123456'),
             ['base_uri' => 'http://localhost']
         );
         $this->assertInstanceOf('Pop\Http\Client', $client);
@@ -23,14 +23,12 @@ class ClientTest extends TestCase
         $this->assertTrue($client->hasResponse());
         $this->assertTrue($client->hasHandler());
         $this->assertTrue($client->hasAuth());
-        $this->assertTrue($client->hasBaseUri());
         $this->assertTrue($client->hasOptions());
         $this->assertTrue($client->hasOption('base_uri'));
         $this->assertInstanceOf('Pop\Http\Client\Request', $client->getRequest());
         $this->assertInstanceOf('Pop\Http\Client\Response', $client->getResponse());
         $this->assertInstanceOf('Pop\Http\Client\Handler\Stream', $client->getHandler());
         $this->assertInstanceOf('Pop\Http\Auth', $client->getAuth());
-        $this->assertEquals('http://localhost', $client->getBaseUri());
         $this->assertEquals('http://localhost', $client->getOption('base_uri'));
         $this->assertCount(1, $client->getOptions());
     }

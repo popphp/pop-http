@@ -156,6 +156,14 @@ interface RequestResponseInterface
     public function getBodyContent(): mixed;
 
     /**
+     * Get body content length
+     *
+     * @param  bool $mb
+     * @return int
+     */
+    public function getBodyContentLength(bool $mb = false): int;
+
+    /**
      * Has a body
      *
      * @return bool

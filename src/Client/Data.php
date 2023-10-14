@@ -74,7 +74,7 @@ class Data
         'jpe'    => 'image/jpeg',
         'jpg'    => 'image/jpeg',
         'jpeg'   => 'image/jpeg',
-        'json'   => 'text/plain',
+        'json'   => 'application/json',
         'log'    => 'text/plain',
         'pdf'    => 'application/pdf',
         'png'    => 'image/png',

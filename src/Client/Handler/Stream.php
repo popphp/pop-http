@@ -89,7 +89,6 @@ class Stream extends AbstractHandler
         }
     }
 
-
     /**
      * Factory method to create a Curl client
      *
@@ -104,7 +103,6 @@ class Stream extends AbstractHandler
         $handler->setMethod($method);
         return $handler;
     }
-
 
     /**
      * Set the method
@@ -366,7 +364,6 @@ class Stream extends AbstractHandler
      */
     public function prepare(Request $request, ?Auth $auth = null, bool $clear = true): Stream
     {
-        $this->uri = $request->getUriAsString();
         $this->setMethod($request->getMethod());
 
         // Clear headers for a fresh request based on the headers in the request object,
@@ -381,46 +378,13 @@ class Stream extends AbstractHandler
 
         // If request has data
         if ($request->hasData()) {
-            // Append GET query string to URL
-            if (($request->isGet()) && ((!$request->hasHeader('Content-Type')) ||
-                    ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
-                $this->uri .= ($request->getData()->hasRawData()) ?
-                    $request->getData()->getRawData() : $request->getData()->prepareQueryString(true);
-            // Else, prepare request data for transmission
-            } else {
-                // If request is JSON
-                if ($request->getHeaderValue('Content-Type') == 'application/json') {
-                    $content = json_encode($request->getData(true), JSON_PRETTY_PRINT);
-                    $request->addHeader('Content-Length', strlen($content));
-                    $this->contextOptions['http']['content'] = $content;
-                // Else, if request is a URL-encoded form
-                } else if ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded') {
-                    $request->addHeader('Content-Length', $request->getData()->getQueryStringLength());
-                    $this->contextOptions['http']['content'] = $request->getData()->prepareQueryString();
-                // Else, if request is a multipart form
-                } else if ($request->isMultipartForm()) {
-                    $formMessage = Message::createForm($request->getData(true));
-                    $header      = $formMessage->getHeader('Content-Type');
-                    $content     = $formMessage->render(false);
-                    $formMessage->removeHeader('Content-Type');
-                    $request->addHeader($header)
-                        ->addHeader('Content-Length', strlen($content));
-                    $this->contextOptions['http']['content'] = $content;
-                // Else, if request has raw data
-                } else if ($request->getData()->hasRawData()) {
-                    $request->addHeader('Content-Length', $request->getData()->getRawDataLength());
-                    $this->contextOptions['http']['content'] = $request->getData()->getRawData();
-                // Else, basic request with data
-                } else {
-                    $this->contextOptions['http']['content'] = $request->getData(true);
-                    if (!$request->hasHeader('Content-Type')) {
-                        $request->addHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    }
-                }
+            $request->prepareData();
+            if ($request->hasDataContent()) {
+                $this->contextOptions['http']['content'] = $request->getDataContent();
             }
         // Else, if there is raw body content
         } else if ($request->hasBodyContent()) {
-            $request->addHeader('Content-Length', strlen($request->getBodyContent()));
+            $request->addHeader('Content-Length', $request->getBodyContentLength());
             $this->contextOptions['http']['content'] = $request->getBodyContent();
         }
 
@@ -447,6 +411,8 @@ class Stream extends AbstractHandler
         if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {
             $this->createContext();
         }
+
+        $this->uri = $request->getUriAsString();
 
         return $this;
     }

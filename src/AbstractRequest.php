@@ -77,7 +77,7 @@ abstract class AbstractRequest extends AbstractRequestResponse
      */
     public function getUriAsString(): string
     {
-        return $this->uri->render();
+        return (string)$this->uri?->render();
     }
 
     /**

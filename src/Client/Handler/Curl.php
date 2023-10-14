@@ -176,7 +176,6 @@ class Curl extends AbstractCurl
      */
     public function prepare(Request $request, ?Auth $auth = null, bool $forceCustom = false): Curl
     {
-        $uri = $request->getUriAsString();
         $this->setMethod($request->getMethod(), $forceCustom);
 
         // Add auth header
@@ -186,46 +185,13 @@ class Curl extends AbstractCurl
 
         // If request has data
         if ($request->hasData()) {
-            // Append GET query string to URL
-            if (($request->isGet()) && ((!$request->hasHeader('Content-Type')) ||
-                    ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
-                $uri .= ($request->getData()->hasRawData()) ?
-                    $request->getData()->getRawData() : $request->getData()->prepareQueryString(true);
-            // Else, prepare request data for transmission
-            } else {
-                // If request is JSON
-                if ($request->getHeaderValue('Content-Type') == 'application/json') {
-                    $content = json_encode($request->getData(true), JSON_PRETTY_PRINT);
-                    $request->addHeader('Content-Length', strlen($content));
-                    $this->setOption(CURLOPT_POSTFIELDS, $content);
-                // Else, if request is a URL-encoded form
-                } else if ($request->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded') {
-                    $request->addHeader('Content-Length', $request->getData()->getQueryStringLength());
-                    $this->setOption(CURLOPT_POSTFIELDS, $request->getData()->prepareQueryString());
-                // Else, if request is a multipart form
-                } else if ($request->isMultipartForm()) {
-                    $formMessage = Message::createForm($request->getData(true));
-                    $header      = $formMessage->getHeader('Content-Type');
-                    $content     = $formMessage->render(false);
-                    $formMessage->removeHeader('Content-Type');
-                    $request->addHeader($header)
-                        ->addHeader('Content-Length', strlen($content));
-                    $this->setOption(CURLOPT_POSTFIELDS, $content);
-                // Else, if request has raw data
-                } else if ($request->getData()->hasRawData()) {
-                    $request->addHeader('Content-Length', $request->getData()->getRawDataLength());
-                    $this->setOption(CURLOPT_POSTFIELDS, $request->getData()->getRawData());
-                // Else, basic request with data
-                } else {
-                    $this->setOption(CURLOPT_POSTFIELDS, $request->getData(true));
-                    if (!$request->hasHeader('Content-Type')) {
-                        $request->addHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    }
-                }
+            $request->prepareData();
+            if (!($request->isGet()) && ($request->hasDataContent())) {
+                $this->setOption(CURLOPT_POSTFIELDS, $request->getDataContent());
             }
         // Else, if request has raw body content
         } else if ($request->hasBodyContent()) {
-            $request->addHeader('Content-Length', strlen($request->getBodyContent()));
+            $request->addHeader('Content-Length', $request->getBodyContentLength());
             $this->setOption(CURLOPT_POSTFIELDS, $request->getBodyContent());
         }
 
@@ -240,7 +206,7 @@ class Curl extends AbstractCurl
             $this->setOption(CURLOPT_HTTPHEADER, $headers);
         }
 
-        $this->setOption(CURLOPT_URL, $uri);
+        $this->setOption(CURLOPT_URL, $request->getUriAsString());
 
         return $this;
     }
@@ -274,7 +240,7 @@ class Curl extends AbstractCurl
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER])) {
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
-            if (isset($this->options[CURLOPT_HEADER])) {
+            if (isset($this->options[CURLOPT_HEADER]) && ($this->options[CURLOPT_HEADER])) {
                 $parsedHeaders = Parser::parseHeaders(substr($this->response, 0, $headerSize));
                 $response->setVersion($parsedHeaders['version']);
                 $response->setCode($parsedHeaders['code']);

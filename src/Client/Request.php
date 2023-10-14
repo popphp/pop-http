@@ -15,6 +15,7 @@ namespace Pop\Http\Client;
 
 use Pop\Http\Uri;
 use Pop\Http\AbstractRequest;
+use Pop\Mime\Message;
 use Pop\Mime\Part\Header;
 
 /**
@@ -56,6 +57,12 @@ class Request extends AbstractRequest
      * @var ?string
      */
     protected ?string $requestType = null;
+
+    /**
+     * Request data content
+     * @var string|array|null
+     */
+    protected string|array|null $dataContent = null;
 
     /**
      * Constructor
@@ -193,12 +200,17 @@ class Request extends AbstractRequest
     /**
      * Set data
      *
-     * @param  array|Data $data
+     * @param  array|string|Data $data
      * @return Request
      */
-    public function setData(array|Data $data): Request
+    public function setData(array|string|Data $data): Request
     {
-        $this->data = (is_array($data)) ? new Data($data) : $data;
+        if (is_string($data)) {
+            $this->data = new Data();
+            $this->data->setData($data);
+        } else {
+            $this->data = (is_array($data)) ? new Data($data) : $data;
+        }
         return $this;
     }
 
@@ -229,13 +241,16 @@ class Request extends AbstractRequest
      * @param  bool $query
      * @return string
      */
-    public function getFullUriAsString(bool $query = true): string
+    public function getUriAsString(bool $query = true): string
     {
-        $uri = $this->getUriAsString();
+        $uri = parent::getUriAsString();
 
-        if (($this->method == 'GET') && ($this->data !== null) &&
-            (($this->requestType === null) || ($this->requestType == self::URLFORM))) {
-            $uri .= $this->data->prepareQueryString(true);
+        if (($this->method == 'GET') && ($query) && ($this->data !== null)) {
+            if ($this->dataContent !== null) {
+                $uri .= '?' . ((is_array($this->dataContent)) ? http_build_query($this->dataContent) : $this->dataContent);
+            } else if (($this->requestType === null) || ($this->requestType == self::URLFORM)) {
+                $uri .= $this->data->prepareQueryString(true);
+            }
         }
 
         return $uri;
@@ -398,6 +413,183 @@ class Request extends AbstractRequest
     public function isValidMethod(string $method): bool
     {
         return in_array(strtoupper($method), ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE']);
+    }
+
+    /**
+     * Has data content
+     *
+     * @return bool
+     */
+    public function hasDataContent(): bool
+    {
+        return ($this->dataContent !== null);
+    }
+
+    /**
+     * Get the data content
+     *
+     * @return string|array|null
+     */
+    public function getDataContent(): string|array|null
+    {
+        return $this->dataContent;
+    }
+
+    /**
+     * Get the content length
+     *
+     * @return int|null
+     */
+    public function getDataContentLength(bool $mb = false): int|null
+    {
+        if (!is_array($this->dataContent)) {
+            return ($mb) ? mb_strlen($this->dataContent) : strlen($this->dataContent);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Prepare request data
+     *
+     * @return void
+     */
+    public function prepareData(): void
+    {
+        // Prepare the GET query string
+        if (($this->method == 'GET') && ((!$this->hasHeader('Content-Type')) ||
+            ($this->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
+            $this->dataContent = ($this->data->hasRawData()) ?
+                $this->data->getRawData() : $this->data->prepareQueryString();
+        // Else, prepare the data content
+        } else if ($this->method != 'GET') {
+            switch ($this->requestType) {
+                case Request::JSON:
+                    $this->prepareJson();
+                    break;
+                case Request::XML:
+                    $this->prepareXml();
+                    break;
+                case Request::URLFORM:
+                    $this->prepareUrlEncoded();
+                    break;
+                case Request::MULTIPART:
+                    $this->prepareMultipart();
+                    break;
+            }
+
+            // Fallback
+            if ($this->dataContent === null) {
+                // If the request has raw data
+                if ($this->data->hasRawData()) {
+                    $this->prepareRawData();
+                // Else, use basic data
+                } else if ($this->data !== null) {
+                    $this->dataContent = $this->getData(true);
+                    if (!$this->hasHeader('Content-Type')) {
+                        $this->setRequestType(Request::URLFORM);
+                    }
+                }
+            }
+        }
+
+        if ($this->method != 'GET') {
+            if ($this->getDataContentLength() !== null) {
+                $this->addHeader('Content-Length', $this->getDataContentLength());
+            }
+        }
+    }
+
+    /**
+     * Method to prepare JSON data content
+     *
+     * @return Request
+     */
+    public function prepareJson(): Request
+    {
+        $jsonData    = $this->getData(true);
+        $jsonContent = [];
+
+        // Check for JSON files
+        foreach ($jsonData as $jsonDatum) {
+            if (isset($jsonDatum['filename']) && isset($jsonDatum['contentType']) &&
+                ($jsonDatum['contentType'] == 'application/json') && file_exists($jsonDatum['filename'])) {
+                $jsonContent = array_merge($jsonContent, json_decode(file_get_contents($jsonDatum['filename']), true));
+            }
+        }
+
+        // Else, use JSON data
+        if (empty($jsonContent)) {
+            $jsonContent = $jsonData;
+        }
+
+        $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
+
+        return $this;
+    }
+
+    /**
+     * Method to prepare XML data content
+     *
+     * @return Request
+     */
+    public function prepareXml(): Request
+    {
+        $xmlData    = $this->getData(true);
+        $xmlContent = null;
+
+        // Check for XML files
+        foreach ($xmlData as $xmlDatum) {
+            $xmlContent .= (isset($xmlDatum['filename']) && isset($xmlDatum['contentType']) &&
+                ($xmlDatum['contentType'] == 'application/xml') && file_exists($xmlDatum['filename'])) ?
+                file_get_contents($xmlDatum['filename']) : $xmlDatum;
+        }
+
+        // Else, use xml data
+        if (empty($xmlContent)) {
+            $xmlContent = $xmlData;
+        }
+
+        $this->dataContent = $xmlContent;
+
+        return $this;
+    }
+
+    /**
+     * Method to prepare URL-encoded data content
+     *
+     * @return Request
+     */
+    public function prepareUrlEncoded(): Request
+    {
+        $this->dataContent = $this->data->prepareQueryString();
+        return $this;
+    }
+
+    /**
+     * Method to prepare multipart data content
+     *
+     * @return Request
+     */
+    public function prepareMultipart(): Request
+    {
+        $formMessage       = Message::createForm($this->data->getData());
+        $contentType       = $formMessage->getHeader('Content-Type');
+        $this->dataContent = $formMessage->render(false);
+        $this->addHeader($contentType);
+
+        return $this;
+    }
+
+    /**
+     * Method to prepare raw data content
+     *
+     * @return Request
+     */
+    public function prepareRawData(): Request
+    {
+        $this->dataContent = $this->data->getRawData();
+        return $this;
     }
 
     /**
