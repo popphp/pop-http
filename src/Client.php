@@ -97,6 +97,24 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Factory to create a multi-handler object
+     *
+     * @param  array $requests
+     * @return CurlMulti
+     */
+    public static function createMulti(array $requests): CurlMulti
+    {
+        $multiHandler = new Client\Handler\CurlMulti();
+
+        foreach ($requests as $request) {
+            $client = new Client($request);
+            $client->setMultiHandler($multiHandler);
+        }
+
+        return $multiHandler;
+    }
+
+    /**
      * Set options
      *
      * Supported options
