@@ -54,6 +54,20 @@ class RequestTest extends TestCase
         $this->assertTrue($request->isMultipart());
     }
 
+    public function testBodyContent()
+    {
+        $request = new Request('http://localhost/', 'POST');
+        $request->setBody('This is a text body');
+        $this->assertEquals('This is a text body', $request->getBodyContent());
+        $this->assertEquals(19, $request->getBodyContentLength());
+    }
+
+    public function testBodyContentZero()
+    {
+        $request = new Request('http://localhost/', 'POST');
+        $this->assertEquals(0, $request->getBodyContentLength());
+    }
+
     public function testMagicMethod()
     {
         $request = new Request('http://localhost/');

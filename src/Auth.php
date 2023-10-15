@@ -288,6 +288,8 @@ class Auth
     public function setDigest(Auth\Digest $digest): Auth
     {
         $this->digest = $digest;
+        $this->setUsername($digest->getUsername());
+        $this->setPassword($digest->getPassword());
         return $this;
     }
 
@@ -478,10 +480,6 @@ class Auth
     {
         $this->createAuthHeader();
 
-        if ($this->authHeader === null) {
-            throw new Exception('Error: The auth header object is not set.');
-        }
-
         $headerValue = $this->authHeader->render();
         if ($crlf) {
             $headerValue .= "\r\n";
@@ -500,12 +498,8 @@ class Auth
     {
         if (($this->isBasic()) && (($this->username === null) || ($this->password === null))) {
             throw new Exception('Error: The username and password values must be set for basic authorization');
-        } else if (($this->isDigest()) && ((!$this->hasDigest()) || (!$this->digest->isValid()))) {
-            if ($this->digest->hasErrors()) {
-                throw new Exception(implode('\n', $this->digest->getErrors()));
-            } else {
-                throw new Exception('Error: The digest is either not set or is not valid.');
-            }
+        } else if (($this->isDigest()) && (!$this->digest->isValid())) {
+            throw new Exception(implode('\n', $this->digest->getErrors()));
         } else if (!($this->isBasic()) && !($this->isDigest()) && ($this->token === null)) {
             throw new Exception('Error: The token is not set');
         }

@@ -54,6 +54,15 @@ class ResponseTest extends TestCase
         $this->assertFalse($response->hasHeaders());
     }
 
+    public function testAddHeader()
+    {
+        $response = new Response();
+        $response->addHeaders([
+            'Content-Type: application/json'
+        ]);
+        $this->assertTrue($response->hasHeader('Content-Type'));
+    }
+
     public function testGetHeadersAsArray()
     {
         $response = new Response();
