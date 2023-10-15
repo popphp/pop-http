@@ -47,4 +47,40 @@ class DataTest extends TestCase
         $this->assertEquals('test=123&foo=bar', $data->getQueryString());
         $this->assertEquals(16, $data->getQueryStringLength());
     }
+
+    public function testHasData()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($data->hasData('foo'));
+    }
+
+    public function testDataString()
+    {
+        $data = new Data();
+        $data->setData(['This is a string']);
+        $this->assertEquals(['POP_CLIENT_REQUEST_RAW_DATA' => 'This is a string'], $data->getData());
+        $this->assertTrue($data->hasRawData());
+        $this->assertEquals(16, $data->getRawDataLength());
+    }
+
+    public function testGetMimeTypes()
+    {
+        $mimeTypes = Data::getMimeTypes();
+        $this->assertTrue(is_array($mimeTypes));
+        $this->assertEquals('image/jpeg', $mimeTypes['jpg']);
+        $this->assertEquals('image/jpeg', Data::getMimeType('jpg'));
+    }
+
+    public function testHasMimeTypes()
+    {
+        $this->assertTrue(Data::hasMimeType('jpg'));
+    }
+
+    public function testGetDefaultMimeTypes()
+    {
+        $this->assertEquals('application/octet-stream', Data::getDefaultMimeType());
+    }
+
 }

@@ -156,7 +156,7 @@ class Request extends AbstractRequest
         if (is_string($header) && ($header == 'Content-Type')) {
             $contentType = $value;
         } else if (($header instanceof Header) && ($header->getName() == 'Content-Type')) {
-            $contentType = $header->getValueAsString();
+            $contentType = $header->getValue()->getValue();
         }
 
         switch ($contentType) {
@@ -552,11 +552,6 @@ class Request extends AbstractRequest
                 $xmlContent .= (isset($xmlDatum['filename']) && isset($xmlDatum['contentType']) &&
                     ($xmlDatum['contentType'] == 'application/xml') && file_exists($xmlDatum['filename'])) ?
                     file_get_contents($xmlDatum['filename']) : $xmlDatum;
-            }
-
-            // Else, use xml data
-            if (empty($xmlContent)) {
-                $xmlContent = $xmlData;
             }
         }
 
