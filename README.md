@@ -7,7 +7,13 @@ pop-http
 * [Overview](#overview)
 * [Install](#install)
 * [Client](#client)
+  - [Quickstart](#quickstart)
+  - [Options](#options)
+  - [Requests](#requests)
+  - [Responses](#responses)
+  - [Handlers](#handlers)
 * [Promises](#promises)
+* [CLI Conversion](#cli-converstion)
 * [Server](#server)
 * [Uploads](#Uploads)
 
@@ -15,7 +21,7 @@ Overview
 --------
 
 `pop-http` is the main HTTP component for the Pop PHP Framework. It provides a robust
-set of features to manage many aspects of HTTP connections. It provides functionality
+set of features to manage the many aspects of HTTP connections. It provides functionality
 for the following:
 
 - **HTTP Client Transactions**
@@ -25,6 +31,7 @@ for the following:
     - Use the request handler of your choice: curl, streams or curl-multi (defaults to curl)
     - Send sync or async requests
     - Support for promises
+    - Client to Curl CLI command conversions
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
   - Easily handle file uploads and apply server-side settings and restrictions
@@ -48,6 +55,39 @@ Or, require it in your composer.json file
 
 Client
 ------
+
+The client object works with a request object, a handler object and a response object. The request object can have
+request data. Both the request and response objects can have headers and a body. The response object will have 
+a response code and response message, along with other helper functions to determine if the request yielded a
+successful response or an error.
+
+### Quickstart
+
+The most basic way to wire up a simple `GET` request would be:
+
+```php
+$response = Client::get('http://localhost/');
+```
+
+which is also the equivalent to:
+
+```php
+$client = new Client('http://localhost/');
+$response = $client->get();
+```
+
+In both examples above, the `$response` object returned is a full response object, complete with all of the headers,
+data, messaging and content body that comes with an HTTP response. If you want to simply access the pertinent body
+content of the response object, you can call this:
+
+```php
+$content = $response->getParsedResponse();
+```
+
+That method will attempt to auto-negotiate the content-type and give an appropriate data response or object. For example,
+if the content type of the response was `application/json`, then the data returned will be a PHP array representation of
+that JSON data.
+
 
 [Top](#pop-http)
 
