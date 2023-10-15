@@ -308,17 +308,17 @@ class Command
 
         // Handle method
         // If forced GET method
-        if (isset($optionValues['-G']) || isset($optionValues['--get'])) {
+        if (array_key_exists('-G', $optionValues) || array_key_exists('--get', $optionValues)) {
             $request->setMethod('GET');
-            if (isset($optionValues['-G'])) {
+            if (array_key_exists('-G', $optionValues)) {
                 unset($optionValues['-G']);
             } else {
                 unset($optionValues['--get']);
             }
-        // If HEAD method
-        } else if (isset($optionValues['-I']) || isset($optionValues['--head'])) {
+            // If HEAD method
+        } else if (array_key_exists('-I', $optionValues) || array_key_exists('--head', $optionValues)) {
             $request->setMethod('HEAD');
-            if (isset($optionValues['-I'])) {
+            if (array_key_exists('-I', $optionValues)) {
                 unset($optionValues['-I']);
             } else {
                 unset($optionValues['--head']);
@@ -360,14 +360,25 @@ class Command
         }
 
         // Handle basic auth
-        if (isset($optionValues['--basic'])) {
-            [$username, $password] = explode(':', self::trimQuotes($optionValues['--basic']), 2);
-            $auth = Auth::createBasic($username, $password);
-            unset($optionValues['--basic']);
+        if ((!array_key_exists('--digest', $optionValues) || array_key_exists('--basic', $optionValues) || array_key_exists('--anyauth', $optionValues)) &&
+            (isset($optionValues['-u']) || isset($optionValues['--user']))) {
+            $userData = ($optionValues['-u'] ?? $optionValues['--user']);
+            if (str_contains($userData, ':')) {
+                [$username, $password] = explode(':', self::trimQuotes($userData), 2);
+                $auth = Auth::createBasic($username, $password);
+                if (isset($optionValues['-u'])) {
+                    unset($optionValues['-u']);
+                } else {
+                    unset($optionValues['--user']);
+                }
+                if (array_key_exists('--basic', $optionValues)) {
+                    unset($optionValues['--basic']);
+                }
+            }
         }
 
         // Handle JSON request
-        if (isset($optionValues['--json'])) {
+        if (array_key_exists('--json', $optionValues)) {
             $request->addHeaders([
                 'Content-Type: application/json',
                 'Accept: application/json'
@@ -380,8 +391,15 @@ class Command
             $data = ($optionValues['-d'] ?? $optionValues['--data']);
 
             if ($request->hasHeader('Content-Type') && is_string($data)) {
-                if (str_starts_with($data, '@') && file_exists(getcwd() . DIRECTORY_SEPARATOR . substr($data, 1))) {
-                    $files[] = getcwd() . DIRECTORY_SEPARATOR . substr($data, 1);
+                if (str_starts_with($data, '@')) {
+                    //&& file_exists(getcwd() . DIRECTORY_SEPARATOR . substr($data, 1))) {
+                    $file = substr($data, 1);
+                    if (!str_starts_with($file, '/')) {
+                        $file = getcwd() . DIRECTORY_SEPARATOR . substr($data, 1);
+                    }
+                    if (file_exists($file)) {
+                        $files[] = $file;
+                    }
                 } else {
                     $contentType = $request->getHeaderValueAsString('Content-Type');
                     if ($contentType ==  Request::JSON) {
@@ -403,14 +421,16 @@ class Command
         if (isset($optionValues['-F']) || isset($optionValues['--form'])) {
             $data     = [];
             $formData = ($optionValues['-F'] ?? $optionValues['--form']);
-            foreach ($formData as $key => $formDatum) {
-                if (str_starts_with($formDatum, '@')) {
-                    $data[$key] = [
-                        'filename'    => getcwd() . DIRECTORY_SEPARATOR . substr($formDatum, 1),
-                        'contentType' => Client\Data::getMimeTypeFromFilename(substr($formDatum, 1))
-                    ];
-                } else {
-                    $data[$key] = $formDatum;
+            if (is_array($formData)) {
+                foreach ($formData as $key => $formDatum) {
+                    if (str_starts_with($formDatum, '@')) {
+                        $data[$key] = [
+                            'filename'    => getcwd() . DIRECTORY_SEPARATOR . substr($formDatum, 1),
+                            'contentType' => Client\Data::getMimeTypeFromFilename(substr($formDatum, 1))
+                        ];
+                    } else {
+                        $data[$key] = $formDatum;
+                    }
                 }
             }
 
@@ -432,7 +452,7 @@ class Command
                         foreach ($curlOption as $cOpt) {
                             if ((str_starts_with($option, '--') && str_contains($cOpt, $option)) || str_starts_with($cOpt, $option)) {
                                 if (Options::isValueOption($option)) {
-                                    $optionValue = Options::getValueOption($option) ?? $value;
+                                    $optionValue = Options::getValueOption($option) ?? self::trimQuotes($value);
                                 } else {
                                     $optionValue = true;
                                 }
@@ -442,7 +462,7 @@ class Command
                         }
                     } else if ((str_starts_with($option, '--') && str_contains($curlOption, $option)) || str_starts_with($curlOption, $option)) {
                         if (Options::isValueOption($option)) {
-                            $optionValue = Options::getValueOption($option) ?? $value;
+                            $optionValue = Options::getValueOption($option) ?? self::trimQuotes($value);
                         } else {
                             $optionValue = true;
                         }

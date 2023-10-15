@@ -372,6 +372,39 @@ class ClientTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Promise', $promise);
     }
 
+    public function testToCurlCommand()
+    {
+        $client = new Client('http://localhost:8000/post.php');
+        $client->setMethod('POST')
+            ->setData([
+                'foo' => 'bar',
+                'baz' => 123
+            ]);
+
+        $command = $client->toCurlCommand();
+        $this->assertEquals('curl -i -X POST --data "foo=bar&baz=123" "http://localhost:8000/post.php"', $command);
+    }
+
+    public function testToCurlCommandException()
+    {
+        $this->expectException('Pop\Http\Exception');
+        $client = new Client('http://localhost:8000/post.php', new Client\Handler\Stream());
+        $client->setMethod('POST')
+            ->setData([
+                'foo' => 'bar',
+                'baz' => 123
+            ]);
+
+        $command = $client->toCurlCommand();
+    }
+
+    public function testFromCurlCommand()
+    {
+        $command = 'curl -i -X POST --data "foo=bar&baz=123" "http://localhost:8000/post.php"';
+        $client = Client::fromCurlCommand($command);
+        $this->assertInstanceOf('Pop\Http\Client', $client);
+    }
+
     public function testMagicCall()
     {
         $client = new Client('http://localhost/');

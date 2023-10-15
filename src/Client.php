@@ -13,6 +13,7 @@
  */
 namespace Pop\Http;
 
+use Pop\Http\Client\Handler\Stream;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
 use Pop\Http\Client\Handler\Curl;
@@ -113,6 +114,18 @@ class Client extends AbstractHttp
         }
 
         return $multiHandler;
+    }
+
+    /**
+     * Method to convert Curl CLI command to a client object
+     *
+     * @param  string $command
+     * @throws Exception
+     * @return Client
+     */
+    public static function fromCurlCommand(string $command): Client
+    {
+        return Curl\Command::commandToClient($command);
     }
 
     /**
@@ -746,6 +759,25 @@ class Client extends AbstractHttp
     public function sendAsync(): Promise
     {
         return new Promise($this);
+    }
+
+    /**
+     * Method to convert client object to a Curl command for the CLI
+     *
+     * @throws Exception|Curl\Exception
+     * @return string
+     */
+    public function toCurlCommand(): string
+    {
+        if ($this->handler instanceof Stream) {
+            throw new Exception('Error: The client handler must be an instance of Curl');
+        }
+
+        if (!$this->hasHandler()) {
+            $this->setHandler(new Curl());
+        }
+
+        return Curl\Command::clientToCommand($this);
     }
 
     /**
