@@ -171,7 +171,7 @@ class CurlMulti extends AbstractCurl
         }
 
         $response = (!empty($curlResource)) ? curl_multi_getcontent($curlResource) : null;
-        if ($response !== null) {
+        if (!empty($response)) {
             $curlClient->getHandler()->setResponse($response);
             return $curlClient;
         } else {

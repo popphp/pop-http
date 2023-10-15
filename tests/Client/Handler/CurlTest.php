@@ -25,6 +25,19 @@ class CurlTest extends TestCase
         $this->assertTrue($curl->hasResource());
     }
 
+    public function testCreate()
+    {
+        $curl = Curl::create('POST');
+        $this->assertInstanceOf('Pop\Http\Client\Handler\Curl', $curl);
+    }
+
+    public function testForceMethod()
+    {
+        $curl = new Curl();
+        $curl->setMethod('PUT', true);
+        $this->assertTrue($curl->hasOption(CURLOPT_CUSTOMREQUEST));
+    }
+
     public function testResponse()
     {
         $curl = new Curl();
@@ -66,6 +79,14 @@ class CurlTest extends TestCase
         $curl = new Curl();
         $curl->allowSelfSigned(false);
         $this->assertFalse($curl->isAllowSelfSigned());
+    }
+
+    public function testGetOptions()
+    {
+        $curl = new Curl();
+        $curl->setOption(CURLOPT_RETURNTRANSFER, 1);
+        $curl->setOption(CURLOPT_HEADER, 1);
+        $this->assertCount(2, $curl->getOptions());
     }
 
     public function testRemoveOption()
@@ -110,6 +131,20 @@ class CurlTest extends TestCase
         $client->getHandler()->prepare($client->getRequest(), $client->getAuth());
         $this->assertTrue($client->getRequest()->hasHeader('Authorization'));
         $this->assertEquals('Authorization: Bearer 123456', $client->getRequest()->getHeaderAsString('Authorization'));
+    }
+
+    public function testPrepareWithHeaders1()
+    {
+        $curl  = new Curl();
+        $curl->setOption(CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer 1234567890'
+        ]);
+        $request = new Request('http://localhost/', 'POST');
+        $request->addHeader('Content-Type', 'application/json');
+
+        $curl->prepare($request);
+        $headers = $curl->getOption(CURLOPT_HTTPHEADER);
+        $this->assertCount(2, $headers);
     }
 
     public function testPrepareWithGetData()

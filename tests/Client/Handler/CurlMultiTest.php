@@ -16,6 +16,12 @@ class CurlMultiTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Client\Handler\CurlMulti', $curlMulti);
     }
 
+    public function testCreate()
+    {
+        $curlMulti = CurlMulti::create();
+        $this->assertInstanceOf('Pop\Http\Client\Handler\CurlMulti', $curlMulti);
+    }
+
     public function testSetOption()
     {
         $curlMulti = new CurlMulti();
@@ -59,6 +65,18 @@ class CurlMultiTest extends TestCase
 
         $this->assertFalse($curlMulti->hasClient('request1'));
         $this->assertCount(1, $curlMulti->getClients());
+    }
+
+    public function testGetClientContent()
+    {
+        $curlMulti     = new CurlMulti();
+        $request1 = new Client('http://localhost/', new Curl());
+        $request2 = new Client('http://localhost/', new Curl());
+        $curlMulti->addClients([
+            'request1' => $request1,
+            'request2' => $request2,
+        ]);
+        $this->assertEmpty($curlMulti->getClientContent('request1'));
     }
 
     public function testRemoveClientException()

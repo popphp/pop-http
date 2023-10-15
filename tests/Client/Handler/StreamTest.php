@@ -8,6 +8,7 @@ use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
 use Pop\Http\Client\Handler\Stream;
 use PHPUnit\Framework\TestCase;
+use Pop\Mime\Part\Header;
 
 class StreamTest extends TestCase
 {
@@ -31,6 +32,17 @@ class StreamTest extends TestCase
         $this->assertNull($stream->getContext());
         $stream->createContext();
         $this->assertNotNull($stream->getContext());
+    }
+
+    public function testCreate()
+    {
+        $stream = Stream::create('POST', 'r', ['http' =>
+            [
+                'method' => 'POST',
+                'header' => 'Content-type: application/x-www-form-urlencoded',
+            ]
+        ], ['foo' => 'bar']);
+        $this->assertInstanceOf('Pop\Http\Client\Handler\Stream', $stream);
     }
 
     public function testCreateContext()
@@ -64,6 +76,23 @@ class StreamTest extends TestCase
         $stream = new Stream();
         $stream->allowSelfSigned(false);
         $this->assertFalse($stream->isAllowSelfSigned());
+    }
+
+    public function testPrepareWithHeaders1()
+    {
+        $stream  = new Stream();
+        $stream->setContextOptions(['http' =>
+            [
+                'method' => 'POST',
+                'header' => 'Authorization: Bearer 1234567890',
+            ]
+        ]);
+        $request = new Request('http://localhost/', 'POST');
+        $request->addHeader('Content-Type', 'application/json');
+
+        $stream->prepare($request, null, false);
+        $headers = $stream->getContextOption('http')['header'];
+        $this->assertEquals("Authorization: Bearer 1234567890\r\nContent-Type: application/json\r\n", $headers);
     }
 
     public function testPrepareWithGetData()
