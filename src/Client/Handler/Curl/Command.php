@@ -32,25 +32,6 @@ class Command
 {
 
     /**
-     * Options to omit from client-to-command conversion, as they are addressed elsewhere in the conversion
-     *
-     * @var array
-     */
-    protected static array $omitPhpOptions = [
-        'CURLOPT_CUSTOMREQUEST', 'CURLOPT_HEADER', 'CURLOPT_HTTPHEADER', 'CURLOPT_POST', 'CURLOPT_POSTFIELDS',
-        'CURLOPT_PUT', 'CURLOPT_RETURNTRANSFER', 'CURLOPT_URL', 'CURLOPT_SSL_VERIFYHOST', 'CURLOPT_SSL_VERIFYPEER'
-    ];
-
-    /**
-     * Options to omit from command-to-client conversion, as they are addressed elsewhere in the conversion
-     *
-     * @var array
-     */
-    protected static array $omitCommandOptions = [
-        '-i', '-X', '--request', '-H', '--header', '-d', '--data', '-F', '--form', '-k', '--insecure', '--url',
-    ];
-
-    /**
      * Create a compatible command string to execute with the curl CLI application
      *
      * @param  Client $client
@@ -155,7 +136,7 @@ class Command
         $curlOptions = $client->getHandler()->getOptions();
         foreach ($curlOptions as $curlOption => $curlOptionValue) {
             $curlOptionName = Options::getOptionNameByValue($curlOption);
-            if (!in_array($curlOptionName, self::$omitPhpOptions)) {
+            if (!Options::isOmitOption($curlOptionName)) {
                 $commandOption = Options::getPhpOption($curlOptionName);
                 $command .= (is_array($commandOption) && isset($commandOption[0])) ?
                     ' ' . $commandOption[0] : ' ' . $commandOption;
@@ -313,7 +294,24 @@ class Command
         $files        = [];
 
         // Handle method
-        if (isset($optionValues['-X']) || isset($optionValues['--request'])) {
+        // If forced GET method
+        if (isset($optionValues['-G']) || isset($optionValues['--get'])) {
+            $request->setMethod('GET');
+            if (isset($optionValues['-G'])) {
+                unset($optionValues['-G']);
+            } else {
+                unset($optionValues['--get']);
+            }
+        // If HEAD method
+        } else if (isset($optionValues['-I']) || isset($optionValues['--head'])) {
+            $request->setMethod('HEAD');
+            if (isset($optionValues['-I'])) {
+                unset($optionValues['-I']);
+            } else {
+                unset($optionValues['--head']);
+            }
+        // All other methods
+        } else if (isset($optionValues['-X']) || isset($optionValues['--request'])) {
             $request->setMethod(($optionValues['-X'] ?? $optionValues['--request']));
             if (isset($optionValues['-X'])) {
                 unset($optionValues['-X']);
@@ -346,6 +344,15 @@ class Command
             } else {
                 unset($optionValues['--header']);
             }
+        }
+
+        // Handle JSON request
+        if (isset($optionValues['--json'])) {
+            $request->addHeaders([
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ]);
+            unset($optionValues['--json']);
         }
 
         // Handle data
@@ -399,7 +406,7 @@ class Command
 
         // Handle all other options
         foreach ($optionValues as $option => $value) {
-            if (!in_array($option, self::$omitCommandOptions)) {
+            if (!Options::isOmitOption($option)) {
                 foreach (Options::getPhpOptions() as $phpOption => $curlOption) {
                     if (is_array($curlOption)) {
                         foreach ($curlOption as $cOpt) {

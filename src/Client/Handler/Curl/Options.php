@@ -30,7 +30,7 @@ class Options
      * Curl CLI-to-PHP options
      * @var array
      */
-    protected static array $cliOptions = [
+    protected static array $commandOptions = [
         '--abstract-unix-socket'      => 'CURLOPT_ABSTRACT_UNIX_SOCKET',                                   // --abstract-unix-socket <path>
         '--alt-svc'                   => 'CURLOPT_ALTSVC',                                                 // --alt-svc <filename>
         '-a'                          => 'CURLOPT_APPEND',
@@ -360,30 +360,6 @@ class Options
     ];
 
     /**
-     * Curl special options
-     * @var array
-     */
-    protected static array $specialOptions = [
-        '--basic',          //                             Use basic auth
-        '--digest',         //                             Use digest auth
-        '--data-ascii',     // --data-ascii <data>         This is just an alias for -d, --data.
-        '--data-binary',    // --data-binary <data>        Transmit binary data with no processing
-        '--data-raw',       // --data-raw <data>           This posts data similarly to -d, --data but without the special interpretation of the @ character.
-        '--data-urlencode', // --data-urlencode <data>     This posts data, similar to the other -d, --data options with the exception that this performs URL-encoding.
-        '--form-escape',    //                             Tells curl to pass on names of multipart form fields and files using backslash-escaping instead of percent-encoding.
-        '--form-string',    // --form-string <name=string> Similar to -F, --form except that the value string for the named parameter is used literally.
-        '-F',               // -F, --form <name=content>   Fets curl emulate a filled-in form in which a user has pressed the submit button.
-        '--form',           // -F, --form <name=content>   Fets curl emulate a filled-in form in which a user has pressed the submit button.
-        '-G',               // -G, --get                   Force GET request
-        '--get',            // -G, --get                   Force GET request
-        '-I',               // -I, --head                  Force HEAD request
-        '--head',           // -I, --head                  Force HEAD request
-        '--json',           // --json <data>               Shortcut for --data <data> --header "Content-Type: application/json" --header "Accept: application/json"
-        '-L',               // -L, --location              Make curl redo the same request on the redirected location
-        '--location',       // -L, --location              Make curl redo the same request on the redirected location
-        '--raw',            //                             Disable all internal HTTP decoding
-    ];
-    /**
      * Curl options that require a value
      * @var array
      */
@@ -617,7 +593,7 @@ class Options
     ];
 
     /**
-     * Curl PHP option values
+     * Curl option PHP values
      * @var array
      */
     protected static array $optionValues = [
@@ -888,6 +864,17 @@ class Options
     ];
 
     /**
+     * Options to omit from conversion, as they are addressed elsewhere in the conversion
+     *
+     * @var array
+     */
+    protected static array $omitOptions = [
+        'CURLOPT_CUSTOMREQUEST', 'CURLOPT_HEADER', 'CURLOPT_HTTPHEADER', 'CURLOPT_POST', 'CURLOPT_POSTFIELDS',
+        'CURLOPT_PUT', 'CURLOPT_RETURNTRANSFER', 'CURLOPT_URL', 'CURLOPT_SSL_VERIFYHOST', 'CURLOPT_SSL_VERIFYPEER',
+        '-i', '-X', '--request', '-H', '--header', '-d', '--data', '-F', '--form', '-k', '--insecure', '--url',
+    ];
+
+    /**
      * Unresolved Curl options
      *
      *   These are Curl options in PHP that have not yet been mapped to a CLI option
@@ -1023,8 +1010,7 @@ class Options
      */
     public static function isValidOption(string $option): bool
     {
-        return (array_key_exists($option, self::$cliOptions) || array_key_exists($option, self::$phpOptions) ||
-            array_key_exists($option, self::$specialOptions));
+        return (array_key_exists($option, self::$commandOptions) || array_key_exists($option, self::$phpOptions));
     }
 
     /**
@@ -1033,9 +1019,9 @@ class Options
      * @param  string $option
      * @return bool
      */
-    public static function isCliOption(string $option): bool
+    public static function isCommandOption(string $option): bool
     {
-        return array_key_exists($option, self::$cliOptions);
+        return array_key_exists($option, self::$commandOptions);
     }
 
     /**
@@ -1047,17 +1033,6 @@ class Options
     public static function isPhpOption(string $option): bool
     {
         return array_key_exists($option, self::$phpOptions);
-    }
-
-    /**
-     * Check if the option is a valid special option
-     *
-     * @param  string $option
-     * @return bool
-     */
-    public static function isSpecialOption(string $option): bool
-    {
-        return in_array($option, self::$specialOptions);
     }
 
     /**
@@ -1087,9 +1062,9 @@ class Options
      *
      * @return array
      */
-    public static function getCliOptions(): array
+    public static function getCommandOptions(): array
     {
-        return self::$cliOptions;
+        return self::$commandOptions;
     }
 
     /**
@@ -1097,9 +1072,9 @@ class Options
      *
      * @return string|array|null
      */
-    public static function getCliOption(string $option): string|array|null
+    public static function getCommandOption(string $option): string|array|null
     {
-        return self::$cliOptions[$option] ?? null;
+        return self::$commandOptions[$option] ?? null;
     }
 
     /**
@@ -1120,26 +1095,6 @@ class Options
     public static function getPhpOption(string $option): string|array|null
     {
         return self::$phpOptions[$option] ?? null;
-    }
-
-    /**
-     * Get the special options
-     *
-     * @return array
-     */
-    public static function getSpecialOptions(): array
-    {
-        return self::$specialOptions;
-    }
-
-    /**
-     * Get special option
-     *
-     * @return string|null
-     */
-    public static function getSpecialOption(string $option): string|null
-    {
-        return self::$specialOptions[$option] ?? null;
     }
 
     /**
@@ -1200,6 +1155,26 @@ class Options
     public static function hasOptionNameByValue(int $curlValue): bool
     {
         return array_key_exists($curlValue, self::$optionValues);
+    }
+
+    /**
+     * Get the omit options
+     *
+     * @return array
+     */
+    public static function getOmitOptions(): array
+    {
+        return self::$omitOptions;
+    }
+
+    /**
+     * Is omit option
+     *
+     * @return bool
+     */
+    public static function isOmitOption(string $option): bool
+    {
+        return in_array($option, self::$omitOptions);
     }
 
 }
