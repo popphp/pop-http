@@ -1154,7 +1154,7 @@ class Options
      */
     public static function hasOptionNameByValue(int $curlValue): bool
     {
-        return array_key_exists($curlValue, self::$optionValues);
+        return in_array($curlValue, self::$optionValues);
     }
 
     /**

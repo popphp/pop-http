@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client\Handler\Curl;
 
+use Pop\Http\Auth;
 use Pop\Http\Client;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Handler\Curl;
@@ -61,6 +62,14 @@ class Command
             ($client->getHandler()->hasOption(CURLOPT_SSL_VERIFYHOST) && (!$client->getHandler()->getOption(CURLOPT_SSL_VERIFYHOST))) ||
             ($client->getHandler()->hasOption(CURLOPT_SSL_VERIFYPEER) && (!$client->getHandler()->getOption(CURLOPT_SSL_VERIFYPEER)))) {
             $command .= ' --insecure';
+        }
+
+        // Handle basic auth
+        if (($client->hasAuth()) && ($client->getAuth()->isBasic())) {
+            $command .= ' --basic -u "' . $client->getAuth()->getUsername() . ':' .  $client->getAuth()->getPassword() . '"';
+            if ($client->getRequest()->hasHeader('Authorization')) {
+                $client->getRequest()->removeHeader('Authorization');
+            }
         }
 
         // Handle headers
@@ -183,12 +192,15 @@ class Command
         $files   = null;
 
         if (!empty($options)) {
-            $files = self::convertCommandOptions($options, $curl, $request);
+            [$auth, $files] = self::convertCommandOptions($options, $curl, $request);
         }
 
         $client = new Client($request, $curl);
 
-        if ($files !== null) {
+        if (!empty($auth)) {
+            $client->setAuth($auth);
+        }
+        if (!empty($files)) {
             $client->setFiles($files, false);
         }
 
@@ -291,6 +303,7 @@ class Command
     public static function convertCommandOptions(array $options, Curl $curl, Request $request): array
     {
         $optionValues = self::extractCommandOptionValues($options);
+        $auth         = null;
         $files        = [];
 
         // Handle method
@@ -344,6 +357,13 @@ class Command
             } else {
                 unset($optionValues['--header']);
             }
+        }
+
+        // Handle basic auth
+        if (isset($optionValues['--basic'])) {
+            [$username, $password] = explode(':', self::trimQuotes($optionValues['--basic']), 2);
+            $auth = Auth::createBasic($username, $password);
+            unset($optionValues['--basic']);
         }
 
         // Handle JSON request
@@ -433,7 +453,7 @@ class Command
             }
         }
 
-        return $files;
+        return [$auth, $files];
     }
 
     /**
