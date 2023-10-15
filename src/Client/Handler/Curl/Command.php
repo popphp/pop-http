@@ -16,6 +16,7 @@ namespace Pop\Http\Client\Handler\Curl;
 use Pop\Http\Client;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Handler\Curl;
+use Pop\Http\Promise;
 
 /**
  * HTTP client curl command class
@@ -54,7 +55,7 @@ class Command
 
         if ($client->getRequest()->hasHeaders()) {
             foreach ($client->getRequest()->getHeaders() as $header) {
-                if ($header->getName() != 'Content-Length') {
+                if ((!str_contains($header->getValueAsString(), 'multipart/form-data')) && ($header->getName() != 'Content-Length')) {
                     $command .= ' --header "' . $header  . '"';
                 }
             }
@@ -68,15 +69,38 @@ class Command
                         ' -F "' . $key . '=@' . $value['filename'] . '"' :
                         ' -F "' . http_build_query([$key => $value]) . '"';
                 }
-            /**
-             * TO-DO: Handle data from @file
-             */
             } else if ($client->getRequest()->isJson()) {
-                $json = json_encode($client->getRequest()->getData(true));
-                if (str_contains($json, "'")) {
-                    $json = str_replace("'", "\\'", $json);
+                $data = $client->getRequest()->getData(true);
+                foreach ($data as $key => $datum) {
+                    if (isset($datum['filename']) && file_exists($datum['filename'])) {
+                        $command .= ' --data @' . $datum['filename'];
+                        unset($data[$key]);
+                    }
                 }
-                $command .= " --data '" . $json . "'";
+                if (!empty($data)) {
+                    $json = json_encode($data);
+                    if (str_contains($json, "'")) {
+                        $json = str_replace("'", "\\'", $json);
+                    }
+                    $command .= " --data '" . $json . "'";
+                }
+            } else if ($client->getRequest()->isXml()) {
+                $data = $client->getRequest()->getData(true);
+                foreach ($data as $key => $datum) {
+                    if (isset($datum['filename']) && file_exists($datum['filename'])) {
+                        $command .= ' --data @' . $datum['filename'];
+                        unset($data[$key]);
+                    }
+                }
+
+                if (!empty($data)) {
+                    foreach ($data as $datum) {
+                        if (str_contains($datum, "'")) {
+                            $datum = str_replace("'", "\\'", $datum);
+                        }
+                        $command .= " --data '" . $datum . "'";
+                    }
+                }
             } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncoded()) ||
                 !($client->getRequest()->hasRequestType())) {
                 $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
@@ -87,7 +111,7 @@ class Command
          * TO-DO: handle other options
          */
 
-        $command .= ' ' . self::addQuotes($client->getRequest()->getFullUriAsString());
+        $command .= ' ' . self::addQuotes($client->getRequest()->getUriAsString());
 
         return $command;
     }
@@ -121,12 +145,19 @@ class Command
 
         $request = new Request(self::trimQuotes($requestUri));
         $curl    = new Curl();
+        $files   = null;
 
         if (!empty($options)) {
-            self::convertCommandOptions($options, $curl, $request);
+            $files = self::convertCommandOptions($options, $curl, $request);
         }
 
-        return new Client($request, $curl);
+        $client = new Client($request, $curl);
+
+        if ($files !== null) {
+            $client->setFiles($files, false);
+        }
+
+        return $client;
     }
 
     /**
@@ -192,7 +223,7 @@ class Command
 
             if (($opt == '-d') || ($opt == '--data') || ($opt == '-F') || ($opt == '--form')) {
                 $val = self::trimQuotes($val);
-                if (str_contains($val, '=')) {
+                if (str_contains($val, '=') && !str_contains($val, '<?xml')) {
                     parse_str(self::trimQuotes($val), $val);
                 }
             }
@@ -220,11 +251,12 @@ class Command
      * @param  array   $options
      * @param  Curl    $curl
      * @param  Request $request
-     * @return void
+     * @return array
      */
-    public static function convertCommandOptions(array $options, Curl $curl, Request $request): void
+    public static function convertCommandOptions(array $options, Curl $curl, Request $request): array
     {
         $optionValues = self::extractCommandOptionValues($options);
+        $files        = [];
 
         // Handle method
         if (isset($optionValues['-X']) || isset($optionValues['--request'])) {
@@ -263,11 +295,15 @@ class Command
             $data = ($optionValues['-d'] ?? $optionValues['--data']);
 
             if ($request->hasHeader('Content-Type') && is_string($data)) {
-                $contentType = $request->getHeaderValueAsString('Content-Type');
-                if ($contentType ==  Request::JSON) {
-                    $data = json_decode($data, true);
-                } else if ($contentType == Request::URLFORM) {
-                    parse_str($data, $data);
+                if (str_starts_with($data, '@') && file_exists(getcwd() . DIRECTORY_SEPARATOR . substr($data, 1))) {
+                    $files[] = getcwd() . DIRECTORY_SEPARATOR . substr($data, 1);
+                } else {
+                    $contentType = $request->getHeaderValueAsString('Content-Type');
+                    if ($contentType ==  Request::JSON) {
+                        $data = json_decode($data, true);
+                    } else if ($contentType == Request::URLFORM) {
+                        parse_str($data, $data);
+                    }
                 }
             }
             $request->setData($data);
@@ -326,6 +362,8 @@ class Command
                 }
             }
         }
+
+        return $files;
     }
 
     /**
