@@ -40,6 +40,16 @@ class ClientTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Client\Handler\CurlMulti', $client->getMultiHandler());
     }
 
+    public function testCreateMulti()
+    {
+        $multiHandler = Client::createMulti([
+            'http://localhost/test1.php',
+            'http://localhost/test2.php',
+            'http://localhost/test3.php'
+        ]);
+        $this->assertInstanceOf('Pop\Http\Client\Handler\CurlMulti', $multiHandler);
+    }
+
     public function testPrepareException()
     {
         $this->expectException('Pop\Http\Exception');
@@ -47,20 +57,57 @@ class ClientTest extends TestCase
         $client->prepare();
     }
 
+    public function testMethod1()
+    {
+        $client = new Client();
+        $client->setMethod('POST');
+        $this->assertTrue($client->hasMethod());
+        $this->assertEquals('POST', $client->getMethod());
+    }
+
+    public function testMethod2()
+    {
+        $client = new Client(new Client\Request());
+        $client->setMethod('POST');
+        $this->assertTrue($client->hasMethod());
+        $this->assertEquals('POST', $client->getMethod());
+    }
+
     public function testPrepare()
     {
         $client = new Client(
             [
                 'base_uri'          => 'http://localhost',
+                'method'            => 'POST',
                 'headers'           => ['Authorization' => 'Bearer 123456'],
-                'query'             => ['filter' => '123'],
+                'data'              => ['foo' => 'bar'],
                 'type'              => 'application/x-www-form-urlencoded',
                 'verify_peer'       => true,
                 'allow_self_signed' => false
             ]
         );
         $client->prepare('/foo/bar');
+        $this->assertTrue($client->hasRequest());
+        $this->assertEquals('POST', $client->getRequest()->getMethod());
         $this->assertTrue($client->hasHandler());
+        $this->assertTrue($client->getRequest()->hasData());
+    }
+
+    public function testPrepareFiles()
+    {
+        $client = new Client(
+            [
+                'base_uri' => 'http://localhost',
+                'method'   => 'POST',
+                'files'    => [
+                    __DIR__ . '/tmp/data.json',
+                    __DIR__ . '/tmp/data.xml',
+                ],
+            ]
+        );
+        $client->prepare('/foo/bar');
+        $this->assertTrue($client->hasRequest());
+        $this->assertTrue($client->getRequest()->hasData());
     }
 
     public function testIsComplete()
@@ -163,6 +210,159 @@ class ClientTest extends TestCase
         $client2 = new Client();
         $this->assertTrue($client->isServerError());
         $this->assertNull($client2->isServerError());
+    }
+
+    public function testData()
+    {
+        $client = new Client();
+        $client->setData([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasData('foo'));
+        $this->assertTrue($client->hasData());
+        $this->assertEquals('bar', $client->getData('foo'));
+        $this->assertCount(1, $client->getData());
+    }
+
+    public function testAddData()
+    {
+        $client = new Client();
+        $client->addData('foo', 'bar');
+        $this->assertEquals('bar', $client->getData('foo'));
+        $this->assertCount(1, $client->getData());
+    }
+
+    public function testRemoveData()
+    {
+        $client = new Client();
+        $client->setData([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasData('foo'));
+        $client->removeData('foo');
+        $this->assertFalse($client->hasData('foo'));
+    }
+
+    public function testRemoveAllData()
+    {
+        $client = new Client();
+        $client->setData([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasData());
+        $client->removeAllData();
+        $this->assertFalse($client->hasData());
+    }
+
+    public function testFiles()
+    {
+        $client = new Client();
+        $client->setFiles(__DIR__ . '/tmp/data.json');
+        $this->assertTrue($client->hasFile('file1'));
+        $this->assertTrue($client->hasFiles());
+        $this->assertEquals(__DIR__ . '/tmp/data.json', $client->getFile('file1'));
+        $this->assertCount(1, $client->getFiles());
+    }
+
+    public function testFileException()
+    {
+        $this->expectException('Pop\Http\Exception');
+        $client = new Client();
+        $client->setFiles(__DIR__ . '/tmp/bad.json');
+    }
+
+    public function testAddFile()
+    {
+        $client = new Client();
+        $client->addFile(__DIR__ . '/tmp/data.json');
+        $client->addFile(__DIR__ . '/tmp/data.xml');
+        $this->assertTrue($client->hasFile('file1'));
+        $this->assertTrue($client->hasFile('file2'));
+        $this->assertTrue($client->hasFiles());
+        $this->assertEquals(__DIR__ . '/tmp/data.json', $client->getFile('file1'));
+        $this->assertEquals(__DIR__ . '/tmp/data.xml', $client->getFile('file2'));
+        $this->assertCount(2, $client->getFiles());
+    }
+
+    public function testAddFileException()
+    {
+        $this->expectException('Pop\Http\Exception');
+        $client = new Client();
+        $client->addFile(__DIR__ . '/tmp/bad.json');
+    }
+
+    public function testRemoveFile()
+    {
+        $client = new Client();
+        $client->setFiles(__DIR__ . '/tmp/data.json');
+        $this->assertTrue($client->hasFile('file1'));
+        $client->removeFile('file1');
+        $this->assertFalse($client->hasFile('file1'));
+    }
+
+    public function testRemoveAllFiles()
+    {
+        $client = new Client();
+        $client->setFiles(__DIR__ . '/tmp/data.json');
+        $this->assertTrue($client->hasFiles());
+        $client->removeFiles();
+        $this->assertFalse($client->hasFiles());
+    }
+
+    public function testSetBody()
+    {
+        $client = new Client(new Client\Request());
+        $client->setBody('This is a text body');
+        $this->assertTrue($client->hasBody());
+        $this->assertInstanceOf('Pop\Mime\Part\Body', $client->getBody());
+        $this->assertEquals('This is a text body', $client->getBodyContent());
+        $this->assertEquals(19, $client->getBodyContentLength());
+    }
+
+    public function testSetBodyException()
+    {
+        $this->expectException('Pop\Http\Exception');
+        $client = new Client();
+        $client->setBody('This is a text body');
+    }
+
+    public function testSetBodyFromFile()
+    {
+        $client = new Client(new Client\Request());
+        $client->setBodyFromFile(__DIR__ . '/tmp/data.json');
+        $this->assertTrue($client->hasBody());
+    }
+
+    public function testSetBodyFromFileException1()
+    {
+        $this->expectException('Pop\Http\Exception');
+        $client = new Client();
+        $client->setBodyFromFile(__DIR__ . '/tmp/data.json');
+        $this->assertTrue($client->hasBody());
+    }
+
+    public function testSetBodyFromFileException2()
+    {
+        $this->expectException('Pop\Http\Exception');
+        $client = new Client(new Client\Request());
+        $client->setBodyFromFile(__DIR__ . '/tmp/bad.json');
+        $this->assertTrue($client->hasBody());
+    }
+
+    public function testRemoveBody()
+    {
+        $client = new Client(new Client\Request());
+        $client->setBody('This is a text body');
+        $this->assertTrue($client->hasBody());
+        $client->removeBody();
+        $this->assertFalse($client->hasBody());
+    }
+
+    public function testSendForceCustomMethod()
+    {
+        $client = new Client('http://localhost/', ['method' => 'GET', 'force_custom_method' => true]);
+        $client->send();
+        $this->assertTrue($client->hasResponse());
     }
 
     public function testSendAsync()

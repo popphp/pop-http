@@ -139,7 +139,6 @@ class Request extends AbstractRequest
         return $this->method;
     }
 
-
     /**
      * Add a header
      *

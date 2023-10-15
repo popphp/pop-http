@@ -18,6 +18,7 @@ use Pop\Http\Client\Response;
 use Pop\Http\Client\Handler\Curl;
 use Pop\Http\Client\Handler\CurlMulti;
 use Pop\Http\Client\Handler\HandlerInterface;
+use Pop\Mime\Part\Body;
 
 /**
  * HTTP client class
@@ -112,6 +113,47 @@ class Client extends AbstractHttp
         }
 
         return $multiHandler;
+    }
+
+    /**
+     * Set method
+     *
+     * @param  string $method
+     * @return Client
+     */
+    public function setMethod(string $method): Client
+    {
+        if ($this->hasRequest()) {
+            $this->request->setMethod($method);
+        } else {
+            $this->options['method'] = $method;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get method
+     *
+     * @return string|null
+     */
+    public function getMethod(): string|null
+    {
+        if ($this->hasRequest()) {
+            return $this->request->getMethod();
+        } else {
+            return $this->options['method'] ?? null;
+        }
+    }
+
+    /**
+     * Has method
+     *
+     * @return bool
+     */
+    public function hasMethod(): bool
+    {
+        return ((($this->hasRequest()) && !empty($this->request->getMethod())) || isset($this->options['method']));
     }
 
     /**
@@ -521,7 +563,6 @@ class Client extends AbstractHttp
         return $this;
     }
 
-
     /**
      * Set request body from file
      *
@@ -539,6 +580,59 @@ class Client extends AbstractHttp
 
         $this->request->setBody(file_get_contents($file));
 
+        return $this;
+    }
+
+    /**
+     * Has request body
+     *
+     * @return bool
+     */
+    public function hasBody(): bool
+    {
+        return (($this->request !== null) && ($this->request->hasBody()));
+    }
+
+    /**
+     * Get request body
+     *
+     * @return Body|null
+     */
+    public function getBody(): Body|null
+    {
+        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBody() : null;
+    }
+
+    /**
+     * Get request body content
+     *
+     * @return string|null
+     */
+    public function getBodyContent(): string|null
+    {
+        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBodyContent() : null;
+    }
+
+    /**
+     * Get request body content length
+     *
+     * @return int
+     */
+    public function getBodyContentLength(): int
+    {
+        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBodyContentLength() : 0;
+    }
+
+    /**
+     * Remove the body
+     *
+     * @return Client
+     */
+    public function removeBody(): Client
+    {
+        if (($this->request !== null) && ($this->request->hasBody())) {
+            $this->request->removeBody();
+        }
         return $this;
     }
 
