@@ -275,23 +275,23 @@ class Data
     }
 
     /**
-     * Has raw data
-     *
-     * @return bool
-     */
-    public function hasRawData(): bool
-    {
-        return (isset($this->data[self::POP_CLIENT_REQUEST_RAW_DATA]));
-    }
-
-    /**
-     * Get the raw data
+     * Get raw data
      *
      * @return string|null
      */
     public function getRawData(): string|null
     {
         return $this->data[self::POP_CLIENT_REQUEST_RAW_DATA] ?? null;
+    }
+
+    /**
+     * Has raw data
+     *
+     * @return bool
+     */
+    public function hasRawData(): bool
+    {
+        return (count($this->data) == 1) && isset($this->data[self::POP_CLIENT_REQUEST_RAW_DATA]);
     }
 
     /**

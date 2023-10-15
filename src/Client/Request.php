@@ -507,23 +507,30 @@ class Request extends AbstractRequest
      */
     public function prepareJson(): Request
     {
-        $jsonData    = $this->getData(true);
-        $jsonContent = [];
+        if ($this->data->hasRawData()) {
+            $jsonContent = $this->data->getRawData();
+        } else {
+            $jsonData    = $this->getData(true);
+            $jsonContent = [];
 
-        // Check for JSON files
-        foreach ($jsonData as $jsonDatum) {
-            if (isset($jsonDatum['filename']) && isset($jsonDatum['contentType']) &&
-                ($jsonDatum['contentType'] == 'application/json') && file_exists($jsonDatum['filename'])) {
-                $jsonContent = array_merge($jsonContent, json_decode(file_get_contents($jsonDatum['filename']), true));
+            // Check for JSON files
+            foreach ($jsonData as $jsonDatum) {
+                if (isset($jsonDatum['filename']) && isset($jsonDatum['contentType']) &&
+                    ($jsonDatum['contentType'] == 'application/json') && file_exists($jsonDatum['filename'])) {
+                    $jsonContent = array_merge($jsonContent, json_decode(file_get_contents($jsonDatum['filename']), true));
+                }
+            }
+
+            // Else, use JSON data
+            if (empty($jsonContent)) {
+                $jsonContent = $jsonData;
             }
         }
 
-        // Else, use JSON data
-        if (empty($jsonContent)) {
-            $jsonContent = $jsonData;
+        // Only encode if the data isn't already encoded
+        if (!((is_string($jsonContent) && (json_decode($jsonContent) !== false)) && (json_last_error() == JSON_ERROR_NONE))) {
+            $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
         }
-
-        $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
 
         return $this;
     }
@@ -535,19 +542,23 @@ class Request extends AbstractRequest
      */
     public function prepareXml(): Request
     {
-        $xmlData    = $this->getData(true);
-        $xmlContent = null;
+        if ($this->data->hasRawData()) {
+            $xmlContent = $this->data->getRawData();
+        } else {
+            $xmlData    = $this->getData(true);
+            $xmlContent = null;
 
-        // Check for XML files
-        foreach ($xmlData as $xmlDatum) {
-            $xmlContent .= (isset($xmlDatum['filename']) && isset($xmlDatum['contentType']) &&
-                ($xmlDatum['contentType'] == 'application/xml') && file_exists($xmlDatum['filename'])) ?
-                file_get_contents($xmlDatum['filename']) : $xmlDatum;
-        }
+            // Check for XML files
+            foreach ($xmlData as $xmlDatum) {
+                $xmlContent .= (isset($xmlDatum['filename']) && isset($xmlDatum['contentType']) &&
+                    ($xmlDatum['contentType'] == 'application/xml') && file_exists($xmlDatum['filename'])) ?
+                    file_get_contents($xmlDatum['filename']) : $xmlDatum;
+            }
 
-        // Else, use xml data
-        if (empty($xmlContent)) {
-            $xmlContent = $xmlData;
+            // Else, use xml data
+            if (empty($xmlContent)) {
+                $xmlContent = $xmlData;
+            }
         }
 
         $this->dataContent = $xmlContent;
