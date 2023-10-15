@@ -134,6 +134,16 @@ abstract class AbstractCurl extends AbstractHandler
     }
 
     /**
+     * Get Curl options
+     *
+     * @return array
+     */
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+    /**
      * Get a Curl option
      *
      * @param  int $opt

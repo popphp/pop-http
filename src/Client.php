@@ -487,6 +487,44 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Set request body
+     *
+     * @param  string $body
+     * @return Client
+     */
+    public function setBody(string $body): Client
+    {
+        if ($this->request === null) {
+            throw new Exception('Error: The request object has not been created.');
+        }
+
+        $this->request->setBody($body);
+
+        return $this;
+    }
+
+
+    /**
+     * Set request body from file
+     *
+     * @param  string $file
+     * @return Client
+     */
+    public function setBodyFromFile(string $file): Client
+    {
+        if ($this->request === null) {
+            throw new Exception('Error: The request object has not been created.');
+        }
+        if (!file_exists($file)) {
+            throw new Exception("Error: The file '" . $file . "' does not exist.");
+        }
+
+        $this->request->setBody(file_get_contents($file));
+
+        return $this;
+    }
+
+    /**
      * Prepare the client request
      *
      * @param  ?string $uri

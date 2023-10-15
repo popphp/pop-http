@@ -32,6 +32,25 @@ class Command
 {
 
     /**
+     * Options to omit from client-to-command conversion, as they are addressed elsewhere in the conversion
+     *
+     * @var array
+     */
+    protected static array $omitPhpOptions = [
+        'CURLOPT_CUSTOMREQUEST', 'CURLOPT_HEADER', 'CURLOPT_HTTPHEADER', 'CURLOPT_POST', 'CURLOPT_POSTFIELDS',
+        'CURLOPT_PUT', 'CURLOPT_RETURNTRANSFER', 'CURLOPT_URL', 'CURLOPT_SSL_VERIFYHOST', 'CURLOPT_SSL_VERIFYPEER'
+    ];
+
+    /**
+     * Options to omit from command-to-client conversion, as they are addressed elsewhere in the conversion
+     *
+     * @var array
+     */
+    protected static array $omitCommandOptions = [
+        '-i', '-X', '--request', '-H', '--header', '-d', '--data', '-F', '--form', '-k', '--insecure', '--url',
+    ];
+
+    /**
      * Create a compatible command string to execute with the curl CLI application
      *
      * @param  Client $client
@@ -46,13 +65,24 @@ class Command
             throw new Exception('Error: The client object must use a Curl handler.');
         }
 
+        // Set return header
         if ($client->getHandler()->isReturnHeader()) {
             $command .= ' -i';
         }
 
+        // Set method
         $method   = $client->getRequest()->getMethod();
         $command .= ' -X ' . $method;
 
+        // Handle insecure settings
+        if (($client->hasOption('verify_peer') && ($client->getOption('verify_peer'))) ||
+            ($client->hasOption('allow_self_signed') && ($client->getOption('allow_self_signed'))) ||
+            ($client->getHandler()->hasOption(CURLOPT_SSL_VERIFYHOST) && (!$client->getHandler()->getOption(CURLOPT_SSL_VERIFYHOST))) ||
+            ($client->getHandler()->hasOption(CURLOPT_SSL_VERIFYPEER) && (!$client->getHandler()->getOption(CURLOPT_SSL_VERIFYPEER)))) {
+            $command .= ' --insecure';
+        }
+
+        // Handle headers
         if ($client->getRequest()->hasHeaders()) {
             foreach ($client->getRequest()->getHeaders() as $header) {
                 if ((!str_contains($header->getValueAsString(), 'multipart/form-data')) && ($header->getName() != 'Content-Length')) {
@@ -61,7 +91,9 @@ class Command
             }
         }
 
+        // Handle data
         if ($client->getRequest()->hasData()) {
+            // Multipart form data
             if ($client->getRequest()->isMultipart()) {
                 $data = $client->getRequest()->getData(true);
                 foreach ($data as $key => $value) {
@@ -69,6 +101,7 @@ class Command
                         ' -F "' . $key . '=@' . $value['filename'] . '"' :
                         ' -F "' . http_build_query([$key => $value]) . '"';
                 }
+            // JSON data
             } else if ($client->getRequest()->isJson()) {
                 $data = $client->getRequest()->getData(true);
                 foreach ($data as $key => $datum) {
@@ -84,6 +117,7 @@ class Command
                     }
                     $command .= " --data '" . $json . "'";
                 }
+            // XML data
             } else if ($client->getRequest()->isXml()) {
                 $data = $client->getRequest()->getData(true);
                 foreach ($data as $key => $datum) {
@@ -101,15 +135,35 @@ class Command
                         $command .= " --data '" . $datum . "'";
                     }
                 }
+            // URL-encoded data
             } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncoded()) ||
                 !($client->getRequest()->hasRequestType())) {
                 $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
             }
         }
 
-        /**
-         * TO-DO: handle other options
-         */
+        // Add body content as data
+        if ($client->getRequest()->hasBody()) {
+            $body = $client->getRequest()->getBodyContent();
+            if (str_contains($body, "'")) {
+                $body = str_replace("'", "\\'", $body);
+            }
+            $command .= " --data '" . $body . "'";
+        }
+
+        // Handle all other options
+        $curlOptions = $client->getHandler()->getOptions();
+        foreach ($curlOptions as $curlOption => $curlOptionValue) {
+            $curlOptionName = Options::getOptionNameByValue($curlOption);
+            if (!in_array($curlOptionName, self::$omitPhpOptions)) {
+                $commandOption = Options::getPhpOption($curlOptionName);
+                $command .= (is_array($commandOption) && isset($commandOption[0])) ?
+                    ' ' . $commandOption[0] : ' ' . $commandOption;
+                if (Options::isValueOption($curlOptionName) && !empty($curlOptionValue)) {
+                    $command .= ' ' . self::addQuotes($curlOptionValue);
+                }
+            }
+        }
 
         $command .= ' ' . self::addQuotes($client->getRequest()->getUriAsString());
 
@@ -268,6 +322,12 @@ class Command
             }
         }
 
+        // Handle insecure settings
+        if (array_key_exists('-k', $optionValues) || array_key_exists('--insecure', $optionValues)) {
+            $curl->setOption(CURLOPT_SSL_VERIFYHOST, 0);
+            $curl->setOption(CURLOPT_SSL_VERIFYPEER, 0);
+        }
+
         // Handle headers
         if (isset($optionValues['-H']) || isset($optionValues['--header'])) {
             $headerOpts = ($optionValues['-H'] ?? $optionValues['--header']);
@@ -288,9 +348,7 @@ class Command
             }
         }
 
-        /**
-         * TO-DO: Handle --data from @file
-         */
+        // Handle data
         if (isset($optionValues['-d']) || isset($optionValues['--data'])) {
             $data = ($optionValues['-d'] ?? $optionValues['--data']);
 
@@ -313,6 +371,8 @@ class Command
                 unset($optionValues['--data']);
             }
         }
+
+        // Handle form data
         if (isset($optionValues['-F']) || isset($optionValues['--form'])) {
             $data     = [];
             $formData = ($optionValues['-F'] ?? $optionValues['--form']);
@@ -337,28 +397,31 @@ class Command
             }
         }
 
+        // Handle all other options
         foreach ($optionValues as $option => $value) {
-            foreach (Options::getPhpOptions() as $phpOption => $curlOption) {
-                if (is_array($curlOption)) {
-                    foreach ($curlOption as $cOpt) {
-                        if ((str_starts_with($option, '--') && str_contains($cOpt, $option)) || str_starts_with($cOpt, $option)) {
-                            if (Options::isValueOption($option)) {
-                                $optionValue = Options::getValueOption($option) ?? $value;
-                            } else {
-                                $optionValue = true;
+            if (!in_array($option, self::$omitCommandOptions)) {
+                foreach (Options::getPhpOptions() as $phpOption => $curlOption) {
+                    if (is_array($curlOption)) {
+                        foreach ($curlOption as $cOpt) {
+                            if ((str_starts_with($option, '--') && str_contains($cOpt, $option)) || str_starts_with($cOpt, $option)) {
+                                if (Options::isValueOption($option)) {
+                                    $optionValue = Options::getValueOption($option) ?? $value;
+                                } else {
+                                    $optionValue = true;
+                                }
+                                $curl->setOption(constant($phpOption), $optionValue);
+                                break;
                             }
-                            $curl->setOption(constant($phpOption), $optionValue);
-                            break;
                         }
+                    } else if ((str_starts_with($option, '--') && str_contains($curlOption, $option)) || str_starts_with($curlOption, $option)) {
+                        if (Options::isValueOption($option)) {
+                            $optionValue = Options::getValueOption($option) ?? $value;
+                        } else {
+                            $optionValue = true;
+                        }
+                        $curl->setOption(constant($phpOption), $optionValue);
+                        break;
                     }
-                } else if ((str_starts_with($option, '--') && str_contains($curlOption, $option)) || str_starts_with($curlOption, $option)) {
-                    if (Options::isValueOption($option)) {
-                        $optionValue = Options::getValueOption($option) ?? $value;
-                    } else {
-                        $optionValue = true;
-                    }
-                    $curl->setOption(constant($phpOption), $optionValue);
-                    break;
                 }
             }
         }
