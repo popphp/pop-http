@@ -2,6 +2,7 @@
 
 namespace Pop\Http\Test\Client\Handler\Curl;
 
+use Pop\Http\Auth;
 use Pop\Http\Client;
 use Pop\Http\Client\Handler\Curl\Command;
 use PHPUnit\Framework\TestCase;
@@ -213,6 +214,96 @@ class CommandTest extends TestCase
         $command = 'curl -X POST -A "popphp/pop-http 1.0" "http://localhost:8000/post.php"';
         $client = Command::commandToClient($command);
         $this->assertEquals('popphp/pop-http 1.0', $client->getHandler()->getOption(CURLOPT_USERAGENT));
+    }
+
+    public function testClientToCommand1()
+    {
+        $client = new Client('http://localhost:8000/post.php', ['verify_peer' => false, 'allow_self_signed' => false]);
+        $command = Command::clientToCommand($client);
+        $this->assertEquals('curl -i -X GET --insecure "http://localhost:8000/post.php"', $command);
+    }
+
+    public function testClientToCommand2()
+    {
+        $request = new Client\Request('http://localhost:8000/post.php');
+        $request->addHeader('Authorization', 'Bearer 123456789');
+        $client = new Client($request, Auth::createBasic('username', 'password'));
+        $command = Command::clientToCommand($client);
+        $this->assertEquals('curl -i -X GET --basic -u "username:password" "http://localhost:8000/post.php"', $command);
+    }
+
+    public function testClientToCommand3()
+    {
+        $request = new Client\Request('http://localhost:8000/post.php');
+        $request->addHeader('Content-Type', 'application/json');
+        $client = new Client($request);
+        $command = Command::clientToCommand($client);
+        $this->assertEquals('curl -i -X GET --header "Content-Type: application/json" "http://localhost:8000/post.php"', $command);
+    }
+
+    public function testClientToCommand4()
+    {
+        $request = new Client\Request('http://localhost:8000/post.php', 'POST');
+        $request->createAsJson()
+            ->setData([
+                'foo' => 'bar',
+                'baz' => 123
+            ]);
+
+        $client = new Client($request);
+        $command = Command::clientToCommand($client);
+        $this->assertEquals('curl -i -X POST --header "Content-Type: application/json" --data \'{"foo":"bar","baz":123}\' "http://localhost:8000/post.php"', $command);
+    }
+
+    public function testClientToCommand5()
+    {
+        $request = new Client\Request('http://localhost:8000/post.php', 'POST');
+        $request->createMultipart()
+            ->setData([
+                'foo' => 'bar',
+                'baz' => 123
+            ]);
+
+        $client = new Client($request);
+        $command = Command::clientToCommand($client);
+        $this->assertEquals('curl -i -X POST -F "foo=bar" -F "baz=123" "http://localhost:8000/post.php"', $command);
+    }
+
+    public function testClientToCommand6()
+    {
+        $request = new Client\Request('http://localhost:8000/post.php', 'POST');
+        $request->createAsXml()
+            ->setData([
+                'file1' => [
+                    'filename'    => __DIR__ . '/../../../tmp/data.xml',
+                    'contentType' => 'application/xml'
+                ]
+            ]);
+
+        $client = new Client($request);
+        $command = Command::clientToCommand($client);
+        $this->assertTrue(str_contains($command, 'curl -i -X POST --header "Content-Type: application/xml" --data @'));
+        $this->assertTrue(str_contains($command, 'tmp/data.xml "http://localhost:8000/post.php'));
+    }
+
+    public function testClientToCommand7()
+    {
+        $request = new Client\Request('http://localhost:8000/post.php', 'POST');
+        $request->setBody("This is the page's text body");
+
+        $client = new Client($request);
+        $command = Command::clientToCommand($client);
+        $this->assertEquals('curl -i -X POST --data \'This is the page\\\'s text body\' "http://localhost:8000/post.php"', $command);
+    }
+
+    public function testClientToCommand8()
+    {
+        $client = new Client('http://localhost:8000/post.php', new Client\Handler\Curl());
+        $client->getHandler()->setOption(CURLOPT_APPEND, 1)
+            ->setOption(CURLOPT_USERAGENT, 'popphp/pop-http 1.0');
+
+        $command = Command::clientToCommand($client);
+        $this->assertEquals('curl -i -X GET -a -A "popphp/pop-http 1.0" "http://localhost:8000/post.php"', $command);
     }
 
 }
