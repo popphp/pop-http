@@ -88,11 +88,23 @@ That method will attempt to auto-negotiate the content-type and give an appropri
 if the content type of the response was `application/json`, then the data returned will be a PHP array representation of
 that JSON data.
 
+### Options
+
+### Requests
+
+### Responses
+
+### Handlers
 
 [Top](#pop-http)
 
 Promises
 --------
+
+[Top](#pop-http)
+
+CLI Conversions
+---------------
 
 [Top](#pop-http)
 
