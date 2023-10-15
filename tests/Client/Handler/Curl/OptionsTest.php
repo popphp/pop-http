@@ -1,6 +1,6 @@
 <?php
 
-namespace Pop\Http\Test\Client\Handler\Options;
+namespace Pop\Http\Test\Client\Handler\Curl;
 
 use Pop\Http\Client\Handler\Curl;
 use PHPUnit\Framework\TestCase;
@@ -14,22 +14,16 @@ class OptionsTest extends TestCase
         $this->assertFalse(Curl\Options::isValidOption('-BAD'));
     }
 
-    public function testCliOption()
+    public function testCommandOption()
     {
-        $this->assertTrue(Curl\Options::isCliOption('-i'));
-        $this->assertFalse(Curl\Options::isCliOption('-BAD'));
+        $this->assertTrue(Curl\Options::isCommandOption('-i'));
+        $this->assertFalse(Curl\Options::isCommandOption('-BAD'));
     }
 
     public function testPhpOption()
     {
         $this->assertTrue(Curl\Options::isPhpOption('CURLOPT_ABSTRACT_UNIX_SOCKET'));
         $this->assertFalse(Curl\Options::isPhpOption('-BAD'));
-    }
-
-    public function testSpecialOption()
-    {
-        $this->assertTrue(Curl\Options::isSpecialOption('--digest'));
-        $this->assertFalse(Curl\Options::isSpecialOption('-BAD'));
     }
 
     public function testValueOption()
