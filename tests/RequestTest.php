@@ -48,10 +48,10 @@ class RequestTest extends TestCase
         $this->assertTrue($request->isXml());
         $request->setRequestType(Request::URLFORM);
         $this->assertEquals(Request::URLFORM, $request->getRequestType());
-        $this->assertTrue($request->isUrlEncodedForm());
+        $this->assertTrue($request->isUrlEncoded());
         $request->setRequestType(Request::MULTIPART);
         $this->assertEquals(Request::MULTIPART, $request->getRequestType());
-        $this->assertTrue($request->isMultipartForm());
+        $this->assertTrue($request->isMultipart());
     }
 
     public function testMagicMethod()

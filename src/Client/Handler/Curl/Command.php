@@ -61,7 +61,7 @@ class Command
         }
 
         if ($client->getRequest()->hasData()) {
-            if ($client->getRequest()->isMultipartForm()) {
+            if ($client->getRequest()->isMultipart()) {
                 $data = $client->getRequest()->getData(true);
                 foreach ($data as $key => $value) {
                     $command .= (isset($value['filename']) && file_exists($value['filename'])) ?
@@ -77,7 +77,7 @@ class Command
                     $json = str_replace("'", "\\'", $json);
                 }
                 $command .= " --data '" . $json . "'";
-            } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncodedForm()) ||
+            } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncoded()) ||
                 !($client->getRequest()->hasRequestType())) {
                 $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
             }

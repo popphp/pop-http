@@ -272,10 +272,10 @@ class Request extends AbstractRequest
                 $this->createAsXml();
                 break;
             case self::URLFORM:
-                $this->createUrlEncodedForm();
+                $this->createUrlEncoded();
                 break;
             case self::MULTIPART:
-                $this->createMultipartForm();
+                $this->createMultipart();
                 break;
         }
 
@@ -361,7 +361,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createUrlEncodedForm(): Request
+    public function createUrlEncoded(): Request
     {
         $this->requestType = self::URLFORM;
 
@@ -378,7 +378,7 @@ class Request extends AbstractRequest
      *
      * @return bool
      */
-    public function isUrlEncodedForm(): bool
+    public function isUrlEncoded(): bool
     {
         return ($this->requestType == self::URLFORM);
     }
@@ -388,7 +388,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createMultipartForm(): Request
+    public function createMultipart(): Request
     {
         $this->requestType = self::MULTIPART;
         return $this;
@@ -399,7 +399,7 @@ class Request extends AbstractRequest
      *
      * @return bool
      */
-    public function isMultipartForm(): bool
+    public function isMultipart(): bool
     {
         return ($this->requestType == self::MULTIPART);
     }
