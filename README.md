@@ -76,6 +76,8 @@ $client = new Client('http://localhost/');
 $response = $client->get();
 ```
 
+**OR**
+
 ```php
 $client = new Client('http://localhost/', ['method' => 'GET']);
 $response = $client->send();
@@ -115,6 +117,8 @@ $client = new Client('http://localhost/post', [
 ]);
 $response = $client->post();
 ```
+
+**OR**
 
 ```php
 $client = new Client('http://localhost/post', [
