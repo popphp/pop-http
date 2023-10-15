@@ -13,7 +13,7 @@ pop-http
   - [Responses](#responses)
   - [Handlers](#handlers)
 * [Promises](#promises)
-* [CLI Conversion](#cli-converstion)
+* [CLI Conversion](#cli-conversions)
 * [Server](#server)
 * [Uploads](#Uploads)
 
@@ -76,7 +76,12 @@ $client = new Client('http://localhost/');
 $response = $client->get();
 ```
 
-In both examples above, the `$response` object returned is a full response object, complete with all of the headers,
+```php
+$client = new Client('http://localhost/', ['method' => 'GET']);
+$response = $client->send();
+```
+
+In the examples above, the `$response` object returned is a full response object, complete with all of the headers,
 data, messaging and content body that comes with an HTTP response. If you want to simply access the pertinent body
 content of the response object, you can call this:
 
@@ -88,7 +93,57 @@ That method will attempt to auto-negotiate the content-type and give an appropri
 if the content type of the response was `application/json`, then the data returned will be a PHP array representation of
 that JSON data.
 
+A `POST` request can be given some data in the `$options` array to send along with the request:
+
+```php
+$response = Client::post('http://localhost/post', [
+    'data' => [
+        'foo' => 'bar',
+        'baz' => 123
+    ]
+]);
+```
+
+which is also the equivalent to:
+
+```php
+$client = new Client('http://localhost/post', [
+    'data' => [
+        'foo' => 'bar',
+        'baz' => 123
+    ]
+]);
+$response = $client->post();
+```
+
+```php
+$client = new Client('http://localhost/post', [
+    'method' => 'POST',
+    'data'   => [
+        'foo' => 'bar',
+        'baz' => 123
+    ]
+]);
+$response = $client->send();
+```
+
+All of the standard HTTP request methods are accessible in the manner outlined above.
+
 ### Options
+
+The client object provides a `$options` array to pass in general configuration details and data about the request.
+Supported keys in the options array are:
+
+- `base_uri` - the base URI for resubmitting many requests with the same client to different endpoints on the same domain
+- `method` - the request method (GET, POST, PUT, PATCH, DELETE, etc.)
+- `headers` - an array of request headers
+- `data` - an array of request data
+- `files` - an array of files on disk to be sent with the request 
+- `async` - trigger an asynchronous request
+- `type` - set the request type (URL-form, JSON, XML or multipart/form)
+- `verify_peer` - enforce or disallow verifying the host (for SSL connections)
+- `allow_self_signed` - allow or disallow the use of self-signed certificates (for SSL connections)
+- `force_custom_method` - for Curl only. Forces the use of CURLOPT_CUSTOMREQUEST
 
 ### Requests
 
