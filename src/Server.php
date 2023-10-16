@@ -35,10 +35,21 @@ class Server extends AbstractHttp
      * @param ?Server\Response $response
      */
     public function __construct(
-        ?Server\Request $request = new Server\Request(), ?Server\Response $response = new Server\Response()
+        ?Server\Request $request = new Server\Request(new Uri()), ?Server\Response $response = new Server\Response()
     )
     {
         parent::__construct($request, $response);
+    }
+
+    /**
+     * Create server object with a base path reference for the request URI
+     *
+     * @param  string $basePath
+     * @return Server
+     */
+    public static function createWithBasePath(string $basePath): Server
+    {
+        return new self(new Server\Request(new Uri(null, $basePath)));
     }
 
     /**

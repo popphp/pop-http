@@ -14,6 +14,14 @@ class ServerTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Server', $server);
     }
 
+
+    public function testCreateWithBasePath()
+    {
+        $server = Server::createWithBasePath('/foo');
+        $this->assertInstanceOf('Pop\Http\Server', $server);
+        $this->assertEquals('/foo', $server->request()->getUri()->getBasePath());
+    }
+
     public function testGettersAndSetters()
     {
         $server = new Server();
