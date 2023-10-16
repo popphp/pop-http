@@ -802,6 +802,71 @@ curl -i -X POST --data "foo=bar&baz=123" "http://localhost/post.php"
 Server
 ------
 
+The server object and its components provide convenient and robust functionality to manage inbound server requests
+and outbound responses. At its core, and like the client object, the server object is compromised of a request object
+and a response object. However, opposite to the client object, the server object's request is typically auto-populated
+from the incoming request headers and data, while the response object is available to be configured as required to
+produce and send a response to the calling client.
+
+Within an application, creating a server will automatically take in the global request data that would come in from an
+inbound client request. This includes:
+
+- Request data (`$_GET`, `$_POST`, etc)
+- Request headers
+- Request body
+
+As an example, this `curl` command pointing at the following URL with a PHP script can be executed:
+
+```bash
+curl -i -X POST `--header "Authorization: Bearer 1234567890"` --data "foo=bar&baz=123" "http://localhost/post.php"
+```
+
+with the contents of `post.php` being:
+
+```php
+use Pop\Http\Server;
+
+$server = new Server();
+
+echo $server->request->getHeader('Authorization')->getValue();
+if ($server->request->isPost()) {
+    print_r($server->request->getPost());
+}
+```
+
+Automatically, the server object's request object will be populated with the incoming request data. The example
+script above will produce:
+
+```text
+Bearer 123456
+Array
+(
+    [foo] => bar
+    [baz] => 123
+)
+```
+
+From an incoming request, you can populate an appropriate response:
+
+```php
+$server->response->setCode(200)
+    ->setMessage('OK')
+    ->setVersion('1.1')
+    ->addHeader('Content-Type', 'text/plain')
+    ->setBody('This is the response');
+
+$server->send();
+```
+
+which will produce:
+
+```text
+HTTP/1.1 200 OK
+Content-Type: text/plain
+
+This is the response
+```
+
 [Top](#pop-http)
 
 Uploads

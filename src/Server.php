@@ -31,8 +31,8 @@ class Server extends AbstractHttp
     /**
      * Instantiate the server object
      *
-     * @param ?Server\Request   $request
-     * @param ?Server\Response  $response
+     * @param ?Server\Request  $request
+     * @param ?Server\Response $response
      */
     public function __construct(
         ?Server\Request $request = new Server\Request(), ?Server\Response $response = new Server\Response()
