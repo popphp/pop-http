@@ -848,7 +848,7 @@ $request->hasFiles();
 **Data**
 
 ```php
-$queryData  = $request->getQuery();
+$queryData  = $request->getQuery(); // GET Request
 $postData   = $request->getPost();
 $putData    = $request->getPut();
 $patchData  = $request->getPatch();
@@ -859,7 +859,7 @@ $envData    = $request->getEnv();
 ```
 
 ```php
-$foo = $request->getQuery('foo');
+$foo = $request->getQuery('foo'); // GET Request
 $foo = $request->getPost('foo');
 $foo = $request->getPut('foo');
 $foo = $request->getPatch('foo');
@@ -879,7 +879,7 @@ $rawData    = $request->getRawData();
 As an example, this `curl` command pointing at the following URL with a PHP script can be executed:
 
 ```bash
-curl -i -X POST --header "Authorization: Bearer 1234567890"` \
+curl -i -X POST --header "Authorization: Bearer 1234567890" \
   --data "foo=bar&baz=123" "http://localhost/post.php"
 ```
 
@@ -951,7 +951,7 @@ use Pop\Http\Server;
 use Pop\Http\Server\Reqeust;
 
 $filters = ['strip_tags', 'addslashes'];
-$server = new Server(new Request(null, $filters));
+$server  = new Server(new Request(null, $filters));
 ```
 
 And with the following curl command with data that contains tags and a single quote:
@@ -966,7 +966,7 @@ if ($server->request->isPost()) {
 }
 ```
 
-The data will be filtered:
+the data will be filtered:
 
 ```text
 Bearer 123456
