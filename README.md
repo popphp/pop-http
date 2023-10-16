@@ -34,7 +34,7 @@ for the following:
     - Full control over request & response headers
     - Manage authorization
     - Manage and parse different request & response data types
-    - Use the request handler of your choice: curl, streams or curl-multi (defaults to curl)
+    - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
     - Send sync or async requests
     - Support for promises
     - Client to Curl CLI command conversions
@@ -62,10 +62,10 @@ Or, require it in your composer.json file
 Client
 ------
 
-The client object works with a request object, a handler object and a response object. The request object can have
-request data. Both the request and response objects can have headers and a body. The response object will have 
-a response code and response message, along with other helper functions to determine if the request yielded a
-successful response or an error.
+At its core, the client object works with a request object, a handler object and a response object to successfully
+execute an HTTP request. The request object can have request data. Both the request and response objects can have
+headers and a body. The response object will have a response code and response message, along with other helper
+functions to determine if the request yielded a successful response or an error.
 
 **NOTE:** The constructor of the `Pop\Http\Client` class is flexible and can take any of the following
 parameters in any order:
@@ -73,7 +73,7 @@ parameters in any order:
 - A URI string
 - A `Pop\Http\Client\Request` object (which contains the URI)
 - A `Pop\Http\Client\Response` object (not common, as the response object is typically auto-populated)
-- A `Pop\Http\Auth` object
+- A `Pop\Http\Auth` object (to assist with authorization)
 - A handler object that is an instance of `Pop\Http\Client\Handler\HandlerInterface`
 - An `$options` array 
 
@@ -96,7 +96,7 @@ $client   = new Client('http://localhost/');
 $response = $client->get();
 ```
 
-**OR**
+**or**
 
 ```php
 use Pop\Http\Client;
@@ -113,9 +113,11 @@ the response object, this method can be used:
 $content = $response->getParsedResponse();
 ```
 
-That method will attempt to auto-negotiate the `Content-Type` header and give an appropriate data response or object.
-For example, if the content type of the response was `application/json`, then the data returned will be a PHP array
-representation of that JSON data.
+That method will attempt to auto-negotiate using the `Content-Type` header and give an appropriate data response
+or object. For example, if the content type of the response was `application/json`, then the data returned will
+be a PHP array representation of that JSON data.
+
+**POST Example**
 
 A `POST` request can be given some data in the `$options` array to send along with the request:
 
@@ -144,7 +146,7 @@ $client = new Client('http://localhost/post', [
 $response = $client->post();
 ```
 
-**OR**
+**or**
 
 ```php
 use Pop\Http\Client;
@@ -184,13 +186,7 @@ There is an auth header class to assist in wiring up different types of standard
 use Pop\Http\Auth;
 use Pop\Http\Client;
 
-$client = new Client(
-    'http://localhost/auth',
-    Auth::createBasic('username', 'password'),
-    ['method' => 'POST']
-);
-
-$response = $client->send();
+$response = Client::post('http://localhost/auth', Auth::createBasic('username', 'password'));
 ```
 
 **Bearer Token**
@@ -199,13 +195,7 @@ $response = $client->send();
 use Pop\Http\Auth;
 use Pop\Http\Client;
 
-$client = new Client(
-    'http://localhost/auth',
-    Auth::createBearer('MY_AUTH_TOKEN'),
-    ['method' => 'POST']
-);
-
-$response = $client->send();
+$response = Client::post('http://localhost/auth', Auth::createBearer('MY_AUTH_TOKEN'));
 ```
 
 **API Key**
@@ -214,13 +204,7 @@ $response = $client->send();
 use Pop\Http\Auth;
 use Pop\Http\Client;
 
-$client = new Client(
-    'http://localhost/auth',
-    Auth::createKey('MY_API_KEY')),
-    ['method' => 'POST']
-);
-
-$response = $client->send();
+$response = Client::post('http://localhost/auth', Auth::createKey('MY_API_KEY')));
 ```
 
 **Digest**
@@ -231,32 +215,26 @@ Digest authorization can be complex and require a number of different parameters
 use Pop\Http\Auth;
 use Pop\Http\Client;
 
-$client = new Client(
+$response = Client::post(
     'http://localhost/auth',
     Auth::createDigest(
         new Auth\Digest('realm', 'username', 'password', '/uri', 'SERVER_NONCE')
-    ),
-    ['method' => 'POST']
+    )
 );
-
-$response = $client->send();
 ```
 
-The digest auth header can be created from a `WWW-Authenticate` header provided by the intial server response:
+The digest auth header can be created from a `WWW-Authenticate` header provided by the initial server response:
 
 ```php
 use Pop\Http\Auth;
 use Pop\Http\Client;
 
-$client = new Client(
+$response = Client::post(
     'http://localhost/auth',
     Auth::createDigest(
         Auth\Digest::createFromWwwAuth($wwwAuthHeader, 'username', 'password', '/uri')
-    ),
-    ['method' => 'POST']
+    )
 );
-
-$response = $client->send();
 ```
 
 ### Options
@@ -567,7 +545,7 @@ $client  = new Client('http://localhost/');
 $promise = $client->postAsync();
 ```
 
-**OR**
+**or**
 
 ```php
 $client  = new Client('http://localhost/', ['method' => 'POST']);
