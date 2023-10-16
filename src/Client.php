@@ -178,8 +178,8 @@ class Client extends AbstractHttp
      *  - 'headers'
      *  - 'data'
      *  - 'files'
-     *  - 'async'
      *  - 'type'
+     *  - 'async'
      *  - 'verify_peer'
      *  - 'allow_self_signed'
      *  - 'force_custom_method' (Curl only - forces CURLOPT_CUSTOMREQUEST)

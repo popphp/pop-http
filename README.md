@@ -8,6 +8,7 @@ pop-http
 * [Install](#install)
 * [Client](#client)
   - [Quickstart](#quickstart)
+  - [Auth](#auth)
   - [Options](#options)
   - [Requests](#requests)
   - [Responses](#responses)
@@ -27,6 +28,7 @@ for the following:
 - **HTTP Client Transactions**
   - Create and manage outbound HTTP client requests and their responses
     - Full control over request & response headers
+    - Manage authorization
     - Manage and parse different request & response data types
     - Use the request handler of your choice: curl, streams or curl-multi (defaults to curl)
     - Send sync or async requests
@@ -66,12 +68,16 @@ successful response or an error.
 The most basic way to wire up a simple `GET` request would be:
 
 ```php
+use Pop\Http\Client;
+
 $response = Client::get('http://localhost/');
 ```
 
 which is also the equivalent to:
 
 ```php
+use Pop\Http\Client;
+
 $client = new Client('http://localhost/');
 $response = $client->get();
 ```
@@ -79,6 +85,8 @@ $response = $client->get();
 **OR**
 
 ```php
+use Pop\Http\Client;
+
 $client = new Client('http://localhost/', ['method' => 'GET']);
 $response = $client->send();
 ```
@@ -98,6 +106,8 @@ that JSON data.
 A `POST` request can be given some data in the `$options` array to send along with the request:
 
 ```php
+use Pop\Http\Client;
+
 $response = Client::post('http://localhost/post', [
     'data' => [
         'foo' => 'bar',
@@ -109,6 +119,8 @@ $response = Client::post('http://localhost/post', [
 which is also the equivalent to:
 
 ```php
+use Pop\Http\Client;
+
 $client = new Client('http://localhost/post', [
     'data' => [
         'foo' => 'bar',
@@ -121,6 +133,8 @@ $response = $client->post();
 **OR**
 
 ```php
+use Pop\Http\Client;
+
 $client = new Client('http://localhost/post', [
     'method' => 'POST',
     'data'   => [
@@ -133,6 +147,92 @@ $response = $client->send();
 
 All of the standard HTTP request methods are accessible in the manner outlined above.
 
+### Auth
+
+The is an auth header class to assist in wiring up different types of standard authorization headers:
+
+- Basic
+- Bearer Token
+- API Key
+- Digest
+
+**Basic**
+
+```php
+use Pop\Http\Auth;
+use Pop\Http\Client;
+
+$client = new Client(
+    'http://localhost/auth',
+    Auth::createBasic('username', 'password'),
+    ['method' => 'POST']
+);
+
+$response = $client->send();
+```
+
+**Bearer Token**
+
+```php
+use Pop\Http\Auth;
+use Pop\Http\Client;
+
+$client = new Client(
+    'http://localhost/auth',
+    Auth::createBearer('MY_AUTH_TOKEN'),
+    ['method' => 'POST']
+);
+
+$response = $client->send();
+```
+
+**API Key**
+
+```php
+use Pop\Http\Auth;
+use Pop\Http\Client;
+
+$client = new Client(
+    'http://localhost/auth',
+    Auth::createKey('MY_API_KEY')),
+    ['method' => 'POST']
+);
+
+$response = $client->send();
+```
+
+**Digest**
+
+Digest authorization can be complex and require a number of different parameters. This is a basic example:
+
+```php
+use Pop\Http\Auth;
+use Pop\Http\Client;
+
+$client = new Client(
+    'http://localhost/auth',
+    Auth::createDigest(new Auth\Digest('realm', 'username', 'password', '/uri', 'SERVER_NONCE')),
+    ['method' => 'POST']
+);
+
+$response = $client->send();
+```
+
+The digest auth header can be created from a `WWW-Authenticate` header provided by the intial server response:
+
+```php
+use Pop\Http\Auth;
+use Pop\Http\Client;
+
+$client = new Client(
+    'http://localhost/auth',
+    Auth::createDigest(Auth\Digest::createFromWwwAuth($wwwAuthHeader, 'username', 'password', '/uri')),
+    ['method' => 'POST']
+);
+
+$response = $client->send();
+```
+
 ### Options
 
 The client object provides a `$options` array to pass in general configuration details and data about the request.
@@ -142,16 +242,142 @@ Supported keys in the options array are:
 - `method` - the request method (GET, POST, PUT, PATCH, DELETE, etc.)
 - `headers` - an array of request headers
 - `data` - an array of request data
-- `files` - an array of files on disk to be sent with the request 
-- `async` - trigger an asynchronous request
-- `type` - set the request type (URL-form, JSON, XML or multipart/form)
-- `verify_peer` - enforce or disallow verifying the host (for SSL connections)
-- `allow_self_signed` - allow or disallow the use of self-signed certificates (for SSL connections)
-- `force_custom_method` - for Curl only. Forces the use of CURLOPT_CUSTOMREQUEST
+- `files` - an array of files on disk to be sent with the request
+- `type` - set the request type (URL-form, JSON, XML or multipart/form) 
+- `async` - trigger an asynchronous request (boolean)
+- `verify_peer` - enforce or disallow verifying the host for SSL connections (boolean)
+- `allow_self_signed` - allow or disallow the use of self-signed certificates for SSL connections (boolean)
+- `force_custom_method` - for Curl only. Forces the use of CURLOPT_CUSTOMREQUEST (boolean)
+
+Here is an example using a `base_uri`:
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Request;
+
+$client    = new Client(['base_uri' => 'http://localhost']);
+$response1 = $client->send('/page1'); // Will request http://localhost/page1
+$response2 = $client->send('/page2'); // Will request http://localhost/page2
+$response2 = $client->send('/page3'); // Will request http://localhost/page3
+```
+
+Here is an example to send some JSON data:
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Request;
+
+$client = new Client('http://localhost/post', [
+    'method' => 'POST',
+    'headers' => [
+        'Accept: application/json'
+    ]
+    'data'   => [
+        'foo' => 'bar',
+        'baz' => 123
+    ],
+    'type' => Request::JSON // "application/json"
+]);
+
+$response = $client->send();
+```
+
+Here is an example to send some files:
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Request;
+
+$client = new Client('http://localhost/post', [
+    'method' => 'POST',
+    'files' => [
+        '/path/to/file/image1.jpg',
+        '/path/to/file/image2.jpg',    
+    ],
+    'type' => Request::MULTIPART // "multipart/form-data"
+]);
+
+$response = $client->send();
+```
 
 ### Requests
 
+You can have granular control over the configuration of the request object by interacting with it directly.
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Request;
+
+$request = new Request('http://localhost/', 'POST');
+$request->createAsJson();
+$request->addHeaders([
+    'X-Custom-Header: Custom-Value',
+]);
+$request->setData([
+        'foo' => 'bar',
+        'baz' => 123
+    ]);
+
+$client = new Client($request);
+$response = $cleint->send();
+```
+
+There are four helper methods to configure the request for four different common data types:
+
+- JSON
+- XML
+- URL-encoded form
+- Multipart form
+
+```php
+$request->createAsJson();
+$request->createAsXml();
+$request->createUrlEncoded();
+$request->createMultipart();
+```
+
+Each method effectively set the appropriate `Content-Type` header and properly formats the data for that data type.
+
 ### Responses
+
+Upon sending a request, the response object is automatically created and populated with the content from the raw response.
+
+```php
+use Pop\Http\Client;
+
+$response = Client::post('http://localhost/post', [
+    'data' => [
+        'foo' => 'bar',
+        'baz' => 123
+    ]
+]);
+
+echo $response->getCode();                      // 200
+echo $response->getMessage();                   // OK
+var_dump($response->getHeaders());              // An array of HTTP header objects
+var_dump($response->hasHeader('Content-Type')); // Boolean result
+var_dump($response->getBody());                 // A body object than contains the body content of the response
+```
+
+The header and body entities of both requests and responses are actually objects that store all their relative
+and pertinent data. To access the actual string values of them, you would have to use methods such as these:
+
+```php
+var_dump($response->getHeaderValueAsString('Content-Type')) // i.e., 'application/json'
+var_dump($response->getBodyContent());                      // Get actual string content of the body object
+```
+
+To determine if the return response was a success or an error, the following methods can be used:
+
+```php
+var_dump($response->isSuccess());     // Boolean on 100-, 200- or 300-level responses
+var_dump($response->isError());       // Boolean on 400- or 500-level responses
+var_dump($response->isContinue());    // Boolean on 100-level response
+var_dump($response->isOk());          // Boolean on 200-level response
+var_dump($response->isRedirect());    // Boolean on 300-level response
+var_dump($response->isClientError()); // Boolean on 400-level response
+var_dump($response->isServerError()); // Boolean on 500-level response
+```
 
 ### Handlers
 
