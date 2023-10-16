@@ -473,7 +473,7 @@ And then you can interact with the handler using the `getHandler()` method:
 $client->getHandler()->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 ```
 
-##### Curl
+#### Curl
 
 The handlers allow you to further customize the request by interfacing with each respective handler's settings.
 For `Curl`, that mainly includes setting additional Curl options needed for the request. (**Please Note:** Many
@@ -493,7 +493,7 @@ $client = new Client('http://localhost/');
 $client->setHandler($curl);
 ```
 
-##### Stream
+#### Stream
 
 For `Stream`, that includes setting context options and parameters needed for the request. (**Please Note:**
 Many of the required Stream context options, such as `http`, `http[method]` and `http[header]` are automatically
@@ -514,7 +514,7 @@ $client = new Client('http://localhost/');
 $client->setHandler($stream);
 ```
 
-##### Curl Multi-Handler
+#### Curl Multi-Handler
 
 The Curl Multi-Handler is a special use-case handler that allows for multiple parallel/concurrent requests
 to be made at the same time. Each request will get its own `Client` object, which will be registered with
@@ -815,6 +815,39 @@ in from an inbound client request. This includes:
 - Request headers
 - Request body
 
+A number of methods exists to determine the type of request and access its data:
+
+```php
+$request->isGet();   
+$request->isPost();
+$request->isPut();
+$request->isPatch();
+$request->isDelete();
+```
+
+```php
+$queryData  = $request->getQuery();
+$postData   = $request->getPost();
+$putData    = $request->getPut();
+$patchData  = $request->getPatch();
+$deleteData = $request->getDelete();
+```
+
+```php
+$foo = $request->getQuery('foo');
+$foo = $request->getPost('foo');
+$foo = $request->getPut('foo');
+$foo = $request->getPatch('foo');
+$foo = $request->getDelete('foo');
+```
+
+If there is general data that has been parsed or raw data, that can be accessed via:
+
+```php
+$parsedData = $request->getParsedData();
+$rawData    = $request->getRawData();
+```
+
 As an example, this `curl` command pointing at the following URL with a PHP script can be executed:
 
 ```bash
@@ -839,7 +872,7 @@ Automatically, the server object's request object will be populated with the inc
 script above will produce:
 
 ```text
-Bearer 123456
+Bearer 1234567890
 Array
 (
     [foo] => bar
@@ -881,7 +914,7 @@ $myResponse = new Response();
 $server     = new Server($myRequest, $myResponse);
 ````
 
-##### Filters
+#### Filters
 
 As an extra layer of protection, you can add filters to the request object to filter incoming data:
 
@@ -916,12 +949,30 @@ Array
 )
 ```
 
+#### Redirects & Forwards
+
+You can redirect to another URL by calling the following method:
+
+```php
+use Pop\Http\Server\Response;
+
+Response::redirect('http://www.newlocation.com/');
+```
+
+You can forward a client object's response as the server's response:
+
+```php
+use Pop\Http\Server\Response;
+
+Response::forward($clientResponse);
+```
+
 [Top](#pop-http)
 
 Uploads
 -------
 
-##### Basic file upload
+#### Basic file upload
 
 ```php
 use Pop\Http\Server\Upload;
@@ -943,7 +994,7 @@ The above code creates the upload object, sets the upload path and sets the basi
 which includes a max file size of 10MBs, and an array of allowed common file types as well
 as an array of common disallowed file types.
 
-##### File upload names and overwrites
+#### File upload names and overwrites
 
 By default, the file upload object will not overwrite a file of the same name. In the above
 example, if `$_FILES['file_upload']['name']` is set to 'my_document.docx' and that file
