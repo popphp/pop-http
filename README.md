@@ -545,6 +545,7 @@ A more abbreviated way to initialize a multi-handler would be:
 
 ```php
 use Pop\Http\Client;
+
 // Three GET requests
 $multiHandler = Client::createMulti([
     'http://localhost/test1.php',
@@ -553,9 +554,12 @@ $multiHandler = Client::createMulti([
 ]);
 ```
 
+**or**
+
 ```php
 use Pop\Http\Client;
 use Pop\Http\Client\Request;
+
 // Three POST requests
 $multiHandler = Client::createMulti([
     new Request('http://localhost/test1.php', 'POST'),
@@ -563,7 +567,6 @@ $multiHandler = Client::createMulti([
     new Request('http://localhost/test3.php', 'POST')
 ]);
 ```
-
 
 [Top](#pop-http)
 
@@ -583,6 +586,8 @@ $promise = Client::postAsync('http://localhost/');
 which is equivalent to:
 
 ```php
+use Pop\Http\Client;
+
 $client  = new Client('http://localhost/');
 $promise = $client->postAsync();
 ```
@@ -590,20 +595,32 @@ $promise = $client->postAsync();
 **or**
 
 ```php
+use Pop\Http\Client;
+
 $client  = new Client('http://localhost/', ['method' => 'POST']);
 $promise = $client->sendAsync();
+```
+
+**or**
+
+```php
+use Pop\Http\Client;
+
+$client  = new Client('http://localhost/', ['method' => 'POST', 'async' => true]);
+$promise = $client->send();
 ```
 
 The multi-handler supports asynchronous requests as well and will return a promise object:
 
 ```php
 use Pop\Http\Client;
-// Three GET requests
+
 $multiHandler = Client::createMulti([
     'http://localhost/test1.php',
     'http://localhost/test2.php',
     'http://localhost/test3.php'
 ]);
+
 $promise = $multiHandler->sendAsync();
 ```
 
