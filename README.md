@@ -63,6 +63,16 @@ request data. Both the request and response objects can have headers and a body.
 a response code and response message, along with other helper functions to determine if the request yielded a
 successful response or an error.
 
+**NOTE:** The constructor of the `Pop\Http\Client` class is flexible and can take any of the following
+parameters in any order:
+
+- A URI string
+- A `Pop\Http\Client\Request` object
+- A `Pop\Http\Client\Response` object (not common, as the response object is typically auto-populated)
+- A `Pop\Http\Auth` object
+- A handler object that is an instance of `Pop\Http\Client\Handler\HandlerInterface`
+- An `$options` array 
+
 ### Quickstart
 
 The most basic way to wire up a simple `GET` request would be:
@@ -157,7 +167,7 @@ $responseDelete = Client::patch('http://localhost/delete', ['data' => ['foo' => 
 
 ### Auth
 
-The is an auth header class to assist in wiring up different types of standard authorization headers:
+There is an auth header class to assist in wiring up different types of standard authorization headers:
 
 - Basic
 - Bearer Token
