@@ -645,7 +645,7 @@ $promise->then(function(Response $response) {
 $promise->resolve();
 ```
 
-As a convenience for a simple `then()` call, you can pass a `$resolve` flag as true to force the promise
+As a convenience for a simple `then()` call, you can pass a `$resolve` flag as `true` to force the promise
 to resolve without having to call the `resolve()` method:
 
 ```php
@@ -691,7 +691,8 @@ $promise = Client::getAsync('http://localhost/test1.php');
 
 $promise->then(function(Client\Response $response) {
     $data1 = $response->getParsedResponse();
-    $promise = Client::getAsync('http://localhost/test2.php')->then(function(Client\Response $response) use ($data1) {
+    $promise = Client::getAsync('http://localhost/test2.php')
+        ->then(function(Client\Response $response) use ($data1) {
         $data2 = $response->getParsedResponse();
         // Do something with both the data results from promise 1 and 2.
     }, true);
