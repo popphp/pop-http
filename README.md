@@ -14,6 +14,10 @@ pop-http
   - [Responses](#responses)
   - [Handlers](#handlers)
 * [Promises](#promises)
+  - [Wait](#wait)
+  - [Then](#then)
+  - [Forwarding](#forwarding)
+  - [Nesting](#nesting)
 * [CLI Conversion](#cli-conversions)
 * [Server](#server)
 * [Uploads](#Uploads)
@@ -532,6 +536,107 @@ $multiHandler = Client::createMulti([
 
 Promises
 --------
+
+Promises allow you to stage asynchronous requests and call them at a later time in the application. When you
+initialize a client object and call it asynchronously, it will return a promise object. There are few different
+ways to achieve this:
+
+```php
+use Pop\Http\Client;
+
+$promise = Client::getAsync('http://localhost/');
+```
+
+which is equivalent to:
+
+```php
+$client  = new Client('http://localhost/');
+$promise = $client->getAsync();
+```
+
+**OR**
+
+```php
+$client  = new Client('http://localhost/', ['method' => 'POST']);
+$promise = $client->sendAsync();
+```
+
+The multi-handler supports asynchronous requests as well and will return a promise object:
+
+```php
+use Pop\Http\Client;
+
+$multiHandler = Client::createMulti([
+    'http://localhost/test1.php',
+    'http://localhost/test2.php',
+    'http://localhost/test3.php'
+]);
+$promise = $multiHandler->sendAsync();
+```
+
+### Wait
+
+Once you have a promise object, the most basic call is to call `wait()`, which simply triggers the request
+and waits until the request is finished before allowing the application to continue. Upon completion,
+the promise will return a response object. Otherwise, it will throw an exception, so it is best to wrap
+the call in a `try/catch` block:
+
+```php
+try {
+    $response = $promise->wait();
+    print_r($response->getParsedResponse());
+} catch (\Exception $e) {
+    echo $e->getMessage() . PHP_EOL;
+}
+```
+
+If you need something that degrades a little more gracefully and need to suppress the thrown exception,
+you can pass `false` as the `$unwrap` parameter into the `wait()` method to prevent the exception from
+being thrown:
+
+```php
+$response = $promise->wait(false);
+if ($response instanceof Response) {
+    print_r($response->getParsedResponse());
+}
+```
+
+### Then
+
+You can use the `then()` method, along with `catch()` and `finally()` to assign callbacks to handle 
+each specific scenario:
+
+- `then()` - on success callback
+- `catch()` - on failure callback
+- `finally()` - callback to run at the end no matter what the result is
+
+Additionally, a cancel callback can be set with the `setCancel()` method and will be triggered at any
+time the promise is cancelled. Once the promise is configured, the `resolve()` method needs to be called
+to finish the request.
+
+```php
+use Pop\Http\Promise;
+use Pop\Http\Client\Response;
+
+$promise->setCancel(function(Promise $promise) {
+    // Do something upon cancellation
+});
+
+$promise->then(function(Response $response) {
+    // On success
+})->catch(function(Response $response)) {
+    // On failure
+})->finally(function(Promise $promise) {
+    // Do something a the end
+});
+
+$promise->resolve();
+```
+
+### Forwarding
+
+### Nesting
+
 
 [Top](#pop-http)
 
