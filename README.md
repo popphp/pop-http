@@ -92,16 +92,16 @@ $response = $client->send();
 ```
 
 In the examples above, the `$response` object returned is a full response object, complete with all of the headers,
-data, messaging and content body that comes with an HTTP response. If you want to simply access the pertinent body
-content of the response object, you can call this:
+data, messaging and content that comes with an HTTP response. If you want to simply access the pertinent content of
+the response object, this method can be used:
 
 ```php
 $content = $response->getParsedResponse();
 ```
 
-That method will attempt to auto-negotiate the content-type and give an appropriate data response or object. For example,
-if the content type of the response was `application/json`, then the data returned will be a PHP array representation of
-that JSON data.
+That method will attempt to auto-negotiate the `Content-Type` header and give an appropriate data response or object.
+For example, if the content type of the response was `application/json`, then the data returned will be a PHP array
+representation of that JSON data.
 
 A `POST` request can be given some data in the `$options` array to send along with the request:
 
@@ -145,7 +145,15 @@ $client = new Client('http://localhost/post', [
 $response = $client->send();
 ```
 
-All of the standard HTTP request methods are accessible in the manner outlined above.
+All of the standard HTTP request methods are accessible in the manner outlined above. For example:
+
+```php
+use Pop\Http\Client;
+
+$responsePut    = Client::put('http://localhost/put', ['data' => ['foo' => 'bar']]);
+$responsePatch  = Client::patch('http://localhost/patch', ['data' => ['foo' => 'bar']]);
+$responseDelete = Client::patch('http://localhost/delete', ['data' => ['foo' => 'bar']]);
+```
 
 ### Auth
 
