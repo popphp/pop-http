@@ -273,7 +273,7 @@ Supported keys in the options array are:
 - `async` - trigger an asynchronous request (boolean)
 - `verify_peer` - enforce or disallow verifying the host for SSL connections (boolean)
 - `allow_self_signed` - allow or disallow the use of self-signed certificates for SSL connections (boolean)
-- `force_custom_method` - for Curl only. Forces the use of CURLOPT_CUSTOMREQUEST (boolean)
+- `force_custom_method` - for Curl only. Forces the use of `CURLOPT_CUSTOMREQUEST` (boolean)
 
 Here is an example using a `base_uri`:
 
@@ -340,9 +340,9 @@ $request->addHeaders([
     'X-Custom-Header: Custom-Value',
 ]);
 $request->setData([
-        'foo' => 'bar',
-        'baz' => 123
-    ]);
+    'foo' => 'bar',
+    'baz' => 123
+]);
 
 $client = new Client($request);
 $response = $cleint->send();
@@ -382,15 +382,23 @@ echo $response->getCode();                      // 200
 echo $response->getMessage();                   // OK
 var_dump($response->getHeaders());              // An array of HTTP header objects
 var_dump($response->hasHeader('Content-Type')); // Boolean result
-var_dump($response->getBody());                 // A body object than contains the body content of the response
+var_dump($response->getBody());                 // A body object than contains the response content
 ```
 
 The header and body entities of both requests and responses are actually objects that store all their relative
 and pertinent data. To access the actual string values of them, you would have to use methods such as these:
 
 ```php
-var_dump($response->getHeaderValueAsString('Content-Type')) // i.e., 'application/json'
-var_dump($response->getBodyContent());                      // Get actual string content of the body object
+// i.e., 'application/json'
+var_dump($response->getHeaderValueAsString('Content-Type'));
+// Get actual string content of the body object
+var_dump($response->getBodyContent());
+```
+
+As mentioned above, using the following method will get the parsed content based on `Content-Type` directly:
+
+```php
+var_dump($response->getParsedResponse());
 ```
 
 To determine if the return response was a success or an error, the following methods can be used:
