@@ -704,14 +704,15 @@ The return of the first `then()` call needs to be another promise object.
 
 ```php
 use Pop\Http\Client;
+use Pop\Http\Client\Response;
 
 $promise1 = Client::getAsync('http://localhost/test1.php');
 $promise2 = Client::getAsync('http://localhost/test2.php');
 
-$promise1->then(function(Client\Response $response) use ($promise2) {
+$promise1->then(function(Response $response) use ($promise2) {
     // Do something with the first promise response
     return $promise2;
-})->then(function(Client\Response $response) {
+})->then(function(Response $response) {
     // Do something with the second promise response
 });
 
@@ -724,13 +725,14 @@ Promises can be "nested" together as well, whereas one resolved promise creates 
 
 ```php
 use Pop\Http\Client;
+use Pop\Http\Client\Response;
 
 $promise = Client::getAsync('http://localhost/test1.php');
 
-$promise->then(function(Client\Response $response) {
+$promise->then(function(Response $response) {
     $data1   = $response->getParsedResponse();
     $promise = Client::getAsync('http://localhost/test2.php')
-        ->then(function(Client\Response $response) use ($data1) {
+        ->then(function(Response $response) use ($data1) {
             $data2 = $response->getParsedResponse();
             // Do something with both the data results from promise 1 and 2.
         }, true);
