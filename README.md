@@ -441,6 +441,12 @@ $client = new Client('http://localhost/');
 $client->setHandler(new Stream());
 ```
 
+And then you can interact with the handler using the `getHandler()` method:
+
+```php
+$client->getHandler()->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+```
+
 ##### Curl
 
 The handlers allow you to further customize the request by interfacing with each respective handler's settings.
