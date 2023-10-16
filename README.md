@@ -808,8 +808,8 @@ and a response object. However, opposite to the client object, the server object
 from the incoming request headers and data, while the response object is available to be configured as required to
 produce and send a response to the calling client.
 
-Within an application, creating a server will automatically take in the global request data that would come in from an
-inbound client request. This includes:
+Within an application, creating a server object will automatically take in the global request data that would come
+in from an inbound client request. This includes:
 
 - Request data (`$_GET`, `$_POST`, etc)
 - Request headers
@@ -818,7 +818,7 @@ inbound client request. This includes:
 As an example, this `curl` command pointing at the following URL with a PHP script can be executed:
 
 ```bash
-curl -i -X POST `--header "Authorization: Bearer 1234567890"` \
+curl -i -X POST --header "Authorization: Bearer 1234567890"` \
   --data "foo=bar&baz=123" "http://localhost/post.php"
 ```
 
@@ -866,6 +866,54 @@ HTTP/1.1 200 OK
 Content-Type: text/plain
 
 This is the response
+```
+
+By default, the server object constructor will instantiate new request and response objects, but you can inject
+your own:
+
+```php
+use Pop\Http\Server;
+use Pop\Http\Server\Request;
+use Pop\Http\Server\Response;
+
+$myRequest  = new Request();
+$myResponse = new Response();
+$server     = new Server($myRequest, $myResponse);
+````
+
+##### Filters
+
+As an extra layer of protection, you can add filters to the request object to filter incoming data:
+
+```php
+use Pop\Http\Server;
+use Pop\Http\Server\Reqeust;
+
+$filters = ['strip_tags', 'addslashes'];
+$server = new Server(new Request(null, $filters));
+```
+
+And with the following curl command with data that contains tags and a single quote:
+
+```bash
+curl -i -X POST --data "foo=<script>bad's script</script>" "http://localhost:8000/post.php"
+```
+
+```php
+if ($server->request->isPost()) {
+    print_r($server->request->getPost());
+}
+```
+
+The data will be filtered:
+
+```text
+Bearer 123456
+Array
+(
+    [foo] => bad\'s script
+
+)
 ```
 
 [Top](#pop-http)
