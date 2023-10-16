@@ -239,7 +239,7 @@ $response = Client::post(
 
 ### Options
 
-The client object supports an `$options` array to pass in general configuration details and data about the request.
+The client object supports an `$options` array to pass in general configuration details and data for the request.
 Supported keys in the options array are:
 
 - `base_uri` - the base URI for re-submitting many requests with the same client to different endpoints on the same domain
@@ -278,9 +278,6 @@ use Pop\Http\Client;
 use Pop\Http\Client\Request;
 
 $client = new Client('http://localhost/post', [
-    'headers' => [
-        'Accept: application/json'
-    ]
     'data'   => [
         'foo' => 'bar',
         'baz' => 123
@@ -326,9 +323,6 @@ use Pop\Http\Client;
 use Pop\Http\Client\Request;
 
 $client = new Client('http://localhost/post', [
-    'headers' => [
-        'Accept: application/json'
-    ]
     'data'   => [
         'foo' => 'bar',
         'baz' => 123
@@ -345,7 +339,7 @@ that JSON data (instead of a full response object.) If you still need to access 
 do so by calling:
 
 ```php
-$fullResponse = $client->getResponse();
+$clientResponse = $client->getResponse();
 ```
 
 ### Requests
@@ -370,7 +364,7 @@ $client = new Client($request);
 $response = $cleint->send();
 ```
 
-There are four helper methods to configure the request for four different common data types:
+There are four ways to configure the request for four different common data types:
 
 - JSON
 - XML
@@ -378,13 +372,24 @@ There are four helper methods to configure the request for four different common
 - Multipart form
 
 ```php
-$request->createAsJson();
-$request->createAsXml();
-$request->createUrlEncoded();
-$request->createMultipart();
+use Pop\Http\Client\Request;
+
+$requestJson  = Request::createJson('http://localhost/', 'POST', $data);
+$requestXml   = Request::createXml('http://localhost/', 'POST', $data);
+$requestUrl   = Request::createUrlForm('http://localhost/', 'POST', $data);
+$requestMulti = Request::createMultipart('http://localhost/', 'POST', $data);
 ```
 
-Each method effectively set the appropriate `Content-Type` header and properly formats the data for that data type.
+**or**
+
+```php
+$request->createAsJson();
+$request->createAsXml();
+$request->createAsUrlEncoded();
+$request->createAsMultipart();
+```
+
+Each way effectively sets the appropriate `Content-Type` header and properly formats the data for that data type.
 
 ### Responses
 
@@ -407,17 +412,17 @@ var_dump($response->hasHeader('Content-Type')); // Boolean result
 var_dump($response->getBody());                 // A body object than contains the response content
 ```
 
-The header and body entities of both requests and responses are actually objects that store all their relative
-and pertinent data. To access the actual string values of them, you would have to use methods such as these:
+The header and body entities of both requests and responses are actually objects that store all their pertinent data.
+To access the actual data content, you would have to use methods such as these:
 
 ```php
 // i.e., 'application/json'
 var_dump($response->getHeaderValueAsString('Content-Type'));
-// Get actual string content of the body object
+// Get actual content of the body object
 var_dump($response->getBodyContent());
 ```
 
-As mentioned above, using the following method will get the parsed content based on `Content-Type` directly:
+As mentioned above, using the following method will get the parsed content based on `Content-Type`:
 
 ```php
 var_dump($response->getParsedResponse());

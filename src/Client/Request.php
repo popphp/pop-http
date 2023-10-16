@@ -108,6 +108,62 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Factory method to create a JSON Request object
+     *
+     * @param  Uri|string|null $uri
+     * @param  string $method
+     * @param  array|Data|null $data
+     * @throws Exception
+     * @return Request
+     */
+    public static function createJson(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    {
+        return new self($uri, $method, $data, Request::JSON);
+    }
+
+    /**
+     * Factory method to create an XML Request object
+     *
+     * @param  Uri|string|null $uri
+     * @param  string $method
+     * @param  array|Data|null $data
+     * @throws Exception
+     * @return Request
+     */
+    public static function createXml(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    {
+        return new self($uri, $method, $data, Request::XML);
+    }
+
+    /**
+     * Factory method to create a URL-encoded Request object
+     *
+     * @param  Uri|string|null $uri
+     * @param  string $method
+     * @param  array|Data|null $data
+     * @throws Exception
+     * @return Request
+     */
+    public static function createUrlForm(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    {
+        return new self($uri, $method, $data, Request::URLFORM);
+    }
+
+    /**
+     * Factory method to create a multipart Request object
+     *
+     * @param  Uri|string|null $uri
+     * @param  string $method
+     * @param  array|Data|null $data
+     * @throws Exception
+     * @return Request
+     */
+    public static function createMultipart(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    {
+        return new self($uri, $method, $data, Request::MULTIPART);
+    }
+
+    /**
      * Set method
      *
      * @param  string $method
@@ -271,10 +327,10 @@ class Request extends AbstractRequest
                 $this->createAsXml();
                 break;
             case self::URLFORM:
-                $this->createUrlEncoded();
+                $this->createAsUrlEncoded();
                 break;
             case self::MULTIPART:
-                $this->createMultipart();
+                $this->createAsMultipart();
                 break;
         }
 
@@ -360,7 +416,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createUrlEncoded(): Request
+    public function createAsUrlEncoded(): Request
     {
         $this->requestType = self::URLFORM;
 
@@ -387,7 +443,7 @@ class Request extends AbstractRequest
      *
      * @return Request
      */
-    public function createMultipart(): Request
+    public function createAsMultipart(): Request
     {
         $this->requestType = self::MULTIPART;
         return $this;

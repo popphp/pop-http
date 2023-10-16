@@ -258,7 +258,7 @@ class CommandTest extends TestCase
     public function testClientToCommand5()
     {
         $request = new Client\Request('http://localhost:8000/post.php', 'POST');
-        $request->createMultipart()
+        $request->createAsMultipart()
             ->setData([
                 'foo' => 'bar',
                 'baz' => 123
