@@ -823,6 +823,7 @@ $request->isPost();
 $request->isPut();
 $request->isPatch();
 $request->isDelete();
+$request->hasFiles();
 ```
 
 ```php
@@ -831,6 +832,9 @@ $postData   = $request->getPost();
 $putData    = $request->getPut();
 $patchData  = $request->getPatch();
 $deleteData = $request->getDelete();
+$filesData  = $request->getFiles();
+$serverData = $request->getServer();
+$envData    = $request->getEnv();
 ```
 
 ```php
@@ -839,6 +843,9 @@ $foo = $request->getPost('foo');
 $foo = $request->getPut('foo');
 $foo = $request->getPatch('foo');
 $foo = $request->getDelete('foo');
+$foo = $request->getFiles('foo');
+$foo = $request->getServer('foo');
+$foo = $request->getEnv('foo');
 ```
 
 If there is general data that has been parsed or raw data, that can be accessed via:
