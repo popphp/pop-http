@@ -78,7 +78,7 @@ which is also the equivalent to:
 ```php
 use Pop\Http\Client;
 
-$client = new Client('http://localhost/');
+$client   = new Client('http://localhost/');
 $response = $client->get();
 ```
 
@@ -87,7 +87,7 @@ $response = $client->get();
 ```php
 use Pop\Http\Client;
 
-$client = new Client('http://localhost/', ['method' => 'GET']);
+$client   = new Client('http://localhost/', ['method' => 'GET']);
 $response = $client->send();
 ```
 
