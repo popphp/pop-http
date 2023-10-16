@@ -266,9 +266,9 @@ use Pop\Http\Client;
 use Pop\Http\Client\Request;
 
 $client    = new Client(['base_uri' => 'http://localhost']);
-$response1 = $client->send('/page1'); // Will request http://localhost/page1
-$response2 = $client->send('/page2'); // Will request http://localhost/page2
-$response2 = $client->send('/page3'); // Will request http://localhost/page3
+$response1 = $client->get('/page1'); // Will request http://localhost/page1
+$response2 = $client->get('/page2'); // Will request http://localhost/page2
+$response2 = $client->get('/page3'); // Will request http://localhost/page3
 ```
 
 Here is an example to send some JSON data:
@@ -278,7 +278,6 @@ use Pop\Http\Client;
 use Pop\Http\Client\Request;
 
 $client = new Client('http://localhost/post', [
-    'method' => 'POST',
     'headers' => [
         'Accept: application/json'
     ]
@@ -289,7 +288,7 @@ $client = new Client('http://localhost/post', [
     'type' => Request::JSON // "application/json"
 ]);
 
-$response = $client->send();
+$response = $client->post();
 ```
 
 Here is an example to send some files:
@@ -308,6 +307,45 @@ $client = new Client('http://localhost/post', [
 ]);
 
 $response = $client->send();
+```
+
+**Automatic Content Negotiation**
+
+In the above examples, the `$response` returned is a full response object. If you want to get the actual response
+content, as mentioned above, you would call:
+
+```php
+$content = $response->getParsedResponse();
+```
+
+If you would like to skip this step and have the client attempt content negotiation automatically and return the
+parsed content, you can set the `auto` option to true.
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Request;
+
+$client = new Client('http://localhost/post', [
+    'headers' => [
+        'Accept: application/json'
+    ]
+    'data'   => [
+        'foo' => 'bar',
+        'baz' => 123
+    ],
+    'type' => Request::JSON // "application/json"
+    'auto' => true
+]);
+
+$response = $client->post();
+```
+
+If the server in the above example returns a JSON payload, the response will now be a PHP array representation of
+that JSON data (instead of a full response object.) If you still need to access the full response object, you can
+do so by calling:
+
+```php
+$fullResponse = $client->getResponse();
 ```
 
 ### Requests
