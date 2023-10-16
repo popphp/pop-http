@@ -176,6 +176,7 @@ class Client extends AbstractHttp
      *  - 'base_uri'
      *  - 'method'
      *  - 'headers'
+     *  - 'user_agent'
      *  - 'data'
      *  - 'files'
      *  - 'type'
@@ -709,6 +710,15 @@ class Client extends AbstractHttp
         // Set handler
         if (!$this->hasHandler()) {
             $this->setHandler(new Curl());
+        }
+
+        // Set user-agent
+        if ($this->hasOption('user_agent')) {
+            if ($this->handler instanceof Curl) {
+                $this->handler->setOption(CURLOPT_USERAGENT, $this->options['user_agent']);
+            } else if ($this->handler instanceof Stream) {
+                $this->handler->addContextOption('http', ['user_agent' => $this->options['user_agent']]);
+            }
         }
 
         // Handle SSL options

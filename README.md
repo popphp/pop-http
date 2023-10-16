@@ -263,6 +263,7 @@ Supported keys in the options array are:
 - `base_uri` - the base URI for re-submitting many requests with the same client to different endpoints on the same domain
 - `method` - the request method (GET, POST, PUT, PATCH, DELETE, etc.)
 - `headers` - an array of request headers
+- `user_agent` - the user agent string
 - `data` - an array of request data
 - `files` - an array of files on disk to be sent with the request
 - `type` - set the request type (URL-form, JSON, XML or multipart/form)
@@ -414,6 +415,108 @@ var_dump($response->isServerError()); // Boolean on 500-level response
 ```
 
 ### Handlers
+
+You can choose to use a different handler with the client object. The available handlers are:
+
+- `Pop\Http\Client\Handler\Curl` - uses the PHP curl extensions (default)
+- `Pop\Http\Client\Handler\Stream` - uses PHP streams
+- `Pop\Http\Client\Handler\CurlMulti` - reserved for multiple parallel/concurrent requests at the same time
+
+You can inject the handler into the client's constructor:
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Handler\Stream;
+
+$client = new Client('http://localhost/', new Stream());
+```
+
+or through the `setHandler()` method:
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Handler\Stream;
+
+$client = new Client('http://localhost/');
+$client->setHandler(new Stream());
+```
+
+The `Curl` and `Stream` handlers allow you to further customize the request by interfacing with each
+respective handler's settings. For `Curl`, that mainly includes setting additional Curl options needed for
+the request. (**Please Note:** Many of the required Curl options, such as `CURLOPT_POST`, `CURLOPT_URL` and
+`CURLOPT_HTTPHEADER` are automatically set based on the initial configuration of the client object.) 
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Handler\Curl;
+
+$curl = new Curl();
+$curl->setOptions([
+    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_0
+]);
+
+$client = new Client('http://localhost/');
+$client->setHandler($curl);
+```
+
+For `Stream`, that includes setting context options and parameters needed for the request. (**Please Note:**
+Many of the required Stream context options, such as `http`, `http[method]` and `http[header]` are automatically
+set based on the initial configuration of the client object.)
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Handler\Stream;
+
+$stream = new Stream();
+$stream->setContextOptions([
+    'http' => [
+        'protocol_version' => '1.0'
+    ]
+]);
+
+$client = new Client('http://localhost/');
+$client->setHandler($stream);
+```
+
+##### Curl Multi-Handler
+
+The Curl Multi-Handler is a special use-case handler that allows for multiple parallel/concurrent requests
+to be made at the same time. Each request will get its own `Client` object, which will be registered with
+the multi-handler object.
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Request;
+use Pop\Http\Client\Handler\CurlMulti;
+
+$multiHandler = new CurlMulti();
+$client1      = new Client(new Request('http://localhost/test1.php'), $multiHandler);
+$client2      = new Client(new Request('http://localhost/test2.php'), $multiHandler);
+$client3      = new Client(new Request('http://localhost/test3.php'), $multiHandler);
+
+$running = null;
+
+do {
+    $multiHandler->send($running);
+} while ($running);
+
+$responses = $multiHandler->getAllResponses();
+```
+
+The `$multiHandler->getAllResponses()` method will return an array of all of the response objects returned
+from each of the requests.
+
+A more abbreviated way to initialize a multi-handler would be:
+
+```php
+use Pop\Http\Client;
+
+$multiHandler = Client::createMulti([
+    'http://localhost/test1.php',
+    'http://localhost/test2.php',
+    'http://localhost/test3.php'
+]);
+```
 
 [Top](#pop-http)
 
