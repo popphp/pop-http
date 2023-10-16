@@ -229,7 +229,9 @@ use Pop\Http\Client;
 
 $client = new Client(
     'http://localhost/auth',
-    Auth::createDigest(new Auth\Digest('realm', 'username', 'password', '/uri', 'SERVER_NONCE')),
+    Auth::createDigest(
+    new Auth\Digest('realm', 'username', 'password', '/uri', 'SERVER_NONCE')
+    ),
     ['method' => 'POST']
 );
 
@@ -253,15 +255,19 @@ $response = $client->send();
 
 ### Options
 
-The client object provides a `$options` array to pass in general configuration details and data about the request.
+The client object supports an `$options` array to pass in general configuration details and data about the request.
 Supported keys in the options array are:
 
-- `base_uri` - the base URI for resubmitting many requests with the same client to different endpoints on the same domain
+- `base_uri` - the base URI for re-submitting many requests with the same client to different endpoints on the same domain
 - `method` - the request method (GET, POST, PUT, PATCH, DELETE, etc.)
 - `headers` - an array of request headers
 - `data` - an array of request data
 - `files` - an array of files on disk to be sent with the request
-- `type` - set the request type (URL-form, JSON, XML or multipart/form) 
+- `type` - set the request type (URL-form, JSON, XML or multipart/form)
+  + `Request::URLFORM`
+  + `Request::JSON`
+  + `Request::XML`
+  + `Request::MULTIPART`
 - `async` - trigger an asynchronous request (boolean)
 - `verify_peer` - enforce or disallow verifying the host for SSL connections (boolean)
 - `allow_self_signed` - allow or disallow the use of self-signed certificates for SSL connections (boolean)
