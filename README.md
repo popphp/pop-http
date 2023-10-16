@@ -818,6 +818,19 @@ in from an inbound client request. This includes:
 A number of methods exists to determine the type of request and access its data:
 
 ```php
+$headers = $reqeuest->getHeaders();
+if ($request->hasHeader('Content-Type')) {
+    $contentType = $request->getHeader('Content-Type');         // Header object
+    var_dump($request->getHeaderValueAsString('Content-Type')); // Header value as string
+}
+```
+
+```php
+$body = $request->getBody();           // Body object
+var_dump($response->getBodyContent()); // Get actual content of the body object
+```
+
+```php
 $request->isGet();   
 $request->isPost();
 $request->isPut();
