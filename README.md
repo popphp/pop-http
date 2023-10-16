@@ -522,13 +522,12 @@ the multi-handler object.
 
 ```php
 use Pop\Http\Client;
-use Pop\Http\Client\Request;
 use Pop\Http\Client\Handler\CurlMulti;
 
 $multiHandler = new CurlMulti();
-$client1      = new Client(new Request('http://localhost/test1.php'), $multiHandler);
-$client2      = new Client(new Request('http://localhost/test2.php'), $multiHandler);
-$client3      = new Client(new Request('http://localhost/test3.php'), $multiHandler);
+$client1      = new Client('http://localhost/test1.php', $multiHandler);
+$client2      = new Client('http://localhost/test2.php', $multiHandler);
+$client3      = new Client('http://localhost/test3.php', $multiHandler);
 
 $running = null;
 
