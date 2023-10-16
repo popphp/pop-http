@@ -16,6 +16,30 @@ class RequestTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Client\Data', $request->getData());
     }
 
+    public function testCreateJson()
+    {
+        $request = Request::createJson('http://localhost/', 'GET', ['foo' => 'bar']);
+        $this->assertTrue($request->isJson());
+    }
+
+    public function testCreateXml()
+    {
+        $request = Request::createXml('http://localhost/', 'GET', ['foo' => 'bar']);
+        $this->assertTrue($request->isXml());
+    }
+
+    public function testCreateUrlForm()
+    {
+        $request = Request::createUrlEncoded('http://localhost/', 'GET', ['foo' => 'bar']);
+        $this->assertTrue($request->isUrlEncoded());
+    }
+
+    public function testCreateMultipart()
+    {
+        $request = Request::createMultipart('http://localhost/', 'GET', ['foo' => 'bar']);
+        $this->assertTrue($request->isMultipart());
+    }
+
     public function testGetterAndSetter()
     {
         $request = Request::create('http://localhost/');

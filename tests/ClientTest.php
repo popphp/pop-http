@@ -57,6 +57,17 @@ class ClientTest extends TestCase
         $client->prepare();
     }
 
+    public function testAddOptions()
+    {
+        $client = new Client();
+        $client->addOptions([
+            'async' => true,
+            'auto'  => true
+        ]);
+        $this->assertTrue($client->hasOption('async'));
+        $this->assertTrue($client->hasOption('auto'));
+    }
+
     public function testMethod1()
     {
         $client = new Client();
@@ -73,13 +84,14 @@ class ClientTest extends TestCase
         $this->assertEquals('POST', $client->getMethod());
     }
 
-    public function testPrepare()
+    public function testPrepareCurl()
     {
         $client = new Client(
             [
                 'base_uri'          => 'http://localhost',
                 'method'            => 'POST',
                 'headers'           => ['Authorization' => 'Bearer 123456'],
+                'user_agent'        => 'popphp/pop-http 1.0',
                 'data'              => ['foo' => 'bar'],
                 'type'              => 'application/x-www-form-urlencoded',
                 'verify_peer'       => true,
@@ -89,6 +101,30 @@ class ClientTest extends TestCase
         $client->prepare('/foo/bar');
         $this->assertTrue($client->hasRequest());
         $this->assertEquals('POST', $client->getRequest()->getMethod());
+        $this->assertEquals('popphp/pop-http 1.0', $client->getHandler()->getOption(CURLOPT_USERAGENT));
+        $this->assertTrue($client->hasHandler());
+        $this->assertTrue($client->getRequest()->hasData());
+    }
+
+    public function testPrepareStream()
+    {
+        $client = new Client(
+            new Client\Handler\Stream(),
+            [
+                'base_uri'          => 'http://localhost',
+                'method'            => 'POST',
+                'headers'           => ['Authorization' => 'Bearer 123456'],
+                'user_agent'        => 'popphp/pop-http 1.0',
+                'data'              => ['foo' => 'bar'],
+                'type'              => 'application/x-www-form-urlencoded',
+                'verify_peer'       => true,
+                'allow_self_signed' => false
+            ]
+        );
+        $client->prepare('/foo/bar');
+        $this->assertTrue($client->hasRequest());
+        $this->assertEquals('POST', $client->getRequest()->getMethod());
+        $this->assertEquals('popphp/pop-http 1.0', $client->getHandler()->getContextOption('http')['user_agent']);
         $this->assertTrue($client->hasHandler());
         $this->assertTrue($client->getRequest()->hasData());
     }

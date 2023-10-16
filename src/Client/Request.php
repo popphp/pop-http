@@ -144,7 +144,7 @@ class Request extends AbstractRequest
      * @throws Exception
      * @return Request
      */
-    public static function createUrlForm(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    public static function createUrlEncoded(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
     {
         return new self($uri, $method, $data, Request::URLFORM);
     }
