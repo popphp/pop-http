@@ -271,11 +271,11 @@ Supported keys in the options array are:
 - `data` - an array of request data
 - `files` - an array of files on disk to be sent with the request
 - `type` - set the request type (URL-form, JSON, XML or multipart/form)
-  + `Request::URLFORM`
-  + `Request::JSON`
-  + `Request::XML`
-  + `Request::MULTIPART`
-- `auto` - trigger automatic content negotiation and return the parsed content (boolean)
+  + `Request::URLFORM` (`application/x-www-form-urlencoded`)
+  + `Request::JSON` (`application/json`)
+  + `Request::XML` (`application/xml`)
+  + `Request::MULTIPART` (`multipart/form-data`)
+- `auto` - trigger automatic content negotiation and return the parsed content, if possible (boolean)
 - `async` - trigger an asynchronous request (boolean)
 - `verify_peer` - enforce or disallow verifying the host for SSL connections (boolean)
 - `allow_self_signed` - allow or disallow the use of self-signed certificates for SSL connections (boolean)
