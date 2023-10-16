@@ -690,12 +690,12 @@ use Pop\Http\Client;
 $promise = Client::getAsync('http://localhost/test1.php');
 
 $promise->then(function(Client\Response $response) {
-    $data1 = $response->getParsedResponse();
+    $data1   = $response->getParsedResponse();
     $promise = Client::getAsync('http://localhost/test2.php')
         ->then(function(Client\Response $response) use ($data1) {
-        $data2 = $response->getParsedResponse();
-        // Do something with both the data results from promise 1 and 2.
-    }, true);
+            $data2 = $response->getParsedResponse();
+            // Do something with both the data results from promise 1 and 2.
+        }, true);
 }, true);
 ```
 
