@@ -817,6 +817,8 @@ in from an inbound client request. This includes:
 
 A number of methods exists to determine the type of request and access its data:
 
+**Headers**
+
 ```php
 $headers = $reqeuest->getHeaders();
 if ($request->hasHeader('Content-Type')) {
@@ -825,10 +827,14 @@ if ($request->hasHeader('Content-Type')) {
 }
 ```
 
+**Body**
+
 ```php
 $body = $request->getBody();           // Body object
 var_dump($response->getBodyContent()); // Get actual content of the body object
 ```
+
+**Method**
 
 ```php
 $request->isGet();   
@@ -838,6 +844,8 @@ $request->isPatch();
 $request->isDelete();
 $request->hasFiles();
 ```
+
+**Data**
 
 ```php
 $queryData  = $request->getQuery();
