@@ -635,9 +635,9 @@ $promise->setCancel(function(Promise $promise) {
 });
 
 $promise->then(function(Response $response) {
-    // On success
+    // Do something on success
 })->catch(function(Response $response)) {
-    // On failure
+    // Do something on failure
 })->finally(function(Promise $promise) {
     // Do something at the end
 });
@@ -645,10 +645,58 @@ $promise->then(function(Response $response) {
 $promise->resolve();
 ```
 
+As a convenience for a simple `then()` call, you can pass a `$resolve` flag as true to force the promise
+to resolve without having to call the `resolve()` method:
+
+```php
+use Pop\Http\Client\Response;
+
+// Force resolve
+$promise->then(function(Response $response) {
+    // Do something on success
+}, true);
+```
+
+The `catch()` and `finally()` methods also have the same `$resolve` force flag.
+
 ### Forwarding
+
+You can chain multiple `then()` method calls together, which is sometimes called "forwarding" a promise.
+The return of the first `then()` call needs to be another promise object.
+
+```php
+use Pop\Http\Client;
+
+$promise1 = Client::getAsync('http://localhost/test1.php');
+$promise2 = Client::getAsync('http://localhost/test2.php');
+
+$promise1->then(function(Client\Response $response) use ($promise2) {
+    // Do something with the first promise response
+    return $promise2;
+})->then(function(Client\Response $response) {
+    // Do something with the second promise response
+});
+
+$promise1->resolve();
+```
 
 ### Nesting
 
+Promises can be "nested" together as well, whereas one resolved promise creates and triggers another promise:
+
+```php
+use Pop\Http\Client;
+
+$promise = Client::getAsync('http://localhost/test1.php');
+
+$promise->then(function(Client\Response $response) {
+    $data1 = $response->getParsedResponse();
+    $promise = Client::getAsync('http://localhost/test2.php')->then(function(Client\Response $response) use ($data1) {
+        $data2 = $response->getParsedResponse();
+        // Do something with both the data results from promise 1 and 2.
+    }, true);
+}, true);
+```
 
 [Top](#pop-http)
 
