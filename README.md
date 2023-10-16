@@ -626,10 +626,10 @@ $promise = $multiHandler->sendAsync();
 
 ### Wait
 
-Once you have a promise object, the most basic call is to call `wait()`, which simply triggers the request
-and waits until the request is finished before allowing the application to continue. Upon completion,
-the promise will return a response object. Otherwise, it will throw an exception, so it is best to wrap
-the call in a `try/catch` block:
+Once you have a promise object, the most basic way to interact with it is to call `wait()`, which simply
+triggers the request and waits until the request is finished before allowing the application to continue.
+Upon completion, the promise will return a response object. Otherwise, it will throw an exception, so it
+is best to wrap the call in a `try/catch` block:
 
 ```php
 try {
