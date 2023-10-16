@@ -230,7 +230,7 @@ use Pop\Http\Client;
 $client = new Client(
     'http://localhost/auth',
     Auth::createDigest(
-    new Auth\Digest('realm', 'username', 'password', '/uri', 'SERVER_NONCE')
+        new Auth\Digest('realm', 'username', 'password', '/uri', 'SERVER_NONCE')
     ),
     ['method' => 'POST']
 );
@@ -246,7 +246,9 @@ use Pop\Http\Client;
 
 $client = new Client(
     'http://localhost/auth',
-    Auth::createDigest(Auth\Digest::createFromWwwAuth($wwwAuthHeader, 'username', 'password', '/uri')),
+    Auth::createDigest(
+        Auth\Digest::createFromWwwAuth($wwwAuthHeader, 'username', 'password', '/uri')
+    ),
     ['method' => 'POST']
 );
 
