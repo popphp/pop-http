@@ -765,6 +765,38 @@ $promise->then(function($response) {
 CLI Conversions
 ---------------
 
+The CLI conversion feature allows you to convert client request objects into valid `curl` commands to be used on
+the CLI. It also supports converting valid `curl` commands into client request objects to be used in a PHP application.
+
+**Curl Command to Client Object**
+
+```php
+use Pop\Http\Client;
+
+$client = Client::fromCurlCommand('curl -i -X POST -d"foo=bar&baz=123" http://localhost/post.php');
+$client->send();
+```
+
+**Client Object to Curl Command**
+
+```php
+use Pop\Http\Client;
+
+$client = new Client('http://localhost/post.php', [
+    'method' => 'POST',
+    'data'   => [
+        'foo' => 'bar',
+        'baz' => 123
+    ]
+]);
+
+echo $client->toCurlCommand();
+```
+
+```bash
+curl -i -X POST --data "foo=bar&baz=123" "http://localhost/post.php"
+```
+
 [Top](#pop-http)
 
 Server
