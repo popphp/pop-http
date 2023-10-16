@@ -818,7 +818,8 @@ inbound client request. This includes:
 As an example, this `curl` command pointing at the following URL with a PHP script can be executed:
 
 ```bash
-curl -i -X POST `--header "Authorization: Bearer 1234567890"` --data "foo=bar&baz=123" "http://localhost/post.php"
+curl -i -X POST `--header "Authorization: Bearer 1234567890"` \
+  --data "foo=bar&baz=123" "http://localhost/post.php"
 ```
 
 with the contents of `post.php` being:
