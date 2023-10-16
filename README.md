@@ -168,7 +168,7 @@ use Pop\Http\Client;
 
 $responsePut    = Client::put('http://localhost/put', ['data' => ['foo' => 'bar']]);
 $responsePatch  = Client::patch('http://localhost/patch', ['data' => ['foo' => 'bar']]);
-$responseDelete = Client::patch('http://localhost/delete', ['data' => ['foo' => 'bar']]);
+$responseDelete = Client::delete('http://localhost/delete', ['data' => ['foo' => 'bar']]);
 ```
 
 ### Auth
