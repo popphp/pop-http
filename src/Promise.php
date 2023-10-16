@@ -59,18 +59,26 @@ class Promise extends Promise\AbstractPromise
      *
      * @param  bool $unwrap
      * @throws Exception|Promise\Exception|ReflectionException|Client\Exception|\Pop\Utils\Exception|\Pop\Http\Exception
-     * @return Response|array|null
+     * @return Response|string|array|null
      */
     public function wait(bool $unwrap = true): Response|array|null
     {
+        $multi = ($this->promiser instanceof CurlMulti);
+        $auto  = (!($multi) && ($this->promiser->hasOption('auto')) &&
+            ($this->promiser->getOption('auto')));
+
         if (($this->isFulfilled()) && ($this->promiser->isComplete())) {
-            return ($this->promiser instanceof CurlMulti) ?
-                $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
+            if ($multi) {
+                return $this->promiser->getAllResponses();
+            } else {
+                return (($auto) && ($this->promiser->hasResponse())) ?
+                    $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
+            }
         }
 
         $this->setState(self::PENDING);
 
-        if ($this->promiser instanceof CurlMulti) {
+        if ($multi) {
             $running = null;
             do {
                 $this->promiser->send($running);
@@ -83,7 +91,7 @@ class Promise extends Promise\AbstractPromise
             if ($this->promiser->isError()) {
                 $this->setState(self::REJECTED);
                 if ($unwrap) {
-                    if ($this->promiser instanceof CurlMulti) {
+                    if ($multi) {
                         throw new Exception('Error: There was an error with one of the multiple requests.');
                     } else {
                         throw new Exception(
@@ -94,8 +102,12 @@ class Promise extends Promise\AbstractPromise
                 }
             } else {
                 $this->setState(self::FULFILLED);
-                return ($this->promiser instanceof CurlMulti) ?
-                    $this->promiser->getAllResponses(false) : $this->promiser->getResponse();
+                if ($multi) {
+                    return $this->promiser->getAllResponses();
+                } else {
+                    return (($auto) && ($this->promiser->hasResponse())) ?
+                        $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
+                }
             }
         } else if ($unwrap) {
             throw new Exception('Error: Unable to complete request.');
@@ -116,7 +128,11 @@ class Promise extends Promise\AbstractPromise
             return;
         }
 
-        if ($this->promiser instanceof CurlMulti) {
+        $multi = ($this->promiser instanceof CurlMulti);
+        $auto  = (!($multi) && ($this->promiser->hasOption('auto')) &&
+            ($this->promiser->getOption('auto')));
+
+        if ($multi) {
             $running = null;
             do {
                 $this->promiser->send($running);
@@ -139,8 +155,14 @@ class Promise extends Promise\AbstractPromise
                         break;
                     // Else, execute callback
                     } else {
+                        if ($multi) {
+                            $response = $this->promiser->getAllResponses();
+                        } else {
+                            $response = (($auto) && ($this->promiser->hasResponse())) ?
+                                $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
+                        }
                         $result = $success->call([
-                            'response' => ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse()
+                            'response' => $response
                         ]);
                     }
                 }
@@ -155,8 +177,14 @@ class Promise extends Promise\AbstractPromise
                     throw new Exception('Error: The failure callback has not been set.');
                 }
                 $this->setState(self::REJECTED);
+                if ($multi) {
+                    $response = $this->promiser->getAllResponses();
+                } else {
+                    $response = (($auto) && ($this->promiser->hasResponse())) ?
+                        $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
+                }
                 $this->failure->call([
-                    'response' => ($this->promiser instanceof CurlMulti) ? $this->promiser->getAllResponses(false) : $this->promiser->getResponse()
+                    'response' => $response
                 ]);
             }
         }

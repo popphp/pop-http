@@ -71,7 +71,7 @@ successful response or an error.
 parameters in any order:
 
 - A URI string
-- A `Pop\Http\Client\Request` object
+- A `Pop\Http\Client\Request` object (which contains the URI)
 - A `Pop\Http\Client\Response` object (not common, as the response object is typically auto-populated)
 - A `Pop\Http\Auth` object
 - A handler object that is an instance of `Pop\Http\Client\Handler\HandlerInterface`
@@ -275,6 +275,7 @@ Supported keys in the options array are:
   + `Request::JSON`
   + `Request::XML`
   + `Request::MULTIPART`
+- `auto` - trigger automatic content negotiation and return the parsed content (boolean)
 - `async` - trigger an asynchronous request (boolean)
 - `verify_peer` - enforce or disallow verifying the host for SSL connections (boolean)
 - `allow_self_signed` - allow or disallow the use of self-signed certificates for SSL connections (boolean)

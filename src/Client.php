@@ -180,6 +180,7 @@ class Client extends AbstractHttp
      *  - 'data'
      *  - 'files'
      *  - 'type'
+     *  - 'auto'
      *  - 'async'
      *  - 'verify_peer'
      *  - 'allow_self_signed'
@@ -191,6 +192,32 @@ class Client extends AbstractHttp
     public function setOptions(array $options): Client
     {
         $this->options = $options;
+        return $this;
+    }
+
+    /**
+     * Add options
+     *
+     * @param  array $options
+     * @return Client
+     */
+    public function addOptions(array $options): Client
+    {
+        foreach ($options as $name => $value) {
+            $this->addOption($name, $value);
+        }
+        return $this;
+    }
+
+    /**
+     * Add an option
+     *
+     * @param  mixed  $value
+     * @return Client
+     */
+    public function addOption(string $name, mixed $value): Client
+    {
+        $this->options[$name] = $value;
         return $this;
     }
 
@@ -745,9 +772,9 @@ class Client extends AbstractHttp
      * @param  ?string $uri
      * @param  ?string $method
      * @throws Exception|Client\Exception|Client\Handler\Exception
-     * @return Response|Promise
+     * @return Response|Promise|array|string
      */
-    public function send(?string $uri = null, string $method = null): Response|Promise
+    public function send(?string $uri = null, string $method = null): Response|Promise|array|string
     {
         if (isset($this->options['async']) && ($this->options['async'] === true)) {
             return $this->sendAsync();
@@ -757,7 +784,8 @@ class Client extends AbstractHttp
                 $this->handler->prepare($this->request, $this->auth, (bool)$this->options['force_custom_method'])->send() :
                 $this->handler->prepare($this->request, $this->auth)->send();
 
-            return $this->response;
+            return (($this->hasOption('auto')) && ($this->options['auto']) && ($this->response instanceof Response)) ?
+                $this->response->getParsedResponse() : $this->response;
         }
     }
 
@@ -796,9 +824,9 @@ class Client extends AbstractHttp
      * @param  string $methodName
      * @param  array  $arguments
      * @throws Exception|Client\Exception
-     * @return Response|Promise
+     * @return Response|Promise|array|string
      */
-    public function __call(string $methodName, array $arguments): Response|Promise
+    public function __call(string $methodName, array $arguments): Response|Promise|array|string
     {
         if (str_contains($methodName, 'Async')) {
             if (isset($arguments[0])) {
@@ -807,7 +835,7 @@ class Client extends AbstractHttp
             }
             return $this->sendAsync();
         } else {
-            return (isset($arguments[0])) ? $this->send($arguments[0], strtoupper($methodName)) : $this->send();
+            return $this->send(($arguments[0] ?? null), strtoupper($methodName));
         }
     }
 
@@ -817,9 +845,9 @@ class Client extends AbstractHttp
      * @param  string $methodName
      * @param  array  $arguments
      * @throws Exception|Client\Exception
-     * @return Response|Promise
+     * @return Response|Promise|array|string
      */
-    public static function __callStatic(string $methodName, array $arguments): Response|Promise
+    public static function __callStatic(string $methodName, array $arguments): Response|Promise|array|string
     {
         $client = new static();
         $uri    = null;

@@ -484,12 +484,7 @@ class Request extends AbstractRequest
                     $this->prepareRawData();
                 // Else, use basic data
                 } else if ($this->data !== null) {
-                    if (!$this->hasHeader('Content-Type')) {
-                        $this->setRequestType(Request::URLFORM);
-                        $this->dataContent = $this->getData()->prepareQueryString();
-                    } else {
-                        $this->dataContent = $this->getData(true);
-                    }
+                    $this->dataContent = $this->getData(true);
                 }
             }
         }

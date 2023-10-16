@@ -199,22 +199,21 @@ class CurlMulti extends AbstractCurl
     /**
      * Get all responses
      *
-     * @param  bool $parsed
      * @return array
      */
-    public function getAllResponses(bool $parsed = true): array
+    public function getAllResponses(): array
     {
         $responses = [];
 
         foreach ($this->clients as $curlClient) {
             $response = $this->parseResponse($curlClient);
             if ($response instanceof Response) {
-                $r = $response->getParsedResponse();
+                $auto        = (($curlClient->hasOption('auto')) && ($curlClient->getOption('auto')));
                 $responses[] = [
                     'client_uri' => $curlClient->getRequest()->getUriAsString(),
                     'method'     => $curlClient->getRequest()->getMethod(),
                     'code'       => $response->getCode(),
-                    'response'   => ($parsed) ? $response->getParsedResponse() : $response
+                    'response'   => ($auto) ? $response->getParsedResponse() : $response
                 ];
             } else {
                 $responses[] = $response;
@@ -266,7 +265,7 @@ class CurlMulti extends AbstractCurl
         $result = null;
 
         if ($this->isComplete()) {
-            $responses = $this->getAllResponses(false);
+            $responses = $this->getAllResponses();
             $result    = true;
             foreach ($responses as $response) {
                 if (!empty($response['code'])) {
@@ -296,7 +295,7 @@ class CurlMulti extends AbstractCurl
         $result = null;
 
         if ($this->isComplete()) {
-            $responses = $this->getAllResponses(false);
+            $responses = $this->getAllResponses();
             foreach ($responses as $response) {
                 if (!empty($response['code'])) {
                     $codeResult = floor($response['code'] / 100);
