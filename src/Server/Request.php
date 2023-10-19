@@ -598,9 +598,9 @@ class Request extends AbstractRequest
     /**
      * Get the raw data
      *
-     * @return string
+     * @return string|null
      */
-    public function getRawData(): string
+    public function getRawData(): string|null
     {
         return $this->data->getRawData();
     }
