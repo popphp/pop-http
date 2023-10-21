@@ -246,8 +246,8 @@ Supported keys in the options array are:
 - `method` - the request method (GET, POST, PUT, PATCH, DELETE, etc.)
 - `headers` - an array of request headers
 - `user_agent` - the user agent string
+- `query` - an array of request query data - reserved for only a URL-encoded query string
 - `data` - an array of request data - can be any request data
-- `query` - an array of request query data - reserved for only a URL-encoded query string 
 - `files` - an array of files on disk to be sent with the request
 - `type` - set the request type (URL-form, JSON, XML or multipart/form)
   + `Request::URLFORM` (`application/x-www-form-urlencoded`)

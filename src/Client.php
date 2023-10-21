@@ -177,8 +177,8 @@ class Client extends AbstractHttp
      *  - 'method'
      *  - 'headers'
      *  - 'user_agent'
-     *  - 'data' (can be any request data)
      *  - 'query' (can only be encoded query string on the URI)
+     *  - 'data' (can be any request data)
      *  - 'files'
      *  - 'type'
      *  - 'auto'
