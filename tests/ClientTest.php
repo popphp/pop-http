@@ -93,6 +93,7 @@ class ClientTest extends TestCase
                 'headers'           => ['Authorization' => 'Bearer 123456'],
                 'user_agent'        => 'popphp/pop-http 1.0',
                 'data'              => ['foo' => 'bar'],
+                'query'             => ['baz' => '123'],
                 'type'              => 'application/x-www-form-urlencoded',
                 'verify_peer'       => true,
                 'allow_self_signed' => false
@@ -104,6 +105,8 @@ class ClientTest extends TestCase
         $this->assertEquals('popphp/pop-http 1.0', $client->getHandler()->getOption(CURLOPT_USERAGENT));
         $this->assertTrue($client->hasHandler());
         $this->assertTrue($client->getRequest()->hasData());
+        $this->assertTrue($client->getRequest()->hasQuery());
+        $this->assertEquals('123', $client->getRequest()->getQuery('baz'));
     }
 
     public function testPrepareStream()
@@ -288,6 +291,48 @@ class ClientTest extends TestCase
         $this->assertTrue($client->hasData());
         $client->removeAllData();
         $this->assertFalse($client->hasData());
+    }
+
+    public function testQuery()
+    {
+        $client = new Client();
+        $client->setQuery([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasQuery('foo'));
+        $this->assertTrue($client->hasQuery());
+        $this->assertEquals('bar', $client->getQuery('foo'));
+        $this->assertCount(1, $client->getQuery());
+    }
+
+    public function testAddQuery()
+    {
+        $client = new Client();
+        $client->addQuery('foo', 'bar');
+        $this->assertEquals('bar', $client->getQuery('foo'));
+        $this->assertCount(1, $client->getQuery());
+    }
+
+    public function testRemoveQuery()
+    {
+        $client = new Client();
+        $client->setQuery([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasQuery('foo'));
+        $client->removeQuery('foo');
+        $this->assertFalse($client->hasQuery('foo'));
+    }
+
+    public function testRemoveAllQuery()
+    {
+        $client = new Client();
+        $client->setQuery([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasQuery());
+        $client->removeAllQuery();
+        $this->assertFalse($client->hasQuery());
     }
 
     public function testFiles()

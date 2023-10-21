@@ -206,7 +206,12 @@ class Curl extends AbstractCurl
             $this->setOption(CURLOPT_HTTPHEADER, $headers);
         }
 
-        $this->setOption(CURLOPT_URL, $request->getUriAsString());
+        $uri = $request->getUriAsString();
+        if (!($request->isGet()) && ($request->hasQuery())) {
+            $uri .= '?' . http_build_query($request->getQuery());
+        }
+
+        $this->setOption(CURLOPT_URL, $uri);
 
         return $this;
     }

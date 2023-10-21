@@ -39,7 +39,7 @@ class Request extends AbstractRequest
     const XML       = 'application/xml';
     const URLFORM   = 'application/x-www-form-urlencoded';
     const MULTIPART = 'multipart/form-data';
-  
+
     /**
      * Request method
      * @var ?string
@@ -48,9 +48,28 @@ class Request extends AbstractRequest
 
     /**
      * Client request data object
+     *
+     * Can be any type of supported request data:
+     *     - URI-based encoded query string
+     *     - URL-encoded body
+     *     - JSON-encoded body
+     *     - XML-encoded body
+     *     - Multipart/form body
+     *
      * @var ?Data
      */
     protected ?Data $data = null;
+
+    /**
+     * Client request query data
+     *
+     *  Differs from the Data object, as it can only be an encoded query string on the URI.
+     *  It can be used in combination of the main request Data object to force certain data
+     *  to be appended to the URI.
+     *
+     * @var array
+     */
+    protected array $query = [];
 
     /**
      * Request type
@@ -291,6 +310,43 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Set query
+     *
+     * @param  array $query
+     * @return Request
+     */
+    public function setQuery(array $query): Request
+    {
+        $this->query = $query;
+        return $this;
+    }
+
+    /**
+     * Get query
+     *
+     * @param  ?string $name
+     * @return mixed
+     */
+    public function getQuery(?string $name = null): mixed
+    {
+        if ($name !== null) {
+            return $this->query[$name] ?? null;
+        } else {
+            return $this->query;
+        }
+    }
+
+    /**
+     * Has query
+     *
+     * @return bool
+     */
+    public function hasQuery(): bool
+    {
+        return ($this->query !== null);
+    }
+
+    /**
      * Get full URI as string
      *
      * @param  bool $query
@@ -304,7 +360,7 @@ class Request extends AbstractRequest
             if ($this->dataContent !== null) {
                 $uri .= '?' . ((is_array($this->dataContent)) ? http_build_query($this->dataContent) : $this->dataContent);
             } else if (($this->requestType === null) || ($this->requestType == self::URLFORM)) {
-                $uri .= $this->data->prepareQueryString(true);
+                $uri .= $this->data->prepareQueryString($this->query, true);
             }
         }
 
@@ -515,7 +571,7 @@ class Request extends AbstractRequest
         if (($this->method == 'GET') && ((!$this->hasHeader('Content-Type')) ||
             ($this->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
             $this->dataContent = ($this->data->hasRawData()) ?
-                $this->data->getRawData() : $this->data->prepareQueryString();
+                $this->data->getRawData() : $this->data->prepareQueryString($this->query);
         // Else, prepare the data content
         } else if ($this->method != 'GET') {
             switch ($this->requestType) {

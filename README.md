@@ -246,7 +246,8 @@ Supported keys in the options array are:
 - `method` - the request method (GET, POST, PUT, PATCH, DELETE, etc.)
 - `headers` - an array of request headers
 - `user_agent` - the user agent string
-- `data` - an array of request data
+- `data` - an array of request data - can be any request data
+- `query` - an array of request query data - reserved for only a URL-encoded query string 
 - `files` - an array of files on disk to be sent with the request
 - `type` - set the request type (URL-form, JSON, XML or multipart/form)
   + `Request::URLFORM` (`application/x-www-form-urlencoded`)
@@ -361,7 +362,7 @@ $request->setData([
 ]);
 
 $client = new Client($request);
-$response = $cleint->send();
+$response = $client->send();
 ```
 
 There are four ways to configure the request for four different common data types:
@@ -518,30 +519,7 @@ $client->setHandler($stream);
 
 The Curl Multi-Handler is a special use-case handler that allows for multiple parallel/concurrent requests
 to be made at the same time. Each request will get its own `Client` object, which will be registered with
-the multi-handler object.
-
-```php
-use Pop\Http\Client;
-use Pop\Http\Client\Handler\CurlMulti;
-
-$multiHandler = new CurlMulti();
-$client1      = new Client('http://localhost/test1.php', $multiHandler);
-$client2      = new Client('http://localhost/test2.php', $multiHandler);
-$client3      = new Client('http://localhost/test3.php', $multiHandler);
-
-$running = null;
-
-do {
-    $multiHandler->send($running);
-} while ($running);
-
-$responses = $multiHandler->getAllResponses();
-```
-
-The `$multiHandler->getAllResponses()` method will return an array of all of the response objects returned
-from each of the requests.
-
-A more abbreviated way to initialize a multi-handler would be:
+the multi-handler object. The simpliest way to configure a multi-handler object would be:
 
 ```php
 use Pop\Http\Client;
@@ -566,6 +544,33 @@ $multiHandler = Client::createMulti([
     new Request('http://localhost/test2.php', 'POST'),
     new Request('http://localhost/test3.php', 'POST')
 ]);
+```
+
+From there the multi-handler object can send the requests:
+
+```php
+$running = null;
+
+do {
+    $multiHandler->send($running);
+} while ($running);
+
+$responses = $multiHandler->getAllResponses();
+```
+
+The `$multiHandler->getAllResponses()` method will return an array of all the response objects returned
+from each of the requests.
+
+Here is a more verbose way to configure a multi-handler object:
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Handler\CurlMulti;
+
+$multiHandler = new CurlMulti();
+$client1      = new Client('http://localhost/test1.php', $multiHandler);
+$client2      = new Client('http://localhost/test2.php', $multiHandler);
+$client3      = new Client('http://localhost/test3.php', $multiHandler);
 ```
 
 [Top](#pop-http)

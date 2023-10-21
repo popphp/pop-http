@@ -391,9 +391,9 @@ class Stream extends AbstractHandler
         if ($request->hasHeaders()) {
             $headers = [];
 
-            foreach ($request->getHeaders() as $header => $value) {
+            foreach ($request->getHeaders() as $value) {
                 if (is_array($value)) {
-                    foreach ($value as $hdr => $val) {
+                    foreach ($value as $val) {
                         $headers[] = (string)$val;
                     }
                 } else {
@@ -413,6 +413,9 @@ class Stream extends AbstractHandler
         }
 
         $this->uri = $request->getUriAsString();
+        if (!($request->isGet()) && ($request->hasQuery())) {
+            $this->uri .= '?' . http_build_query($request->getQuery());
+        }
 
         return $this;
     }

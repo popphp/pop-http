@@ -225,16 +225,18 @@ class Data
     /**
      * Prepare the query string
      *
-     * @param  bool $withQuestionMark
+     * @param  array $queryData
+     * @param  bool  $withQuestionMark
      * @return string|null
      */
-    public function prepareQueryString(bool $withQuestionMark = false): string|null
+    public function prepareQueryString(array $queryData = [], bool $withQuestionMark = false): string|null
     {
-        if (!empty($this->data) && !array_key_exists(self::POP_CLIENT_REQUEST_RAW_DATA, $this->data)) {
+        if (!array_key_exists(self::POP_CLIENT_REQUEST_RAW_DATA, $this->data) && (!empty($this->data) || !empty($queryData))) {
+            $data = array_merge($this->data, $queryData);
             if ($this->hasFilters()) {
-                $this->data = $this->filter($this->data);
+                $data = $this->filter($data);
             }
-            $this->queryString = http_build_query($this->data);
+            $this->queryString = http_build_query($data);
         } else {
             $this->queryString = null;
         }
@@ -255,12 +257,13 @@ class Data
     /**
      * Get the query string
      *
-     * @param  bool $withQuestionMark
+     * @param  array $queryData
+     * @param  bool  $withQuestionMark
      * @return string
      */
-    public function getQueryString(bool $withQuestionMark = false): string
+    public function getQueryString(array $queryData = [], bool $withQuestionMark = false): string
     {
-        return $this->prepareQueryString($withQuestionMark);
+        return $this->prepareQueryString($queryData, $withQuestionMark);
     }
 
     /**

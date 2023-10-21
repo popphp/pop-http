@@ -177,7 +177,8 @@ class Client extends AbstractHttp
      *  - 'method'
      *  - 'headers'
      *  - 'user_agent'
-     *  - 'data'
+     *  - 'data' (can be any request data)
+     *  - 'query' (can only be encoded query string on the URI)
      *  - 'files'
      *  - 'type'
      *  - 'auto'
@@ -391,6 +392,7 @@ class Client extends AbstractHttp
         $this->options['data'][$name] = $value;
         return $this;
     }
+
     /**
      * Get data
      *
@@ -446,6 +448,94 @@ class Client extends AbstractHttp
     {
         if (isset($this->options['data'])) {
             unset($this->options['data']);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Set query
+     *
+     * @param  array $query
+     * @return Client
+     */
+    public function setQuery(array $query): Client
+    {
+        $this->options['query'] = $query;
+        return $this;
+    }
+
+    /**
+     * Add query
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return Client
+     */
+    public function addQuery(string $name, mixed $value): Client
+    {
+        if (!isset($this->options['query'])) {
+            $this->options['query'] = [];
+        }
+        $this->options['query'][$name] = $value;
+        return $this;
+    }
+
+    /**
+     * Get query
+     *
+     * @param  ?string $key
+     * @return mixed
+     */
+    public function getQuery(?string $key = null): mixed
+    {
+        if ($key !== null) {
+            return (isset($this->options['query']) && isset($this->options['query'][$key])) ?
+                $this->options['query'][$key] : null;
+        } else {
+            return $this->options['query'] ?? null;
+        }
+    }
+
+    /**
+     * Has query
+     *
+     * @param  ?string $key
+     * @return bool
+     */
+    public function hasQuery(?string $key = null): bool
+    {
+        if ($key !== null) {
+            return (isset($this->options['query']) && isset($this->options['query'][$key]));
+        } else {
+            return isset($this->options['query']);
+        }
+    }
+
+    /**
+     * Remove query
+     *
+     * @param  string $key
+     * @return Client
+     */
+    public function removeQuery(string $key): Client
+    {
+        if (isset($this->options['query']) && isset($this->options['query'][$key])) {
+            unset($this->options['query'][$key]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove all query data
+     *
+     * @return Client
+     */
+    public function removeAllQuery(): Client
+    {
+        if (isset($this->options['query'])) {
+            unset($this->options['query']);
         }
 
         return $this;
@@ -727,6 +817,11 @@ class Client extends AbstractHttp
 
         if (!empty($data)) {
             $this->request->setData($data);
+        }
+
+        // Add query
+        if ($this->hasOption('query')) {
+            $this->request->setQuery($this->options['query']);
         }
 
         // Set request type
