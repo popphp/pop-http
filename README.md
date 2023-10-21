@@ -546,7 +546,7 @@ $multiHandler = Client::createMulti([
 ]);
 ```
 
-From there the multi-handler object can send the requests:
+From there, the multi-handler object can send the requests:
 
 ```php
 $running = null;
