@@ -516,7 +516,9 @@ class Auth
             $value->setScheme('Bearer ');
             $value->setValue($this->token);
         } else {
-            $value->setScheme($this->scheme);
+            if (!empty($this->scheme)) {
+                $value->setScheme($this->scheme);
+            }
             $value->setValue($this->token);
         }
 
