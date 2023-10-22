@@ -306,7 +306,7 @@ class Request extends AbstractRequest
      */
     public function hasData(): bool
     {
-        return ($this->data !== null);
+        return !empty($this->data);
     }
 
     /**
@@ -343,7 +343,7 @@ class Request extends AbstractRequest
      */
     public function hasQuery(): bool
     {
-        return ($this->query !== null);
+        return !empty($this->query);
     }
 
     /**
