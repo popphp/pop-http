@@ -183,12 +183,17 @@ class Curl extends AbstractCurl
             $request->addHeader($auth->createAuthHeader());
         }
 
+        $queryString = null;
+
         // If request has data
         if ($request->hasData()) {
             $request->prepareData();
             if (!($request->isGet()) && ($request->hasDataContent())) {
                 $this->setOption(CURLOPT_POSTFIELDS, $request->getDataContent());
             }
+        // Else, if request has query
+        } else if ($request->hasQuery()) {
+            $queryString = '?' . http_build_query($request->getQuery());
         // Else, if request has raw body content
         } else if ($request->hasBodyContent()) {
             $request->addHeader('Content-Length', $request->getBodyContentLength());
@@ -207,8 +212,8 @@ class Curl extends AbstractCurl
         }
 
         $uri = $request->getUriAsString();
-        if (!($request->isGet()) && ($request->hasQuery())) {
-            $uri .= '?' . http_build_query($request->getQuery());
+        if (!empty($queryString) && !str_contains($uri, '?')) {
+            $uri .= $queryString;
         }
 
         $this->setOption(CURLOPT_URL, $uri);

@@ -376,12 +376,17 @@ class Stream extends AbstractHandler
             $request->addHeader($auth->createAuthHeader());
         }
 
+        $queryString = null;
+
         // If request has data
         if ($request->hasData()) {
             $request->prepareData();
             if ($request->hasDataContent()) {
                 $this->contextOptions['http']['content'] = $request->getDataContent();
             }
+        // Else, if request has query
+        } else if ($request->hasQuery()) {
+            $queryString = '?' . http_build_query($request->getQuery());
         // Else, if there is raw body content
         } else if ($request->hasBodyContent()) {
             $request->addHeader('Content-Length', $request->getBodyContentLength());
@@ -413,8 +418,8 @@ class Stream extends AbstractHandler
         }
 
         $this->uri = $request->getUriAsString();
-        if (!($request->isGet()) && ($request->hasQuery())) {
-            $this->uri .= '?' . http_build_query($request->getQuery());
+        if (!empty($queryString) && !str_contains($this->uri, '?')) {
+            $this->uri .= $queryString;
         }
 
         return $this;
