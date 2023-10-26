@@ -62,6 +62,9 @@ class Curl extends AbstractCurl
         } else if ($method != 'GET') {
             $this->setOption(CURLOPT_CUSTOMREQUEST, $method);
         }
+        if ($method == 'HEAD') {
+            $this->setOption(CURLOPT_NOBODY, true);
+        }
 
         return $this;
     }
