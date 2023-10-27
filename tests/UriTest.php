@@ -26,6 +26,7 @@ class UriTest extends TestCase
         $uri = Uri::create('https://username:password@www.domain.com:8000/foo/bar?query=123&filter=456#name');
         $this->assertEquals('https', $uri->getScheme());
         $this->assertEquals('www.domain.com', $uri->getHost());
+        $this->assertEquals('www.domain.com:8000', $uri->getFullHost());
         $this->assertEquals('username', $uri->getUsername());
         $this->assertEquals('password', $uri->getPassword());
         $this->assertEquals('8000', $uri->getPort());

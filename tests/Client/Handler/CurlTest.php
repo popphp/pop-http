@@ -31,6 +31,17 @@ class CurlTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Client\Handler\Curl', $curl);
     }
 
+    public function testSetHttpVersion()
+    {
+        $curl = new Curl();
+        $curl->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+        $this->assertEquals('1.0', $curl->getHttpVersion());
+        $curl->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        $this->assertEquals('1.1', $curl->getHttpVersion());
+        $curl->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+        $this->assertEquals('2.0', $curl->getHttpVersion());
+    }
+
     public function testForceMethod()
     {
         $curl = new Curl();

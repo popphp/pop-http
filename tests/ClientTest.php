@@ -525,4 +525,48 @@ class ClientTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Promise', Client::getAsync('http://localhost/'));
     }
 
+    public function testRender1()
+    {
+        $options = [
+            'method' => 'GET',
+            'query'   => [
+                'foo' => 'bar'
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer 123456789'
+            ]
+        ];
+        $client  = new Client('http://localhost:8000/get.php', $options);
+        $request = $client->render();
+
+        $this->assertTrue(str_contains($request, 'GET /get.php?foo=bar HTTP/1.1'));
+        $this->assertTrue(str_contains($request, 'Host: localhost:8000'));
+        $this->assertTrue(str_contains($request, 'Authorization: Bearer 123456789'));
+    }
+
+    public function testRender2()
+    {
+        $options = [
+            'method' => 'POST',
+            'data'   => [
+                'foo' => 'bar'
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer 123456789',
+                'Accept'        => 'application/json',
+            ],
+            'type' => Client\Request::URLFORM
+        ];
+        $client  = new Client('http://localhost:8000/post.php', $options);
+        $request = $client->render();
+
+        $this->assertTrue(str_contains($request, 'POST /post.php HTTP/1.1'));
+        $this->assertTrue(str_contains($request, 'Host: localhost:8000'));
+        $this->assertTrue(str_contains($request, 'Authorization: Bearer 123456789'));
+        $this->assertTrue(str_contains($request, 'Accept: application/json'));
+        $this->assertTrue(str_contains($request, 'Content-Type: application/x-www-form-urlencoded'));
+        $this->assertTrue(str_contains($request, 'Content-Length: 7'));
+        $this->assertTrue(str_contains($request, 'foo=bar'));
+    }
+
 }

@@ -93,6 +93,9 @@ class StreamTest extends TestCase
         $stream->prepare($request, null, false);
         $headers = $stream->getContextOption('http')['header'];
         $this->assertEquals("Authorization: Bearer 1234567890\r\nContent-Type: application/json\r\n", $headers);
+        $this->assertTrue($stream->hasUri());
+        $this->assertEquals('http://localhost/', $stream->getUri());
+        $this->assertInstanceOf('Pop\Http\Uri', $stream->getUriObject());
     }
 
     public function testPrepareWithGetData()
