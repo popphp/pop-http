@@ -171,6 +171,39 @@ $responsePatch  = Client::patch('http://localhost/patch', ['data' => ['foo' => '
 $responseDelete = Client::delete('http://localhost/delete', ['data' => ['foo' => 'bar']]);
 ```
 
+##### Rendering Requests
+
+Client requests can be rendered out to a raw string:
+
+```php
+use Pop\Http\Client;
+
+$client   = new Client('http://localhost:8000/files.php', [
+    'method' => 'POST',
+    'data'  => [
+        'foo' => 'bar'
+    ],
+    'headers' => [
+        'Authorization' => 'Bearer 123456789',
+    ],
+    'type' => Request::URLFORM
+]);
+echo $client->render();
+```
+
+Which would produce a string like this:
+
+```text
+POST /files.php HTTP/1.1
+Host: localhost:8000
+Authorization: Bearer 123456789
+Accept: application/json
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 7
+
+foo=bar
+```
+
 ### Auth
 
 There is an auth header class to assist in wiring up different types of standard authorization headers:
@@ -316,28 +349,40 @@ content, as mentioned above, you would call:
 $content = $response->getParsedResponse();
 ```
 
-If you would like to skip this step and have the client attempt content negotiation automatically and return the
-parsed content, you can set the `auto` option to true.
+There are two ways to attempt content negotiation automatically and return the parsed content:
+
+1. If you would like to attempt to parse the response content as JSON, regardless of any `Content-Type` header value
+   or absence thereof, you can call the `json()` method to obtain a PHP array representation of the data:
+
+```php
+use Pop\Http\Client;
+
+// Returns an array
+$data = Client::get('http://localhost/')->json();
+```
+
+2. Similarly, if you would prefer to have a `Collection` object populated with the data content returned,
+   you can call the `collect()` method. Internally, this will attempt the `json()` method as well:
+
+```php
+use Pop\Http\Client;
+
+// Returns an instance of Pop\Utils\Collection
+$data = Client::get('http://localhost/')->collect();
+```
+
+3. You can set the `auto` option to true, which is contingent on the server response having the correct
+   `Content-Type` header. This will return a PHP array representation of the data:
 
 ```php
 use Pop\Http\Client;
 use Pop\Http\Client\Request;
 
-$client = new Client('http://localhost/post', [
-    'data'   => [
-        'foo' => 'bar',
-        'baz' => 123
-    ],
-    'type' => Request::JSON // "application/json"
-    'auto' => true
-]);
-
-$response = $client->post();
+$client = new Client('http://localhost/', ['auto' => true]);
+$data   = $client->post(); // Returns an array
 ```
 
-If the server in the above example returns a JSON payload, the response will now be a PHP array representation of
-that JSON data (instead of a full response object.) If you still need to access the full response object, you can
-do so by calling:
+If you still need to access the full response object, you can access it by calling:
 
 ```php
 $clientResponse = $client->getResponse();
