@@ -178,6 +178,21 @@ class Uri
     }
 
     /**
+     * Get the host with the port
+     *
+     * @return string
+     */
+    public function getFullHost(): string
+    {
+        $host = $this->host;
+        if ($this->hasPort()) {
+            $host .= ':' . $this->port;
+        }
+
+        return $host;
+    }
+
+    /**
      * Get the username
      *
      * @return string

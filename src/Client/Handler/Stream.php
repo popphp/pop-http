@@ -33,12 +33,6 @@ class Stream extends AbstractHandler
 {
 
     /**
-     * URI string
-     * @var ?string
-     */
-    protected ?string $uri = null;
-
-    /**
      * Stream context
      * @var mixed
      */
@@ -162,6 +156,10 @@ class Stream extends AbstractHandler
             $this->contextOptions[$name] = array_merge($this->contextOptions[$name], $option);
         } else {
             $this->contextOptions[$name] = $option;
+        }
+
+        if (isset($this->contextOptions['http']) && isset($this->contextOptions['http']['protocol_version'])) {
+            $this->httpVersion = $this->contextOptions['http']['protocol_version'];
         }
 
         return $this;

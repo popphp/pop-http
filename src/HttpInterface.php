@@ -29,32 +29,32 @@ interface HttpInterface
     /**
      * Set the request
      *
-     * @param  RequestResponseInterface $request
+     * @param  AbstractRequest $request
      * @return HttpInterface
      */
-    public function setRequest(RequestResponseInterface $request): HttpInterface;
+    public function setRequest(AbstractRequest $request): HttpInterface;
 
     /**
      * Set the response
      *
-     * @param  RequestResponseInterface $response
+     * @param  AbstractResponse $response
      * @return HttpInterface
      */
-    public function setResponse(RequestResponseInterface $response): HttpInterface;
+    public function setResponse(AbstractResponse $response): HttpInterface;
 
     /**
      * Get the request
      *
-     * @return RequestResponseInterface
+     * @return AbstractRequest
      */
-    public function getRequest(): RequestResponseInterface;
+    public function getRequest(): AbstractRequest;
 
     /**
      * Get the response
      *
-     * @return RequestResponseInterface
+     * @return AbstractResponse
      */
-    public function getResponse(): RequestResponseInterface;
+    public function getResponse(): AbstractResponse;
 
     /**
      * Has request

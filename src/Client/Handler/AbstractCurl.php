@@ -114,6 +114,20 @@ abstract class AbstractCurl extends AbstractHandler
             curl_setopt($this->resource, $opt, $val);
         }
 
+        if ($this->hasOption(CURLOPT_HTTP_VERSION)) {
+            switch ($this->getOption(CURLOPT_HTTP_VERSION)) {
+                case 1:
+                    $this->httpVersion = '1.0';
+                    break;
+                case 2:
+                    $this->httpVersion = '1.1';
+                    break;
+                case 3:
+                    $this->httpVersion = '2.0';
+                    break;
+            }
+        }
+
         return $this;
     }
 

@@ -28,23 +28,23 @@ abstract class AbstractHttp implements HttpInterface
 
     /**
      * Request
-     * @var ?RequestResponseInterface
+     * @var ?AbstractRequest
      */
-    protected ?RequestResponseInterface $request = null;
+    protected ?AbstractRequest $request = null;
 
     /**
      * Response
-     * @var ?RequestResponseInterface
+     * @var ?AbstractResponse
      */
-    protected ?RequestResponseInterface $response = null;
+    protected ?AbstractResponse $response = null;
 
     /**
      * Instantiate the HTTP object
      *
-     * @param  ?RequestResponseInterface $request
-     * @param  ?RequestResponseInterface $response
+     * @param  ?AbstractRequest $request
+     * @param  ?AbstractResponse $response
      */
-    public function __construct(?RequestResponseInterface $request = null, ?RequestResponseInterface $response = null)
+    public function __construct(?AbstractRequest $request = null, ?AbstractResponse $response = null)
     {
         if ($request !== null) {
             $this->setRequest($request);
@@ -57,10 +57,10 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Set the request
      *
-     * @param  RequestResponseInterface $request
+     * @param  AbstractRequest $request
      * @return AbstractHttp
      */
-    public function setRequest(RequestResponseInterface $request): AbstractHttp
+    public function setRequest(AbstractRequest $request): AbstractHttp
     {
         $this->request = $request;
         return $this;
@@ -69,10 +69,10 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Set the response
      *
-     * @param  RequestResponseInterface $response
+     * @param  AbstractResponse $response
      * @return AbstractHttp
      */
-    public function setResponse(RequestResponseInterface $response): AbstractHttp
+    public function setResponse(AbstractResponse $response): AbstractHttp
     {
         $this->response = $response;
         return $this;
@@ -81,9 +81,9 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Get the request
      *
-     * @return RequestResponseInterface
+     * @return AbstractRequest
      */
-    public function getRequest(): RequestResponseInterface
+    public function getRequest(): AbstractRequest
     {
         return $this->request;
     }
@@ -91,9 +91,9 @@ abstract class AbstractHttp implements HttpInterface
     /**
      * Get the response
      *
-     * @return RequestResponseInterface
+     * @return AbstractResponse
      */
-    public function getResponse(): RequestResponseInterface
+    public function getResponse(): AbstractResponse
     {
         return $this->response;
     }
@@ -135,13 +135,7 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function isSuccess(): bool|null
     {
-        $code = $this->response?->getCode();
-        if (!empty($code)) {
-            $type = floor($code / 100);
-            return (($type == 1) || ($type == 2) || ($type == 3));
-        } else {
-            return null;
-        }
+        return $this->response?->isSuccess();
     }
 
     /**
@@ -151,45 +145,57 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function isError(): bool|null
     {
-        $code = $this->response?->getCode();
-        if (!empty($code)) {
-            $type = floor($code / 100);
-            return (($type == 4) || ($type == 5));
-        } else {
-            return null;
-        }
+        return $this->response?->isError();
     }
 
     /**
-     * Determine if the response is continue
+     * Determine if the response is a continue
      *
      * @return bool|null
      */
     public function isContinue(): bool|null
     {
-        $code = $this->response?->getCode();
-        if (!empty($code)) {
-            $type = floor($code / 100);
-            return ($type == 1);
-        } else {
-            return null;
-        }
+        return $this->response?->isContinue();
     }
 
     /**
-     * Determine if the response is OK
+     * Determine if the response is 200 OK
      *
      * @return bool|null
      */
     public function isOk(): bool|null
     {
-        $code = $this->response?->getCode();
-        if (!empty($code)) {
-            $type = floor($code / 100);
-            return ($type == 2);
-        } else {
-            return null;
-        }
+        return $this->response?->isOk();
+    }
+
+    /**
+     * Determine if the response is 201 created
+     *
+     * @return bool|null
+     */
+    public function isCreated(): bool|null
+    {
+        return $this->response?->isCreated();
+    }
+
+    /**
+     * Determine if the response is 202 accepted
+     *
+     * @return bool|null
+     */
+    public function isAccepted():bool|null
+    {
+        return $this->response?->isAccepted();
+    }
+
+    /**
+     * Determine if the response is 204 No Content
+     *
+     * @return bool|null
+     */
+    public function isNoContent():bool|null
+    {
+        return $this->response?->isNoContent();
     }
 
     /**
@@ -199,13 +205,27 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function isRedirect(): bool|null
     {
-        $code = $this->response?->getCode();
-        if (!empty($code)) {
-            $type = floor($code / 100);
-            return ($type == 3);
-        } else {
-            return null;
-        }
+        return $this->response?->isRedirect();
+    }
+
+    /**
+     * Determine if the response is a 301 Moved Permanently
+     *
+     * @return bool|null
+     */
+    public function isMovedPermanently(): bool|null
+    {
+        return $this->response?->isMovedPermanently();
+    }
+
+    /**
+     * Determine if the response is a 302 Found
+     *
+     * @return bool|null
+     */
+    public function isFound(): bool|null
+    {
+        return $this->response?->isFound();
     }
 
     /**
@@ -215,13 +235,127 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function isClientError(): bool|null
     {
-        $code = $this->response?->getCode();
-        if (!empty($code)) {
-            $type = floor($code / 100);
-            return ($type == 4);
-        } else {
-            return null;
-        }
+        return $this->response?->isClientError();
+    }
+
+    /**
+     * Determine if the response is a 400 Bad Request
+     *
+     * @return bool|null
+     */
+    public function isBadRequest(): bool|null
+    {
+        return $this->response?->isBadRequest();
+    }
+
+    /**
+     * Determine if the response is a 401 Unauthorized
+     *
+     * @return bool|null
+     */
+    public function isUnauthorized(): bool|null
+    {
+        return $this->response?->isUnauthorized();
+    }
+
+    /**
+     * Determine if the response is a 403 Forbidden
+     *
+     * @return bool|null
+     */
+    public function isForbidden(): bool|null
+    {
+        return $this->response?->isForbidden();
+    }
+
+    /**
+     * Determine if the response is a 404 Not Found
+     *
+     * @return bool|null
+     */
+    public function isNotFound(): bool|null
+    {
+        return $this->response?->isNotFound();
+    }
+
+    /**
+     * Determine if the response is a 405 Method Not Allowed
+     *
+     * @return bool|null
+     */
+    public function isMethodNotAllowed(): bool|null
+    {
+        return $this->response?->isMethodNotAllowed();
+    }
+
+    /**
+     * Determine if the response is a 406 Not Acceptable
+     *
+     * @return bool|null
+     */
+    public function isNotAcceptable(): bool|null
+    {
+        return $this->response?->isNotAcceptable();
+    }
+
+    /**
+     * Determine if the response is a 408 Request Timeout
+     *
+     * @return bool|null
+     */
+    public function isRequestTimeout(): bool|null
+    {
+        return $this->response?->isRequestTimeout();
+    }
+
+    /**
+     * Determine if the response is a 409 Conflict
+     *
+     * @return bool|null
+     */
+    public function isConflict(): bool|null
+    {
+        return $this->response?->isConflict();
+    }
+
+    /**
+     * Determine if the response is a 411 Length Required
+     *
+     * @return bool|null
+     */
+    public function isLengthRequired(): bool|null
+    {
+        return $this->response?->isLengthRequired();
+    }
+
+    /**
+     * Determine if the response is a 415 Unsupported Media Type
+     *
+     * @return bool|null
+     */
+    public function isUnsupportedMediaType(): bool|null
+    {
+        return $this->response?->isUnsupportedMediaType();
+    }
+
+    /**
+     * Determine if the response is a 422 Unprocessable Entity
+     *
+     * @return bool|null
+     */
+    public function isUnprocessableEntity(): bool|null
+    {
+        return $this->response?->isUnprocessableEntity();
+    }
+
+    /**
+     * Determine if the response is a 429 Too Many Requests
+     *
+     * @return bool|null
+     */
+    public function isTooManyRequests(): bool|null
+    {
+        return $this->response?->isTooManyRequests();
     }
 
     /**
@@ -231,13 +365,37 @@ abstract class AbstractHttp implements HttpInterface
      */
     public function isServerError(): bool|null
     {
-        $code = $this->response?->getCode();
-        if (!empty($code)) {
-            $type = floor($code / 100);
-            return ($type == 5);
-        } else {
-            return null;
-        }
+        return $this->response?->isServerError();
+    }
+
+    /**
+     * Determine if the response is a 500 Internal Server Error
+     *
+     * @return bool|null
+     */
+    public function isInternalServerError(): bool|null
+    {
+        return $this->response?->isInternalServerError();
+    }
+
+    /**
+     * Determine if the response is a 502 Bad Gateway
+     *
+     * @return bool|null
+     */
+    public function isBadGateway(): bool|null
+    {
+        return $this->response?->isBadGateway();
+    }
+
+    /**
+     * Determine if the response is a 503 Service Unavailable
+     *
+     * @return bool|null
+     */
+    public function isServiceUnavailable(): bool|null
+    {
+        return $this->response?->isServiceUnavailable();
     }
 
     /**

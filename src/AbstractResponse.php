@@ -284,7 +284,7 @@ abstract class AbstractResponse extends AbstractRequestResponse
     }
 
     /**
-     * Determine if the response is a continue
+     * Determine if the response is a 100 continue
      *
      * @return bool
      */
@@ -295,14 +295,43 @@ abstract class AbstractResponse extends AbstractRequestResponse
     }
 
     /**
-     * Determine if the response is OK
+     * Determine if the response is 200 OK
      *
      * @return bool
      */
     public function isOk(): bool
     {
-        $type = floor($this->code / 100);
-        return ($type == 2);
+        return ($this->code == 200);
+    }
+
+    /**
+     * Determine if the response is 201 created
+     *
+     * @return bool
+     */
+    public function isCreated(): bool
+    {
+        return ($this->code == 201);
+    }
+
+    /**
+     * Determine if the response is 202 accepted
+     *
+     * @return bool
+     */
+    public function isAccepted(): bool
+    {
+        return ($this->code == 202);
+    }
+
+    /**
+     * Determine if the response is 204 No Content
+     *
+     * @return bool
+     */
+    public function isNoContent(): bool
+    {
+        return ($this->code == 204);
     }
 
     /**
@@ -314,6 +343,26 @@ abstract class AbstractResponse extends AbstractRequestResponse
     {
         $type = floor($this->code / 100);
         return ($type == 3);
+    }
+
+    /**
+     * Determine if the response is a 301 Moved Permanently
+     *
+     * @return bool
+     */
+    public function isMovedPermanently(): bool
+    {
+        return ($this->code == 301);
+    }
+
+    /**
+     * Determine if the response is a 302 Found
+     *
+     * @return bool
+     */
+    public function isFound(): bool
+    {
+        return ($this->code == 302);
     }
 
     /**
@@ -339,6 +388,126 @@ abstract class AbstractResponse extends AbstractRequestResponse
     }
 
     /**
+     * Determine if the response is a 400 Bad Request
+     *
+     * @return bool
+     */
+    public function isBadRequest(): bool
+    {
+        return ($this->code == 400);
+    }
+
+    /**
+     * Determine if the response is a 401 Unauthorized
+     *
+     * @return bool
+     */
+    public function isUnauthorized(): bool
+    {
+        return ($this->code == 401);
+    }
+
+    /**
+     * Determine if the response is a 403 Forbidden
+     *
+     * @return bool
+     */
+    public function isForbidden(): bool
+    {
+        return ($this->code == 403);
+    }
+
+    /**
+     * Determine if the response is a 404 Not Found
+     *
+     * @return bool
+     */
+    public function isNotFound(): bool
+    {
+        return ($this->code == 404);
+    }
+
+    /**
+     * Determine if the response is a 405 Method Not Allowed
+     *
+     * @return bool
+     */
+    public function isMethodNotAllowed(): bool
+    {
+        return ($this->code == 405);
+    }
+
+    /**
+     * Determine if the response is a 406 Not Acceptable
+     *
+     * @return bool
+     */
+    public function isNotAcceptable(): bool
+    {
+        return ($this->code == 406);
+    }
+
+    /**
+     * Determine if the response is a 408 Request Timeout
+     *
+     * @return bool
+     */
+    public function isRequestTimeout(): bool
+    {
+        return ($this->code == 408);
+    }
+
+    /**
+     * Determine if the response is a 409 Conflict
+     *
+     * @return bool
+     */
+    public function isConflict(): bool
+    {
+        return ($this->code == 409);
+    }
+
+    /**
+     * Determine if the response is a 411 Length Required
+     *
+     * @return bool
+     */
+    public function isLengthRequired(): bool
+    {
+        return ($this->code == 411);
+    }
+
+    /**
+     * Determine if the response is a 415 Unsupported Media Type
+     *
+     * @return bool
+     */
+    public function isUnsupportedMediaType(): bool
+    {
+        return ($this->code == 415);
+    }
+
+    /**
+     * Determine if the response is a 422 Unprocessable Entity
+     *
+     * @return bool
+     */
+    public function isUnprocessableEntity(): bool
+    {
+        return ($this->code == 422);
+    }
+
+    /**
+     * Determine if the response is a 429 Too Many Requests
+     *
+     * @return bool
+     */
+    public function isTooManyRequests(): bool
+    {
+        return ($this->code == 429);
+    }
+
+    /**
      * Determine if the response is a server error
      *
      * @return bool
@@ -347,6 +516,36 @@ abstract class AbstractResponse extends AbstractRequestResponse
     {
         $type = floor($this->code / 100);
         return ($type == 5);
+    }
+
+    /**
+     * Determine if the response is a 500 Internal Server Error
+     *
+     * @return bool
+     */
+    public function isInternalServerError(): bool
+    {
+        return ($this->code == 500);
+    }
+
+    /**
+     * Determine if the response is a 502 Bad Gateway
+     *
+     * @return bool
+     */
+    public function isBadGateway(): bool
+    {
+        return ($this->code == 502);
+    }
+
+    /**
+     * Determine if the response is a 503 Service Unavailable
+     *
+     * @return bool
+     */
+    public function isServiceUnavailable(): bool
+    {
+        return ($this->code == 503);
     }
 
 }

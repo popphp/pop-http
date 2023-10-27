@@ -38,6 +38,59 @@ class ServerTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Server\Response', $server->response);
     }
 
+    public function testStatusMethods1()
+    {
+        $server = new Server();
+        $server->setRequest(new Server\Request())
+            ->setResponse(new Server\Response(['code' => 200]));
+
+        $this->assertTrue($server->isOk());
+        $this->assertFalse($server->isCreated());
+        $this->assertFalse($server->isAccepted());
+        $this->assertFalse($server->isNoContent());
+    }
+
+    public function testStatusMethods2()
+    {
+        $server = new Server();
+        $server->setRequest(new Server\Request())
+            ->setResponse(new Server\Response(['code' => 301]));
+
+        $this->assertTrue($server->isMovedPermanently());
+        $this->assertFalse($server->isFound());
+    }
+
+    public function testStatusMethods3()
+    {
+        $server = new Server();
+        $server->setRequest(new Server\Request())
+            ->setResponse(new Server\Response(['code' => 401]));
+
+        $this->assertTrue($server->isUnauthorized());
+        $this->assertFalse($server->isBadRequest());
+        $this->assertFalse($server->isForbidden());
+        $this->assertFalse($server->isNotFound());
+        $this->assertFalse($server->isMethodNotAllowed());
+        $this->assertFalse($server->isNotAcceptable());
+        $this->assertFalse($server->isRequestTimeout());
+        $this->assertFalse($server->isConflict());
+        $this->assertFalse($server->isLengthRequired());
+        $this->assertFalse($server->isUnsupportedMediaType());
+        $this->assertFalse($server->isUnprocessableEntity());
+        $this->assertFalse($server->isTooManyRequests());
+    }
+
+    public function testStatusMethods4()
+    {
+        $server = new Server();
+        $server->setRequest(new Server\Request())
+            ->setResponse(new Server\Response(['code' => 502]));
+
+        $this->assertTrue($server->isBadGateway());
+        $this->assertFalse($server->isInternalServerError());
+        $this->assertFalse($server->isServiceUnavailable());
+    }
+
     public function testGetHeadersAsString()
     {
         $response = new Server\Response();

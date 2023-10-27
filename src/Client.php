@@ -899,6 +899,36 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Method to render the request as a string
+     *
+     * @return string
+     */
+    public function render(): string
+    {
+        $this->prepare();
+
+        if (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) {
+            $this->handler->prepare($this->request, $this->auth, (bool)$this->options['force_custom_method']);
+        } else {
+            $this->handler->prepare($this->request, $this->auth);
+        }
+
+        $uri       = $this->handler->getUriObject();
+        $uriString = $uri->getUri();
+        if ($uri->hasQuery()) {
+            $uriString .= '?' . $uri->getQuery();
+        }
+
+        $request = $this->request->getMethod() . ' ' . $uriString . ' HTTP/' . $this->handler->getHttpVersion() . "\r\n" .
+            'Host: ' . $uri->getFullHost() . "\r\n" . $this->request->getHeadersAsString() . "\r\n";
+
+        if ($this->request->hasDataContent()) {
+            $request .= $this->request->getDataContent();
+        }
+        return $request;
+    }
+
+    /**
      * Method to convert client object to a Curl command for the CLI
      *
      * @throws Exception|Curl\Exception

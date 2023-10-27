@@ -16,6 +16,7 @@ namespace Pop\Http\Client\Handler;
 use Pop\Http\Auth;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
+use Pop\Http\Uri;
 
 /**
  * HTTP client handler interface
@@ -29,6 +30,18 @@ use Pop\Http\Client\Response;
  */
 abstract class AbstractHandler implements HandlerInterface
 {
+
+    /**
+     * URI string
+     * @var ?string
+     */
+    protected ?string $uri = null;
+
+    /**
+     * HTTP version
+     * @var string
+     */
+    protected string $httpVersion = '1.1';
 
     /**
      * Client resource object
@@ -54,6 +67,46 @@ abstract class AbstractHandler implements HandlerInterface
     public function getResource(): mixed
     {
         return $this->resource;
+    }
+
+    /**
+     * Determine whether or not there is a URI string
+     *
+     * @return bool
+     */
+    public function hasUri(): bool
+    {
+        return ($this->uri !== null);
+    }
+
+    /**
+     * Get the URI string
+     *
+     * @return ?string
+     */
+    public function getUri(): ?string
+    {
+        return $this->uri;
+    }
+
+    /**
+     * Get the URI string
+     *
+     * @return string
+     */
+    public function getHttpVersion(): string
+    {
+        return $this->httpVersion;
+    }
+
+    /**
+     * Get the URI as an object
+     *
+     * @return Uri
+     */
+    public function getUriObject(): Uri
+    {
+        return new Uri($this->uri);
     }
 
     /**
