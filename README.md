@@ -518,7 +518,7 @@ $response->isServiceUnavailable();   // Bool on 503 response
 You can choose to use a different handler with the client object. The available handlers are:
 
 - `Pop\Http\Client\Handler\Curl` - uses the PHP curl extension (default)
-- `Pop\Http\Client\Handler\Stream` - uses PHP stream
+- `Pop\Http\Client\Handler\Stream` - uses PHP stream functionality
 - `Pop\Http\Client\Handler\CurlMulti` - reserved for multiple parallel/concurrent requests at the same time
 
 You can inject the handler into the client's constructor:
@@ -550,8 +550,8 @@ $client->getHandler()->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 
 The handlers allow you to further customize the request by interfacing with each respective handler's settings.
 For `Curl`, that mainly includes setting additional Curl options needed for the request. (**Please Note:** Many
-of the required Curl options, such as `CURLOPT_POST`, `CURLOPT_URL` and `CURLOPT_HTTPHEADER` are automatically
-set based on the initial configuration of the client and request objects.) 
+of the required Curl options, such as `CURLOPT_URL`  and `CURLOPT_HTTPHEADER` are automatically set based on
+the initial configuration of the client and request objects.) 
 
 ```php
 use Pop\Http\Client;
@@ -569,8 +569,8 @@ $client->setHandler($curl);
 #### Stream
 
 For `Stream`, that includes setting context options and parameters needed for the request. (**Please Note:**
-Many of the required Stream context options, such as `http`, `http[method]` and `http[header]` are automatically
-set based on the initial configuration of the client and request objects.)
+Many of the required Stream context options, such as `['http']`, `['http']['method']` and `['http']['header']`
+are automatically set based on the initial configuration of the client and request objects.)
 
 ```php
 use Pop\Http\Client;
