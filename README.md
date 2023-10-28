@@ -37,10 +37,11 @@ for the following:
     - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
     - Send sync or async requests
     - Support for promises
-    - Dumping client requests out to a raw string
+    - Dump client requests out to a raw string
     - 2-way client to curl CLI command conversions
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
+  - Dump server responses out to a raw string
   - Easily handle file uploads and apply server-side settings and restrictions
 
 `pop-http` is a component of the [Pop PHP Framework](http://www.popphp.org/).
