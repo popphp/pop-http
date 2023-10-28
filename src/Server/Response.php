@@ -128,14 +128,24 @@ class Response extends AbstractResponse
     }
 
     /**
+     * Render entire response as a string
+     *
+     * @return string
+     */
+    public function render(): string
+    {
+        $body = $this->prepareBody();
+        return $this->getHeadersAsString(true) . "\r\n" . $body;
+    }
+
+    /**
      * Return entire response as a string
      *
      * @return string
      */
     public function __toString(): string
     {
-        $body = $this->prepareBody();
-        return $this->getHeadersAsString(true) . "\r\n" . $body;
+        return $this->render();
     }
 
     /**

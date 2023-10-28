@@ -143,4 +143,23 @@ class ServerTest extends TestCase
         $this->assertEmpty($result);
     }
 
+    public function testRender()
+    {
+        $response = new Server\Response();
+        $response->addHeaders([
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer 123456'
+        ]);
+        $response->setBody(json_encode(['foo' => 'bar'], JSON_PRETTY_PRINT));
+
+        $server = new Server(new Server\Request(), $response);
+
+        $responseString = (string)$server;
+
+        $this->assertTrue(str_contains($responseString, 'HTTP/1.1 200 OK'));
+        $this->assertTrue(str_contains($responseString, 'Bearer 123456'));
+        $this->assertTrue(str_contains($responseString, 'application/json'));
+        $this->assertTrue(str_contains($responseString, '"foo"'));
+    }
+
 }

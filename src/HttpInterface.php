@@ -75,4 +75,14 @@ interface HttpInterface
      */
     public function send();
 
+    /**
+     * Render the request/response to string
+     */
+    public function render(): string;
+
+    /**
+     * Render the request/response to string
+     */
+    public function __toString(): string;
+
 }

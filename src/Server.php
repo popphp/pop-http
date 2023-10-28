@@ -117,6 +117,26 @@ class Server extends AbstractHttp
     }
 
     /**
+     * Render response as a raw string
+     *
+     * @return string
+     */
+    public function render(): string
+    {
+        return ($this->response !== null) ? $this->response->render() : '';
+    }
+
+    /**
+     * Render response as a raw string
+     *
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return $this->render();
+    }
+
+    /**
      * Magic method to get the request or response object
      *
      * @param  string $name
