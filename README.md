@@ -10,7 +10,9 @@ pop-http
   - [Quickstart](#quickstart)
   - [Auth](#auth)
   - [Options](#options)
+  - [Automatic Content Negotiation](#automatic-content-negotiation)
   - [Requests](#requests)
+  - [Rendering Request](#rendering-requests)
   - [Responses](#responses)
   - [Handlers](#handlers)
 * [Promises](#promises)
@@ -38,13 +40,13 @@ for the following:
   - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
   - Send sync or async requests
   - Support for promises
-  - Dump client requests out to a raw string
+  - Render client requests out to a raw string
   - 2-way client to curl CLI command conversions
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
   - Create and manage outbound HTTP server responses, headers and data
   - Automatic content negotiation of request data, where possible
-  - Dump server responses out to a raw string
+  - Render server responses out to a raw string
   - Easily handle file uploads and apply server-side settings and restrictions
 
 `pop-http` is a component of the [Pop PHP Framework](http://www.popphp.org/).
@@ -174,39 +176,6 @@ use Pop\Http\Client;
 $responsePut    = Client::put('http://localhost/put', ['data' => ['foo' => 'bar']]);
 $responsePatch  = Client::patch('http://localhost/patch', ['data' => ['foo' => 'bar']]);
 $responseDelete = Client::delete('http://localhost/delete', ['data' => ['foo' => 'bar']]);
-```
-
-##### Rendering Requests
-
-Client requests can be rendered out to a raw string:
-
-```php
-use Pop\Http\Client;
-
-$client   = new Client('http://localhost:8000/files.php', [
-    'method' => 'POST',
-    'data'  => [
-        'foo' => 'bar'
-    ],
-    'headers' => [
-        'Authorization' => 'Bearer 123456789',
-    ],
-    'type' => Request::URLFORM
-]);
-echo $client->render();
-```
-
-Which would produce a string like this:
-
-```text
-POST /files.php HTTP/1.1
-Host: localhost:8000
-Authorization: Bearer 123456789
-Accept: application/json
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 7
-
-foo=bar
 ```
 
 ### Auth
@@ -345,7 +314,7 @@ $client = new Client('http://localhost/post', [
 $response = $client->send();
 ```
 
-**Automatic Content Negotiation**
+### Automatic Content Negotiation
 
 In the above examples, the `$response` returned is a full response object. If you want to get the actual response
 content, as mentioned above, you would call:
@@ -441,6 +410,39 @@ $request->createAsMultipart();
 ```
 
 Each way effectively sets the appropriate `Content-Type` header and properly formats the data for that data type.
+
+### Rendering Requests
+
+Client requests can be rendered out to a raw string:
+
+```php
+use Pop\Http\Client;
+
+$client   = new Client('http://localhost:8000/files.php', [
+    'method' => 'POST',
+    'data'  => [
+        'foo' => 'bar'
+    ],
+    'headers' => [
+        'Authorization' => 'Bearer 123456789',
+    ],
+    'type' => Request::URLFORM
+]);
+echo $client->render();
+```
+
+Which would produce a string like this:
+
+```text
+POST /files.php HTTP/1.1
+Host: localhost:8000
+Authorization: Bearer 123456789
+Accept: application/json
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 7
+
+foo=bar
+```
 
 ### Responses
 
