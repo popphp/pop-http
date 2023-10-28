@@ -42,6 +42,7 @@ for the following:
   - 2-way client to curl CLI command conversions
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
+  - Automatic content negotiation of request data
   - Dump server responses out to a raw string
   - Easily handle file uploads and apply server-side settings and restrictions
 
