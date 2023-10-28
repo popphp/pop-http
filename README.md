@@ -12,7 +12,7 @@ pop-http
   - [Options](#options)
   - [Automatic Content Negotiation](#automatic-content-negotiation)
   - [Requests](#requests)
-  - [Rendering Request](#rendering-requests)
+  - [Rendering Requests](#rendering-requests)
   - [Responses](#responses)
   - [Handlers](#handlers)
 * [Promises](#promises)
@@ -22,6 +22,7 @@ pop-http
   - [Nesting](#nesting)
 * [CLI Conversion](#cli-conversions)
 * [Server](#server)
+* [Rendering Responses](#rendering-responses)
 * [Uploads](#Uploads)
 
 Overview
@@ -893,6 +894,8 @@ in from an inbound client request. This includes:
 
 A number of methods exists to determine the type of request and access its data:
 
+### Request Headers & Data
+
 **Headers**
 
 ```php
@@ -1018,7 +1021,7 @@ $myResponse = new Response();
 $server     = new Server($myRequest, $myResponse);
 ````
 
-#### Filters
+### Filters
 
 As an extra layer of protection, you can add filters to the request object to filter incoming data:
 
@@ -1053,7 +1056,7 @@ Array
 )
 ```
 
-#### Redirects & Forwards
+### Redirects & Forwards
 
 You can redirect to another URL by calling the following method:
 
@@ -1069,6 +1072,32 @@ You can forward a client object's response as the server's response:
 use Pop\Http\Server\Response;
 
 Response::forward($clientResponse);
+```
+
+### Rendering Responses
+
+Server responses can be rendered out to a raw string:
+
+```php
+use Pop\Http\Server;
+
+$server = new Server();
+$server->response->setCode(200)
+    ->setMessage('OK')
+    ->setVersion('1.1')
+    ->addHeader('Content-Type', 'text/plain')
+    ->setBody('This is the response');
+
+echo $server;
+```
+
+Which would produce a string like this:
+
+```text
+HTTP/1.1 200 OK
+Content-Type: text/plain
+
+This is the response
 ```
 
 [Top](#pop-http)
