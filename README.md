@@ -650,9 +650,8 @@ $client3      = new Client('http://localhost/test3.php', $multiHandler);
 Promises
 --------
 
-Promises allow you to stage asynchronous requests and call them at a later time in the application. When you
-initialize a client object and call it asynchronously, it will return a promise object. There are few different
-ways to achieve this:
+Promises allow you to stage asynchronous requests within the application. When you initialize a client object
+and call it asynchronously, it will return a promise object. There are few different ways to achieve this:
 
 ```php
 use Pop\Http\Client;
