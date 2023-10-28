@@ -37,7 +37,8 @@ for the following:
     - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
     - Send sync or async requests
     - Support for promises
-    - Client to Curl CLI command conversions
+    - Dumping client requests out to a raw string
+    - 2-way client to curl CLI command conversions
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
   - Easily handle file uploads and apply server-side settings and restrictions

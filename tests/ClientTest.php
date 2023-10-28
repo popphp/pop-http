@@ -537,7 +537,7 @@ class ClientTest extends TestCase
             ]
         ];
         $client  = new Client('http://localhost:8000/get.php', $options);
-        $request = $client->render();
+        $request = (string)$client;
 
         $this->assertTrue(str_contains($request, 'GET /get.php?foo=bar HTTP/1.1'));
         $this->assertTrue(str_contains($request, 'Host: localhost:8000'));

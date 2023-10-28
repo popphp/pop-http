@@ -948,6 +948,15 @@ class Client extends AbstractHttp
     }
 
     /**
+     * To string magic method to render the client request to a raw string
+     *
+     */
+    public function __toString(): string
+    {
+        return $this->render();
+    }
+
+    /**
      * Magic method to send requests by the method name, i.e. $client->get('http://localhost/');
      *
      * @param  string $methodName
