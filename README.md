@@ -34,7 +34,7 @@ for the following:
   - Full control over request & response headers
   - Manage authorization
   - Manage and parse different request & response data types
-  - Automatic content negotiation of response data 
+  - Automatic content negotiation of response data, where possible
   - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
   - Send sync or async requests
   - Support for promises
@@ -42,7 +42,7 @@ for the following:
   - 2-way client to curl CLI command conversions
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
-  - Automatic content negotiation of request data
+  - Automatic content negotiation of request data, where possible
   - Dump server responses out to a raw string
   - Easily handle file uploads and apply server-side settings and restrictions
 
