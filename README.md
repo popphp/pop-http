@@ -31,7 +31,7 @@ for the following:
 
 - **HTTP Client Transactions**
   - Create and manage outbound HTTP client requests and their responses
-  - Full control over request & response headers
+  - Full control over request & response headers and data
   - Manage authorization
   - Manage and parse different request & response data types
   - Automatic content negotiation of response data, where possible
