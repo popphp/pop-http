@@ -353,7 +353,7 @@ use Pop\Http\Client;
 use Pop\Http\Client\Request;
 
 $client = new Client('http://localhost/', ['auto' => true]);
-$data   = $client->post(); // Returns an array
+$data   = $client->get(); // Returns an array
 ```
 
 If you still need to access the full response object, you can access it by calling:
@@ -418,7 +418,7 @@ Client requests can be rendered out to a raw string:
 ```php
 use Pop\Http\Client;
 
-$client   = new Client('http://localhost:8000/files.php', [
+$client = new Client('http://localhost:8000/files.php', [
     'method' => 'POST',
     'data'  => [
         'foo' => 'bar'
@@ -481,16 +481,36 @@ As mentioned above, using the following method will get the parsed content based
 var_dump($response->getParsedResponse());
 ```
 
-To determine if the return response was a success or an error, the following methods can be used:
+There are a number of helper methods to determine the response's status:
 
 ```php
-var_dump($response->isSuccess());     // Boolean on 100-, 200- or 300-level responses
-var_dump($response->isError());       // Boolean on 400- or 500-level responses
-var_dump($response->isContinue());    // Boolean on 100-level response
-var_dump($response->isOk());          // Boolean on 200-level response
-var_dump($response->isRedirect());    // Boolean on 300-level response
-var_dump($response->isClientError()); // Boolean on 400-level response
-var_dump($response->isServerError()); // Boolean on 500-level response
+$response->isSuccess();              // Bool on 100/200/300-level responses
+$response->isError();                // Bool on 400/500-level responses
+$response->isContinue();             // Bool on 100-level response
+$response->isOk();                   // Bool on 200 response
+$response->isCreated();              // Bool on 201 response
+$response->isAccepted();             // Bool on 202 response
+$response->isNoContent();            // Bool on 204 response
+$response->isRedirect();             // Bool on 300-level response
+$response->isMovedPermanently();     // Bool on 301 response
+$response->isFound();                // Bool on 302 response
+$response->isClientError();          // Bool on 400-level response
+$response->isBadRequest();           // Bool on 400 response
+$response->isUnauthorized();         // Bool on 401 response
+$response->isForbidden();            // Bool on 403 response
+$response->isNotFound();             // Bool on 404 response
+$response->isMethodNotAllowed();     // Bool on 405 response
+$response->isNotAcceptable();        // Bool on 406 response
+$response->isRequestTimeout();       // Bool on 408 response
+$response->isConflict();             // Bool on 409 response
+$response->isLengthRequired();       // Bool on 411 response
+$response->isUnsupportedMediaType(); // Bool on 415 response
+$response->isUnprocessableEntity();  // Bool on 422 response
+$response->isTooManyRequests();      // Bool on 429 response
+$response->isServerError();          // Bool on 500-level response
+$response->isInternalServerError();  // Bool on 500 response
+$response->isBadGateway();           // Bool on 502 response
+$response->isServiceUnavailable();   // Bool on 503 response
 ```
 
 ### Handlers
