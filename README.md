@@ -31,14 +31,14 @@ for the following:
 
 - **HTTP Client Transactions**
   - Create and manage outbound HTTP client requests and their responses
-    - Full control over request & response headers
-    - Manage authorization
-    - Manage and parse different request & response data types
-    - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
-    - Send sync or async requests
-    - Support for promises
-    - Dump client requests out to a raw string
-    - 2-way client to curl CLI command conversions
+  - Full control over request & response headers
+  - Manage authorization
+  - Manage and parse different request & response data types
+  - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
+  - Send sync or async requests
+  - Support for promises
+  - Dump client requests out to a raw string
+  - 2-way client to curl CLI command conversions
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
   - Dump server responses out to a raw string
