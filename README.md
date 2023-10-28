@@ -34,6 +34,7 @@ for the following:
   - Full control over request & response headers
   - Manage authorization
   - Manage and parse different request & response data types
+  - Automatic content negotiation of response data 
   - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
   - Send sync or async requests
   - Support for promises
