@@ -22,7 +22,10 @@ pop-http
   - [Nesting](#nesting)
 * [CLI Conversion](#cli-conversions)
 * [Server](#server)
-* [Rendering Responses](#rendering-responses)
+  - [Request Headers & Data](#request-headers-data)
+  - [Filters](#filters)
+  - [Redirects & Forwards](#redirects-forwards)
+  - [Rendering Responses](#rendering-responses)
 * [Uploads](#Uploads)
 
 Overview
