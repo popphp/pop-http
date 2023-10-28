@@ -22,11 +22,11 @@ pop-http
   - [Nesting](#nesting)
 * [CLI Conversion](#cli-conversions)
 * [Server](#server)
-  - [Request Headers & Data](#request-headers-data)
+  - [Request Headers & Data](#request-headers--data)
   - [Filters](#filters)
-  - [Redirects & Forwards](#redirects-forwards)
+  - [Redirects & Forwards](#redirects--forwards)
   - [Rendering Responses](#rendering-responses)
-* [Uploads](#Uploads)
+  - [Uploads](#uploads)
 
 Overview
 --------
@@ -182,6 +182,8 @@ $responsePatch  = Client::patch('http://localhost/patch', ['data' => ['foo' => '
 $responseDelete = Client::delete('http://localhost/delete', ['data' => ['foo' => 'bar']]);
 ```
 
+[Top](#pop-http)
+
 ### Auth
 
 There is an auth header class to assist in wiring up different types of standard authorization headers:
@@ -247,6 +249,8 @@ $response = Client::post(
     )
 );
 ```
+
+[Top](#pop-http)
 
 ### Options
 
@@ -318,6 +322,8 @@ $client = new Client('http://localhost/post', [
 $response = $client->send();
 ```
 
+[Top](#pop-http)
+
 ### Automatic Content Negotiation
 
 In the above examples, the `$response` returned is a full response object. If you want to get the actual response
@@ -365,6 +371,8 @@ If you still need to access the full response object, you can access it by calli
 ```php
 $clientResponse = $client->getResponse();
 ```
+
+[Top](#pop-http)
 
 ### Requests
 
@@ -415,6 +423,8 @@ $request->createAsMultipart();
 
 Each way effectively sets the appropriate `Content-Type` header and properly formats the data for that data type.
 
+[Top](#pop-http)
+
 ### Rendering Requests
 
 Client requests can be rendered out to a raw string:
@@ -447,6 +457,8 @@ Content-Length: 7
 
 foo=bar
 ```
+
+[Top](#pop-http)
 
 ### Responses
 
@@ -517,6 +529,8 @@ $response->isBadGateway();           // Bool on 502 response
 $response->isServiceUnavailable();   // Bool on 503 response
 ```
 
+[Top](#pop-http)
+
 ### Handlers
 
 You can choose to use a different handler with the client object. The available handlers are:
@@ -550,6 +564,8 @@ And then you can interact with the handler using the `getHandler()` method:
 $client->getHandler()->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 ```
 
+[Top](#pop-http)
+
 #### Curl
 
 The handlers allow you to further customize the request by interfacing with each respective handler's settings.
@@ -569,6 +585,8 @@ $curl->setOptions([
 $client = new Client('http://localhost/');
 $client->setHandler($curl);
 ```
+
+[Top](#pop-http)
 
 #### Stream
 
@@ -590,6 +608,8 @@ $stream->setContextOptions([
 $client = new Client('http://localhost/');
 $client->setHandler($stream);
 ```
+
+[Top](#pop-http)
 
 #### Curl Multi-Handler
 
@@ -704,6 +724,8 @@ $multiHandler = Client::createMulti([
 $promise = $multiHandler->sendAsync();
 ```
 
+[Top](#pop-http)
+
 ### Wait
 
 Once you have a promise object, the most basic way to interact with it is to call `wait()`, which simply
@@ -730,6 +752,8 @@ if ($response instanceof Response) {
     print_r($response->getParsedResponse());
 }
 ```
+
+[Top](#pop-http)
 
 ### Then
 
@@ -777,6 +801,8 @@ $promise->then(function(Response $response) {
 
 The `catch()` and `finally()` methods also have the same `$resolve` force flag.
 
+[Top](#pop-http)
+
 ### Forwarding
 
 You can chain multiple `then()` method calls together, which is sometimes called "forwarding" a promise.
@@ -798,6 +824,8 @@ $promise1->then(function(Response $response) use ($promise2) {
 
 $promise1->resolve();
 ```
+
+[Top](#pop-http)
 
 ### Nesting
 
@@ -896,6 +924,8 @@ in from an inbound client request. This includes:
 - Request body
 
 A number of methods exists to determine the type of request and access its data:
+
+[Top](#pop-http)
 
 ### Request Headers & Data
 
@@ -1024,6 +1054,8 @@ $myResponse = new Response();
 $server     = new Server($myRequest, $myResponse);
 ````
 
+[Top](#pop-http)
+
 ### Filters
 
 As an extra layer of protection, you can add filters to the request object to filter incoming data:
@@ -1059,6 +1091,8 @@ Array
 )
 ```
 
+[Top](#pop-http)
+
 ### Redirects & Forwards
 
 You can redirect to another URL by calling the following method:
@@ -1076,6 +1110,8 @@ use Pop\Http\Server\Response;
 
 Response::forward($clientResponse);
 ```
+
+[Top](#pop-http)
 
 ### Rendering Responses
 
@@ -1105,8 +1141,7 @@ This is the response
 
 [Top](#pop-http)
 
-Uploads
--------
+### Uploads
 
 #### Basic file upload
 
