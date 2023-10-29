@@ -4,7 +4,8 @@ pop-http
 [![Build Status](https://github.com/popphp/pop-http/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-http/actions)
 [![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-http)](http://cc.popphp.org/pop-http/)
 
-[![Join the chat at https://discord.gg/D9JBxPa5](https://www.popphp.org/assets/img/discord-chat.svg)](https://discord.gg/D9JBxPa5)
+[![Join the chat at https://popphp.slack.com](https://media.popphp.org/img/slack.svg)](https://popphp.slack.com)
+[![Join the chat at https://discord.gg/D9JBxPa5](https://media.popphp.org/img/discord.svg)](https://discord.gg/D9JBxPa5)
 
 * [Overview](#overview)
 * [Install](#install)
