@@ -688,9 +688,10 @@ class Request extends AbstractRequest
     public function prepareMultipart(): Request
     {
         $formMessage       = Message::createForm($this->data->getData());
-        $contentType       = $formMessage->getHeader('Content-Type');
-        $this->dataContent = $formMessage->render(false);
-        $this->addHeader($contentType);
+        $this->dataContent = $formMessage->renderRaw();
+        $this->addHeader($formMessage->getHeader('Content-Type'));
+
+
 
         return $this;
     }
