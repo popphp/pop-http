@@ -336,7 +336,7 @@ content, as mentioned above, you would call:
 $content = $response->getParsedResponse();
 ```
 
-There are two ways to attempt content negotiation automatically and return the parsed content:
+There are three ways to attempt content negotiation automatically and return the parsed content:
 
 1. If you would like to attempt to parse the response content as JSON, regardless of any `Content-Type` header value
    or absence thereof, you can call the `json()` method to obtain a PHP array representation of the data:
@@ -564,6 +564,7 @@ $client->setHandler(new Stream());
 And then you can interact with the handler using the `getHandler()` method:
 
 ```php
+// Example with a CURL handler
 $client->getHandler()->setOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 ```
 
@@ -618,7 +619,7 @@ $client->setHandler($stream);
 
 The Curl Multi-Handler is a special use-case handler that allows for multiple parallel/concurrent requests
 to be made at the same time. Each request will get its own `Client` object, which will be registered with
-the multi-handler object. The simpliest way to configure a multi-handler object would be:
+the multi-handler object. The simplest way to configure a multi-handler object would be:
 
 ```php
 use Pop\Http\Client;
@@ -925,8 +926,6 @@ in from an inbound client request. This includes:
 - Request data (`$_GET`, `$_POST`, etc)
 - Request headers
 - Request body
-
-A number of methods exists to determine the type of request and access its data:
 
 [Top](#pop-http)
 
