@@ -417,15 +417,15 @@ class Data
         // Set parsed data to the proper method-based array
         switch (strtoupper($_SERVER['REQUEST_METHOD'])) {
             case 'PUT':
-                $this->put = $this->parsedData;
+                $this->put = (!empty($this->parsedData)) ? $this->parsedData : [];
                 break;
 
             case 'PATCH':
-                $this->patch = $this->parsedData;
+                $this->patch = (!empty($this->parsedData)) ? $this->parsedData : [];
                 break;
 
             case 'DELETE':
-                $this->delete = $this->parsedData;
+                $this->delete = (!empty($this->parsedData)) ? $this->parsedData : [];
                 break;
         }
     }
