@@ -172,7 +172,7 @@ class Auth
             $header = Header::parse($header);
         }
 
-        $headerName = (strtolower($header->getName()) == 'www-authenticate') ? 'Authorization' : $header->getName();
+        $headerName = (strtolower((string)$header->getName()) == 'www-authenticate') ? 'Authorization' : $header->getName();
         $auth->setHeader($headerName);
 
         if (count($header->getValues()) == 1) {
@@ -186,7 +186,7 @@ class Auth
             if (!isset($options['password'])) {
                 throw new Exception('Error: The password option must be passed.');
             }
-            if (strtolower($header->getName()) == 'www-authenticate') {
+            if (strtolower((string)$header->getName()) == 'www-authenticate') {
                 if (!isset($options['username']) || !isset($options['uri'])) {
                     throw new Exception('Error: The username and URI options must be passed.');
                 }
@@ -420,7 +420,7 @@ class Auth
      */
     public function isBasic(): bool
     {
-        return (strtolower($this->scheme) == 'basic');
+        return (strtolower((string)$this->scheme) == 'basic');
     }
 
     /**
@@ -430,7 +430,7 @@ class Auth
      */
     public function isBearer(): bool
     {
-        return (strtolower($this->scheme) == 'bearer');
+        return (strtolower((string)$this->scheme) == 'bearer');
     }
 
     /**
