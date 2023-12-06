@@ -793,7 +793,10 @@ class Client extends AbstractHttp
                 $request = new Request(new Uri($uri), ($method ?? 'GET'));
                 $this->setRequest($request);
             }
-        } else if ($method !== null) {
+        }
+
+        // Set method
+        if ($method !== null) {
             $this->request->setMethod($method);
         }
 
