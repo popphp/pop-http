@@ -181,7 +181,7 @@ class Auth
             $value = $header->getValuesAsStrings('; ');
         }
 
-        if ((($value instanceof Header\Value) && (trim($value->getScheme()) == 'Digest')) ||
+        if ((($value instanceof Header\Value) && !empty($value->getScheme()) && (trim($value->getScheme()) == 'Digest')) ||
             (isset($options['scheme']) && ($options['scheme'] == 'digest'))) {
             if (!isset($options['password'])) {
                 throw new Exception('Error: The password option must be passed.');

@@ -557,6 +557,18 @@ class Uri
             $this->setBasePath($basePath);
         }
 
+        // Get fragment
+        if (str_contains($this->uri, '#')) {
+            $this->fragment = substr($this->uri, (strpos($this->uri, '#') + 1));
+            $this->uri      = substr($this->uri, 0, strpos($this->uri, '#'));
+        }
+
+        // Get query
+        if (str_contains($this->uri, '?')) {
+            $this->query = substr($this->uri, (strpos($this->uri, '?') + 1));
+            $this->uri   = substr($this->uri, 0, strpos($this->uri, '?'));
+        }
+
         // Get segments
         if (($this->uri != '/') && (str_contains($this->uri, '/'))) {
             $uri = (str_starts_with($this->uri, '/')) ? substr($this->uri, 1) : $this->uri;

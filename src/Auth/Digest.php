@@ -175,7 +175,7 @@ class Digest
     {
         if (is_string($header)) {
             $header = Header::parse($header);
-            if (trim($header->getValue()->getScheme()) != 'Digest') {
+            if (($header->getValue()->getScheme() === null) || (trim($header->getValue()->getScheme()) != 'Digest')) {
                 throw new Exception('Error: The auth header is not digest.');
             }
         }
@@ -219,7 +219,7 @@ class Digest
     {
         if (is_string($wwwAuth)) {
             $wwwAuth = Header::parse($wwwAuth);
-            if (trim($wwwAuth->getValue()->getScheme()) != 'Digest') {
+            if (($wwwAuth->getValue()->getScheme() === null) || (trim($wwwAuth->getValue()->getScheme()) != 'Digest')) {
                 throw new Exception('Error: The auth header is not digest.');
             }
         }
@@ -723,7 +723,7 @@ class Digest
             $result = false;
         }
         // Check QOP auth/auth-int nonce count and client nonce for the response
-        if (str_contains($this->qop, 'auth') && (($this->nonceCount === null) || ($this->clientNonce === null))) {
+        if (!empty($this->qop) && (str_contains($this->qop, 'auth') && (($this->nonceCount === null) || ($this->clientNonce === null)))) {
             $this->errors[] = 'Error: Either the nonce count or client nonce was not set for the auth QOP.';
             $result = false;
         }
