@@ -777,7 +777,7 @@ class Client extends AbstractHttp
      */
     public function prepare(?string $uri = null, string $method = null): Client
     {
-        if ((!$this->hasRequest()) && ($uri === null)) {
+        if ((!$this->hasRequest()) && ($uri === null) && !isset($this->options['base_uri'])) {
             throw new Exception('Error: There is no request URI to send.');
         }
 
@@ -793,6 +793,9 @@ class Client extends AbstractHttp
                 $request = new Request(new Uri($uri), ($method ?? 'GET'));
                 $this->setRequest($request);
             }
+        } else if ((!$this->hasRequest()) && isset($this->options['base_uri'])) {
+            $request = new Request(new Uri($this->options['base_uri']), ($method ?? 'GET'));
+            $this->setRequest($request);
         }
 
         // Set method
