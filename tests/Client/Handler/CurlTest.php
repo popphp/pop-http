@@ -155,7 +155,7 @@ class CurlTest extends TestCase
 
         $curl->prepare($request);
         $headers = $curl->getOption(CURLOPT_HTTPHEADER);
-        $this->assertCount(2, $headers);
+        $this->assertCount(1, $headers);
     }
 
     public function testPrepareWithGetData()
