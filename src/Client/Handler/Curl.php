@@ -171,15 +171,22 @@ class Curl extends AbstractCurl
     /**
      * Method to prepare the handler
      *
-     * @param Request $request
-     * @param  ?Auth $auth
-     * @parma  bool
+     * @param  Request $request
+     * @param  ?Auth   $auth
+     * @param  bool   $forceCustom
+     * @param  bool   $clear
      * @throws Exception|\Pop\Http\Exception
      * @return Curl
      */
-    public function prepare(Request $request, ?Auth $auth = null, bool $forceCustom = false): Curl
+    public function prepare(Request $request, ?Auth $auth = null, bool $forceCustom = false, bool $clear = true): Curl
     {
         $this->setMethod($request->getMethod(), $forceCustom);
+
+        // Clear headers for a fresh request based on the headers in the request object,
+        // else fall back to pre-defined headers in the stream context
+        if (($clear) && $this->hasOption(CURLOPT_HTTPHEADER)) {
+            $this->setOption(CURLOPT_HTTPHEADER, []);
+        }
 
         // Add auth header
         if ($auth !== null) {
