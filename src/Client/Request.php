@@ -567,30 +567,37 @@ class Request extends AbstractRequest
      */
     public function prepareData(): void
     {
+        $dataPrepared = false;
+
         // Prepare the GET query string
         if (($this->method == 'GET') && ((!$this->hasHeader('Content-Type')) ||
-            ($this->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
+                ($this->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
             $this->dataContent = ($this->data->hasRawData()) ?
                 $this->data->getRawData() : $this->data->prepareQueryString($this->query);
-        // Else, prepare the data content
+            $dataPrepared = true;
+            // Else, prepare the data content
         } else if ($this->method != 'GET') {
             switch ($this->requestType) {
                 case Request::JSON:
                     $this->prepareJson();
+                    $dataPrepared = true;
                     break;
                 case Request::XML:
                     $this->prepareXml();
+                    $dataPrepared = true;
                     break;
                 case Request::URLFORM:
                     $this->prepareUrlEncoded();
+                    $dataPrepared = true;
                     break;
                 case Request::MULTIPART:
                     $this->prepareMultipart();
+                    $dataPrepared = true;
                     break;
             }
 
             // Fallback
-            if ($this->dataContent === null) {
+            if (!$dataPrepared) {
                 // If the request has raw data
                 if ($this->data->hasRawData()) {
                     $this->prepareRawData();
