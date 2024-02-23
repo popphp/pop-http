@@ -645,6 +645,8 @@ class Request extends AbstractRequest
         // Only encode if the data isn't already encoded
         if (!((is_string($jsonContent) && (json_decode($jsonContent) !== false)) && (json_last_error() == JSON_ERROR_NONE))) {
             $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
+        } else {
+            $this->dataContent = $jsonContent;
         }
 
         return $this;
