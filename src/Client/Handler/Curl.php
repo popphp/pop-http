@@ -59,6 +59,9 @@ class Curl extends AbstractCurl
     {
         if (($method == 'POST') && (!$forceCustom)) {
             $this->setOption(CURLOPT_POST, true);
+            if ($this->hasOption(CURLOPT_CUSTOMREQUEST)) {
+                $this->removeOption(CURLOPT_CUSTOMREQUEST);
+            }
         } else if ($method != 'GET') {
             $this->setOption(CURLOPT_CUSTOMREQUEST, $method);
         }
