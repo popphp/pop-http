@@ -366,6 +366,94 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Set headers
+     *
+     * @param  array $headers
+     * @return Client
+     */
+    public function setHeaders(array $headers): Client
+    {
+        $this->options['headers'] = $headers;
+        return $this;
+    }
+
+    /**
+     * Add header
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return Client
+     */
+    public function addHeader(string $name, mixed $value): Client
+    {
+        if (!isset($this->options['headers'])) {
+            $this->options['headers'] = [];
+        }
+        $this->options['headers'][$name] = $value;
+        return $this;
+    }
+
+    /**
+     * Get header
+     *
+     * @param  ?string $key
+     * @return mixed
+     */
+    public function getHeader(?string $key = null): mixed
+    {
+        if ($key !== null) {
+            return (isset($this->options['headers']) && isset($this->options['headers'][$key])) ?
+                $this->options['headers'][$key] : null;
+        } else {
+            return $this->options['headers'] ?? null;
+        }
+    }
+
+    /**
+     * Has header
+     *
+     * @param  ?string $key
+     * @return bool
+     */
+    public function hasHeader(?string $key = null): bool
+    {
+        if ($key !== null) {
+            return (isset($this->options['headers']) && isset($this->options['headers'][$key]));
+        } else {
+            return isset($this->options['headers']);
+        }
+    }
+
+    /**
+     * Remove header
+     *
+     * @param  string $key
+     * @return Client
+     */
+    public function removeHeader(string $key): Client
+    {
+        if (isset($this->options['headers']) && isset($this->options['headers'][$key])) {
+            unset($this->options['headers'][$key]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove all headers
+     *
+     * @return Client
+     */
+    public function removeAllHeaders(): Client
+    {
+        if (isset($this->options['headers'])) {
+            unset($this->options['headers']);
+        }
+
+        return $this;
+    }
+
+    /**
      * Set data
      *
      * @param  array $data

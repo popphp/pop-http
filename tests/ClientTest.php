@@ -293,6 +293,48 @@ class ClientTest extends TestCase
         $this->assertFalse($client->hasData());
     }
 
+    public function testHeader()
+    {
+        $client = new Client();
+        $client->setHeaders([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasHeader('foo'));
+        $this->assertTrue($client->hasHeader());
+        $this->assertEquals('bar', $client->getHeader('foo'));
+        $this->assertCount(1, $client->getHeader());
+    }
+
+    public function testAddHeader()
+    {
+        $client = new Client();
+        $client->addHeader('foo', 'bar');
+        $this->assertEquals('bar', $client->getHeader('foo'));
+        $this->assertCount(1, $client->getHeader());
+    }
+
+    public function testRemoveHeader()
+    {
+        $client = new Client();
+        $client->setHeaders([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasHeader('foo'));
+        $client->removeHeader('foo');
+        $this->assertFalse($client->hasHeader('foo'));
+    }
+
+    public function testRemoveAllHeader()
+    {
+        $client = new Client();
+        $client->setHeaders([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasHeader());
+        $client->removeAllHeaders();
+        $this->assertFalse($client->hasHeader());
+    }
+
     public function testQuery()
     {
         $client = new Client();
