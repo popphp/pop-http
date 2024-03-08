@@ -40,7 +40,14 @@ class Command
      */
     public static function clientToCommand(Client $client): string
     {
-        $command = 'curl';
+        $command        = 'curl';
+        $currentOptions = [];
+
+        // If client has a Curl handler, get current options before reset
+        if (($client->hasHandler()) && ($client->getHandler() instanceof Curl) && ($client->getHandler()->hasOptions())) {
+            $currentOptions = $client->getHandler()->getOptions();
+        }
+
         $client->prepare();
 
         if (!($client->getHandler() instanceof Curl)) {
@@ -142,7 +149,7 @@ class Command
         }
 
         // Handle all other options
-        $curlOptions = $client->getHandler()->getOptions();
+        $curlOptions =  $client->getHandler()->getOptions() + $currentOptions;
         foreach ($curlOptions as $curlOption => $curlOptionValue) {
             $curlOptionName = Options::getOptionNameByValue($curlOption);
             if (!Options::isOmitOption($curlOptionName)) {

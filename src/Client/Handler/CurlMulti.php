@@ -39,6 +39,27 @@ class CurlMulti extends AbstractCurl
     protected array $clients = [];
 
     /**
+     * Constructor
+     *
+     * Instantiate the Curl multi handler object
+     *
+     * @param  ?array $options
+     * @throws Exception
+     */
+    public function __construct(?array $options = null)
+    {
+        if (!function_exists('curl_multi_init')) {
+            throw new Exception('Error: Curl multi handler support is not available.');
+        }
+
+        $this->resource = curl_multi_init();
+
+        if (!empty($options)) {
+            $this->setOptions($options);
+        }
+    }
+
+    /**
      * Factory method to create a Curl multi handler
      *
      * @param  ?array $options
@@ -47,6 +68,21 @@ class CurlMulti extends AbstractCurl
     public static function create(?array $options = null): CurlMulti
     {
         return new self($options);
+    }
+
+    /**
+     * Set Curl option
+     *
+     * @param  int   $opt
+     * @param  mixed $val
+     * @return AbstractCurl
+     */
+    public function setOption(int $opt, mixed $val): AbstractCurl
+    {
+        parent::setOption($opt, $val);
+        curl_multi_setopt($this->resource, $opt, $val);
+
+        return $this;
     }
 
     /**

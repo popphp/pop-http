@@ -46,24 +46,7 @@ abstract class AbstractCurl extends AbstractHandler
      * @param  ?array $options
      * @throws Exception
      */
-    public function __construct(?array $options = null)
-    {
-        if (!function_exists('curl_init')) {
-            throw new Exception('Error: Curl is not available.');
-        }
-
-        if (str_contains(get_class($this), 'Multi')) {
-            $this->resource = curl_multi_init();
-        } else {
-            $this->resource = curl_init();
-            $this->setOption(CURLOPT_HEADER, true);
-            $this->setOption(CURLOPT_RETURNTRANSFER, true);
-        }
-
-        if ($options !== null) {
-            $this->setOptions($options);
-        }
-    }
+    abstract public function __construct(?array $options = null);
 
     /**
      * Get Curl response
@@ -108,11 +91,6 @@ abstract class AbstractCurl extends AbstractHandler
     {
         // Set the protected property to keep track of the Curl options.
         $this->options[$opt] = $val;
-        if (str_contains(get_class($this), 'Multi')) {
-            curl_multi_setopt($this->resource, $opt, $val);
-        } else {
-            curl_setopt($this->resource, $opt, $val);
-        }
 
         if ($this->hasOption(CURLOPT_HTTP_VERSION)) {
             switch ($this->getOption(CURLOPT_HTTP_VERSION)) {
@@ -197,6 +175,16 @@ abstract class AbstractCurl extends AbstractHandler
     public function hasOption(int $opt): bool
     {
         return (isset($this->options[$opt]));
+    }
+
+    /**
+     * Has Curl options
+     *
+     * @return bool
+     */
+    public function hasOptions(): bool
+    {
+        return !empty($this->options);
     }
 
     /**

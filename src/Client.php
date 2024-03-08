@@ -89,6 +89,11 @@ class Client extends AbstractHttp
 
         parent::__construct($request, $response);
 
+        // Set the 'type' option if the incoming request has a request type
+        if (($request !== null) && ($request->hasRequestType()) && (!$this->hasType())) {
+            $this->setType($request->getRequestType());
+        }
+
         if ($handler !== null) {
             if ($handler instanceof CurlMulti) {
                 $this->setMultiHandler($handler);
@@ -260,7 +265,32 @@ class Client extends AbstractHttp
      */
     public function hasOption(string $name): bool
     {
-        return isset($this->options[$name]);
+        return array_key_exists($name, $this->options);
+    }
+
+    /**
+     * Remove option
+     *
+     * @param  string $name
+     * @return Client
+     */
+    public function removeOption(string $name): Client
+    {
+        if (isset($this->options[$name])) {
+            unset($this->options[$name]);
+        }
+        return $this;
+    }
+
+    /**
+     * Remove options
+     *
+     * @return Client
+     */
+    public function removeOptions(): Client
+    {
+        $this->options = [];
+        return $this;
     }
 
     /**
@@ -630,6 +660,52 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Set type
+     *
+     * @param  string $type
+     * @return Client
+     */
+    public function setType(string $type): Client
+    {
+        $this->options['type'] = $type;
+        return $this;
+    }
+
+    /**
+     * Get type
+     *
+     * @return mixed
+     */
+    public function getType(): mixed
+    {
+        return $this->options['type'] ?? null;
+    }
+
+    /**
+     * Has type
+     *
+     * @return bool
+     */
+    public function hasType(): bool
+    {
+        return isset($this->options['type']);
+    }
+
+    /**
+     * Remove type
+     *
+     * @return Client
+     */
+    public function removeType(): Client
+    {
+        if (isset($this->options['type'])) {
+            unset($this->options['type']);
+        }
+
+        return $this;
+    }
+
+    /**
      * Set files
      *
      * @param  array|string $files
@@ -873,17 +949,24 @@ class Client extends AbstractHttp
             $method = $this->options['method'];
         }
 
-        // Set request URI
-        if ($uri !== null) {
-            if ($this->hasRequest()) {
+        if ($this->hasRequest()) {
+            // Set request URI
+            if ($uri !== null) {
+                if (isset($this->options['base_uri']) && !str_starts_with($uri, $this->options['base_uri'])) {
+                    $uri = $this->options['base_uri'] . $uri;
+                }
                 $this->request->setUri(new Uri($uri));
-            } else {
-                $request = new Request(new Uri($uri), ($method ?? 'GET'));
-                $this->setRequest($request);
+            // Else, check and adjust for base_uri
+            } else if (isset($this->options['base_uri']) && !str_starts_with($this->request->getUriAsString(), $this->options['base_uri'])) {
+                $this->request->setUri($this->options['base_uri'] . $this->request->getUriAsString());
             }
-        } else if ((!$this->hasRequest()) && isset($this->options['base_uri'])) {
-            $request = new Request(new Uri($this->options['base_uri']), ($method ?? 'GET'));
-            $this->setRequest($request);
+        } else {
+            if (($uri === null) && isset($this->options['base_uri'])) {
+                $uri = $this->options['base_uri'];
+            } else if (isset($this->options['base_uri']) && !str_starts_with($uri, $this->options['base_uri'])) {
+                $uri = $this->options['base_uri'] . $uri;
+            }
+            $this->setRequest(new Request(new Uri($uri), ($method ?? 'GET')));
         }
 
         // Set method
@@ -923,13 +1006,13 @@ class Client extends AbstractHttp
         }
 
         // Set request type
-        if ($this->hasOption('type')) {
-            $this->request->setRequestType($this->options['type']);
-        }
+        $this->request->setRequestType(($this->hasOption('type') ? $this->options['type'] : null));
 
-        // Set handler
+        // Set (or reset) handler
         if (!$this->hasHandler()) {
             $this->setHandler(new Curl());
+        } else {
+            $this->getHandler()->reset();
         }
 
         // Set user-agent
@@ -949,11 +1032,6 @@ class Client extends AbstractHttp
             if ($this->hasOption('allow_self_signed')) {
                 $this->handler->allowSelfSigned((bool)$this->options['allow_self_signed']);
             }
-        }
-
-        // Adjust for base_uri
-        if (($this->hasOption('base_uri')) && !str_starts_with($this->request->getUriAsString(), $this->getOption('base_uri'))) {
-            $this->request->setUri($this->getOption('base_uri') . $this->request->getUriAsString());
         }
 
         return $this;

@@ -285,6 +285,7 @@ class Request extends AbstractRequest
         } else {
             $this->data = (is_array($data)) ? new Data($data) : $data;
         }
+        $this->dataContent = null;
         return $this;
     }
 
@@ -357,10 +358,15 @@ class Request extends AbstractRequest
         $uri = parent::getUriAsString();
 
         if (($this->method == 'GET') && ($query) && ($this->data !== null)) {
+            $queryString = null;
             if ($this->dataContent !== null) {
-                $uri .= '?' . ((is_array($this->dataContent)) ? http_build_query($this->dataContent) : $this->dataContent);
+                $queryString = ((is_array($this->dataContent)) ? http_build_query($this->dataContent) : $this->dataContent);
             } else if (($this->requestType === null) || ($this->requestType == self::URLFORM)) {
-                $uri .= $this->data->prepareQueryString($this->query, true);
+                $queryString = $this->data->prepareQueryString($this->query);
+            }
+
+            if (!empty($queryString) && !str_contains($uri, $queryString)) {
+                $uri .= ((str_contains($uri, '?')) ? '&' : '?') . $queryString;
             }
         }
 
@@ -370,10 +376,10 @@ class Request extends AbstractRequest
     /**
      * Set request type
      *
-     * @param  string $type
+     * @param  ?string $type
      * @return Request
      */
-    public function setRequestType(string $type): Request
+    public function setRequestType(string $type = null): Request
     {
         switch ($type) {
             case self::JSON:
@@ -388,6 +394,14 @@ class Request extends AbstractRequest
             case self::MULTIPART:
                 $this->createAsMultipart();
                 break;
+            default:
+                $this->requestType = null;
+                if ($this->hasHeader('Content-Type')) {
+                    $this->removeHeader('Content-Type');
+                }
+                if ($this->hasHeader('Content-Length')) {
+                    $this->removeHeader('Content-Length');
+                }
         }
 
         return $this;

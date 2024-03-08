@@ -369,6 +369,7 @@ class Stream extends AbstractHandler
         if (($clear) && isset($this->contextOptions['http']['header'])) {
             $this->contextOptions['http']['header'] = null;
         }
+
         // Add auth header
         if ($auth !== null) {
             $request->addHeader($auth->createAuthHeader());
@@ -381,6 +382,8 @@ class Stream extends AbstractHandler
             $request->prepareData();
             if ($request->hasDataContent()) {
                 $this->contextOptions['http']['content'] = $request->getDataContent();
+            } else if (!empty($this->contextOptions['http']['content'])) {
+                unset($this->contextOptions['http']['content']);
             }
         // Else, if request has query
         } else if ($request->hasQuery()) {

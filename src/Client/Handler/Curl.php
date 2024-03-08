@@ -33,19 +33,62 @@ class Curl extends AbstractCurl
 {
 
     /**
+     * Constructor
+     *
+     * Instantiate the Curl handler object
+     *
+     * @param  ?array $options
+     * @param  bool   $default
+     * @throws Exception
+     */
+    public function __construct(?array $options = null, bool $default = true)
+    {
+        if (!function_exists('curl_init')) {
+            throw new Exception('Error: Curl is not available.');
+        }
+
+        $this->resource = curl_init();
+
+        if ($default) {
+            $this->setOption(CURLOPT_HEADER, true);
+            $this->setOption(CURLOPT_RETURNTRANSFER, true);
+        }
+
+        if (!empty($options)) {
+            $this->setOptions($options);
+        }
+    }
+
+    /**
      * Factory method to create a Curl handler
      *
      * @param  string $method
      * @param  ?array $options
-     * @throws Exception
+     * @param  bool  $default
      * @return Curl
      *
+     *@throws Exception
      */
-    public static function create(string $method = 'GET', ?array $options = null): Curl
+    public static function create(string $method = 'GET', ?array $options = null, bool $default = true): Curl
     {
-        $handler = new self($options);
+        $handler = new self($options, $default);
         $handler->setMethod($method);
         return $handler;
+    }
+
+    /**
+     * Set Curl option
+     *
+     * @param  int   $opt
+     * @param  mixed $val
+     * @return AbstractCurl
+     */
+    public function setOption(int $opt, mixed $val): AbstractCurl
+    {
+        parent::setOption($opt, $val);
+        curl_setopt($this->resource, $opt, $val);
+
+        return $this;
     }
 
     /**
@@ -57,16 +100,26 @@ class Curl extends AbstractCurl
      */
     public function setMethod(string $method, bool $forceCustom = false): Curl
     {
-        if (($method == 'POST') && (!$forceCustom)) {
+        if ($method == 'GET') {
+            if ($this->hasOption(CURLOPT_POST)) {
+                $this->removeOption(CURLOPT_POST);
+            }
+            if ($this->hasOption(CURLOPT_CUSTOMREQUEST)) {
+                $this->removeOption(CURLOPT_CUSTOMREQUEST);
+            }
+        } else if (($method == 'POST') && (!$forceCustom)) {
             $this->setOption(CURLOPT_POST, true);
             if ($this->hasOption(CURLOPT_CUSTOMREQUEST)) {
                 $this->removeOption(CURLOPT_CUSTOMREQUEST);
             }
-        } else if ($method != 'GET') {
+        } else {
             $this->setOption(CURLOPT_CUSTOMREQUEST, $method);
         }
+
         if ($method == 'HEAD') {
             $this->setOption(CURLOPT_NOBODY, true);
+        } else if ($this->hasOption(CURLOPT_NOBODY)) {
+            $this->removeOption(CURLOPT_NOBODY);
         }
 
         return $this;
@@ -203,6 +256,8 @@ class Curl extends AbstractCurl
             $request->prepareData();
             if (!($request->isGet()) && ($request->hasDataContent())) {
                 $this->setOption(CURLOPT_POSTFIELDS, $request->getDataContent());
+            } else if ($this->hasOption(CURLOPT_POSTFIELDS)) {
+                $this->removeOption(CURLOPT_POSTFIELDS);
             }
         // Else, if request has query
         } else if ($request->hasQuery()) {
@@ -215,6 +270,7 @@ class Curl extends AbstractCurl
 
         if ($request->hasHeaders()) {
             $headers = [];
+
             foreach ($request->getHeaders() as $header) {
                 $headers[] = $header->render();
             }
@@ -290,11 +346,20 @@ class Curl extends AbstractCurl
     /**
      * Method to reset the handler
      *
+     * @param  bool $default
      * @return Curl
      */
-    public function reset(): Curl
+    public function reset(bool $default = true): Curl
     {
+        curl_reset($this->resource);
         $this->response = null;
+        $this->options  = [];
+
+        if ($default) {
+            $this->setOption(CURLOPT_HEADER, true);
+            $this->setOption(CURLOPT_RETURNTRANSFER, true);
+        }
+
         return $this;
     }
 
