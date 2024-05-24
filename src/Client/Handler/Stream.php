@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client\Handler;
 
+use Pop\Http\AbstractRequest;
 use Pop\Http\Auth;
 use Pop\Http\Parser;
 use Pop\Http\Client\Request;
@@ -27,7 +28,7 @@ use Pop\Mime\Message;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 class Stream extends AbstractHandler
 {
@@ -347,20 +348,19 @@ class Stream extends AbstractHandler
      */
     public function isAllowSelfSigned(): bool
     {
-        return (isset($this->contextOptions['ssl']) && isset($this->contextOptions['ssl']['allow_self_signed']) &&
-            ($this->contextOptions['ssl']['allow_self_signed'] == true));
+        return (isset($this->contextOptions['ssl']['allow_self_signed']) && $this->contextOptions['ssl']['allow_self_signed'] == true);
     }
 
     /**
      * Method to prepare the handler
      *
-     * @param  Request $request
-     * @param  ?Auth   $auth
-     * @param  bool    $clear
-     * @throws Exception|\Pop\Http\Exception
+     * @param  Request|AbstractRequest $request
+     * @param  ?Auth                   $auth
+     * @param  bool                    $clear
+     * @throws \Pop\Http\Exception
      * @return Stream
      */
-    public function prepare(Request $request, ?Auth $auth = null, bool $clear = true): Stream
+    public function prepare(Request|AbstractRequest $request, ?Auth $auth = null, bool $clear = true): Stream
     {
         $this->setMethod($request->getMethod());
 
@@ -375,25 +375,7 @@ class Stream extends AbstractHandler
             $request->addHeader($auth->createAuthHeader());
         }
 
-        $queryString = null;
-
-        // If request has data
-        if ($request->hasData()) {
-            $request->prepareData();
-            if ($request->hasDataContent()) {
-                $this->contextOptions['http']['content'] = $request->getDataContent();
-            } else if (!empty($this->contextOptions['http']['content'])) {
-                unset($this->contextOptions['http']['content']);
-            }
-        // Else, if request has query
-        } else if ($request->hasQuery()) {
-            $queryString = '?' . http_build_query($request->getQuery());
-        // Else, if there is raw body content
-        } else if ($request->hasBodyContent()) {
-            $request->addHeader('Content-Length', $request->getBodyContentLength());
-            $this->contextOptions['http']['content'] = $request->getBodyContent();
-        }
-
+        // Add headers
         if ($request->hasHeaders()) {
             $headers = [];
 
@@ -412,6 +394,38 @@ class Stream extends AbstractHandler
             } else {
                 $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
             }
+        }
+
+        $queryString = null;
+
+        // If request has a query
+        if ($request->hasQuery()) {
+            $queryString = '?' . $request->getQuery()->prepare()->getDataContent();
+        }
+
+        // If request has data
+        if ($request->hasData()) {
+            $request->prepareData();
+
+            // Set request data content
+            if ($request->hasDataContent()) {
+                // If it's a URL-encoded GET request
+                if (($queryString === null) && ($request->isUrlEncoded()) && ($request->isGet())) {
+                    $queryString = '?' . $request->getDataContent();
+                // Else, set data content
+                } else {
+                    $this->contextOptions['http']['content'] = $request->getDataContent();
+                }
+            }
+        // Else, if there is raw body content
+        } else if ($request->hasBodyContent()) {
+            $request->addHeader('Content-Length', $request->getBodyContentLength());
+            $this->contextOptions['http']['content'] = $request->getBodyContent();
+        }
+
+        // If there is no data or body content, unset HTTP content
+        if (!($request->hasDataContent()) && !($request->hasBodyContent()) && !empty($this->contextOptions['http']['content'])) {
+            unset($this->contextOptions['http']['content']);
         }
 
         if ((count($this->contextOptions) > 0) || (count($this->contextParams) > 0)) {

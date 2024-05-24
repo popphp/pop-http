@@ -27,7 +27,7 @@ use Pop\Http\Promise;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 class Command
 {
@@ -92,7 +92,7 @@ class Command
         if ($client->getRequest()->hasData()) {
             // Multipart form data
             if ($client->getRequest()->isMultipart()) {
-                $data = $client->getRequest()->getData(true);
+                $data = $client->getRequest()->getData()->toArray();
                 foreach ($data as $key => $value) {
                     $command .= (isset($value['filename']) && file_exists($value['filename'])) ?
                         ' -F "' . $key . '=@' . $value['filename'] . '"' :
@@ -100,7 +100,7 @@ class Command
                 }
             // JSON data
             } else if ($client->getRequest()->isJson()) {
-                $data = $client->getRequest()->getData(true);
+                $data = $client->getRequest()->getData()->toArray();
                 foreach ($data as $key => $datum) {
                     if (isset($datum['filename']) && file_exists($datum['filename'])) {
                         $command .= ' --data @' . $datum['filename'];
@@ -116,7 +116,7 @@ class Command
                 }
             // XML data
             } else if ($client->getRequest()->isXml()) {
-                $data = $client->getRequest()->getData(true);
+                $data = $client->getRequest()->getData()->toArray();
                 foreach ($data as $key => $datum) {
                     if (isset($datum['filename']) && file_exists($datum['filename'])) {
                         $command .= ' --data @' . $datum['filename'];
@@ -135,7 +135,7 @@ class Command
             // URL-encoded data
             } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncoded()) ||
                 !($client->getRequest()->hasRequestType())) {
-                $command .= ' --data "' . $client->getRequest()->getData()->prepareQueryString()  . '"';
+                $command .= ' --data "' . $client->getRequest()->getData()->prepare()->getDataContent()  . '"';
             }
         }
 
@@ -411,7 +411,7 @@ class Command
                     $contentType = $request->getHeaderValueAsString('Content-Type');
                     if ($contentType ==  Request::JSON) {
                         $data = json_decode($data, true);
-                    } else if ($contentType == Request::URLFORM) {
+                    } else if ($contentType == Request::URLENCODED) {
                         parse_str($data, $data);
                     }
                 }

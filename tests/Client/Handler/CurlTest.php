@@ -158,17 +158,6 @@ class CurlTest extends TestCase
         $this->assertCount(1, $headers);
     }
 
-    public function testPrepareWithGetData()
-    {
-        $curl    = new Curl();
-        $request = new Request('http://localhost/');
-        $request->setData(['foo' => 'bar']);
-        $client  = new Client($request, $curl);
-        $client->getHandler()->prepare($client->getRequest());
-        $this->assertTrue($request->getData()->hasQueryString());
-        $this->assertEquals('foo=bar', $request->getData()->getQueryString());
-    }
-
     public function testPrepareWithJsonData()
     {
         $curl    = new Curl();
@@ -185,7 +174,7 @@ class CurlTest extends TestCase
     {
         $curl    = new Curl();
         $request = new Request('http://localhost/', 'POST');
-        $request->setRequestType(Request::URLFORM);
+        $request->setRequestType(Request::URLENCODED);
         $request->setData(['foo' => 'bar']);
         $client  = new Client($request, $curl);
         $client->getHandler()->prepare($client->getRequest());
@@ -210,7 +199,7 @@ class CurlTest extends TestCase
         $request->setData(['foo' => 'bar']);
         $client  = new Client($request, $curl);
         $client->getHandler()->prepare($client->getRequest());
-        $this->assertEquals(['foo' => 'bar'], $curl->getOption(CURLOPT_POSTFIELDS));
+        $this->assertEquals('foo=bar', $curl->getOption(CURLOPT_POSTFIELDS));
     }
 
     public function testPrepareWithBodyData()

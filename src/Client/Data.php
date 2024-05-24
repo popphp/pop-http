@@ -14,6 +14,8 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\HttpFilterableTrait;
+use Pop\Mime\Message;
+use Pop\Mime\Part;
 
 /**
  * Client request data class
@@ -23,7 +25,7 @@ use Pop\Http\HttpFilterableTrait;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 class Data
 {
@@ -54,10 +56,22 @@ class Data
     protected array $data = [];
 
     /**
-     * Query string
+     * Data type
      * @var ?string
      */
-    protected ?string $queryString = null;
+    protected ?string $type = null;
+
+    /**
+     * Data content-type header
+     * @var ?Part\Header
+     */
+    protected ?Part\Header $contentTypeHeader = null;
+
+    /**
+     * Data content
+     * @var ?string
+     */
+    protected ?string $dataContent = null;
 
     /**
      * Common mime types
@@ -107,9 +121,11 @@ class Data
      *
      * Instantiate the request data object
      *
-     * @param array $data
+     * @param array|string $data
+     * @param mixed        $filters
+     * @param ?string      $type
      */
-    public function __construct(array $data = [], mixed $filters = null)
+    public function __construct(array|string $data = [], mixed $filters = null, ?string $type = Request::URLENCODED)
     {
         if ($filters !== null) {
             if (is_array($filters)) {
@@ -119,7 +135,13 @@ class Data
             }
         }
 
-        $this->setData($data);
+        if ($type !== null) {
+            $this->setType($type);
+        }
+
+        if (!empty($data)) {
+            $this->setData($data);
+        }
     }
 
     /**
@@ -136,7 +158,7 @@ class Data
             $this->data = [self::POP_CLIENT_REQUEST_RAW_DATA => $data[0]];
         } else {
             $this->data = $data;
-            $this->prepareQueryString();
+            $this->prepare();
         }
 
         return $this;
@@ -157,7 +179,7 @@ class Data
             $this->data = array_merge($this->data, $data);
         }
 
-        $this->prepareQueryString();
+        $this->prepare();
 
         return $this;
     }
@@ -204,7 +226,7 @@ class Data
             unset($this->data[$key]);
         }
 
-        $this->prepareQueryString();
+        $this->prepare();
 
         return $this;
     }
@@ -217,72 +239,273 @@ class Data
     public function removeAllData(): Data
     {
         $this->data        = [];
-        $this->queryString = null;
+        $this->dataContent = null;
 
         return $this;
     }
 
     /**
-     * Prepare the query string
+     * Set data type
      *
-     * @param  array $queryData
-     * @param  bool  $withQuestionMark
-     * @return string|null
+     * @param  string $type
+     * @return Data
      */
-    public function prepareQueryString(array $queryData = [], bool $withQuestionMark = false): string|null
+    public function setType(string $type): Data
     {
-        if (!array_key_exists(self::POP_CLIENT_REQUEST_RAW_DATA, $this->data) && (!empty($this->data) || !empty($queryData))) {
-            $data = array_merge($this->data, $queryData);
-            if ($this->hasFilters()) {
-                $data = $this->filter($data);
-            }
-            $this->queryString = http_build_query($data);
-        } else {
-            $this->queryString = null;
-        }
-
-        return ($withQuestionMark) ? '?' . $this->queryString : $this->queryString;
+        $this->type = $type;
+        return $this;
     }
 
     /**
-     * Is query string prepared
+     * Get data type
+     *
+     * @return ?string
+     */
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    /**
+     * Has data type
      *
      * @return bool
      */
-    public function hasQueryString(): bool
+    public function hasType(): bool
     {
-        return ($this->queryString !== null);
+        return !empty($this->type);
     }
 
     /**
-     * Get the query string
+     * Get prepared data content
      *
-     * @param  array $queryData
-     * @param  bool  $withQuestionMark
-     * @return string
+     * @return ?string
      */
-    public function getQueryString(array $queryData = [], bool $withQuestionMark = false): string
+    public function getDataContent(): ?string
     {
-        return $this->prepareQueryString($queryData, $withQuestionMark);
+        return $this->dataContent;
     }
 
     /**
-     * Get query string length
+     * Get data content length
      *
      * @param  bool $mb
      * @return int
      */
-    public function getQueryStringLength(bool $mb = false): int
+    public function getDataContentLength(bool $mb = false): int
     {
-        return ($mb) ? mb_strlen($this->queryString) : strlen($this->queryString);
+        return ($mb) ? mb_strlen($this->dataContent) : strlen($this->dataContent);
+    }
+
+    /**
+     * Check if the data content has been prepared
+     *
+     * @return bool
+     */
+    public function hasDataContent(): bool
+    {
+        return !empty($this->dataContent);
+    }
+
+    /**
+     * Get data content-type header
+     *
+     * @return ?Part\Header
+     */
+    public function getContentTypeHeader(): ?Part\Header
+    {
+        return $this->contentTypeHeader;
+    }
+
+    /**
+     * Has data content-type header
+     *
+     * @return bool
+     */
+    public function hasContentTypeHeader(): bool
+    {
+        return !empty($this->contentTypeHeader);
+    }
+
+    /**
+     * Check if data is JSON
+     *
+     * @return bool
+     */
+    public function isJson(): bool
+    {
+        return ($this->type == Request::JSON);
+    }
+
+    /**
+     * Check if data is XML
+     *
+     * @return bool
+     */
+    public function isXml(): bool
+    {
+        return ($this->type == Request::XML);
+    }
+
+    /**
+     * Check if data is URL-encoded
+     *
+     * @return bool
+     */
+    public function isUrlEncoded(): bool
+    {
+        return ($this->type == Request::URLENCODED);
+    }
+
+    /**
+     * Check if data is multi-part
+     * @return bool
+     */
+    public function isMultipart(): bool
+    {
+        return ($this->type == Request::MULTIPART);
+    }
+
+    /**
+     * Check if the data content has been prepared (alias to hasDataContent)
+     *
+     * @return bool
+     */
+    public function isPrepared(): bool
+    {
+        return !empty($this->dataContent);
+    }
+
+    /**
+     * Prepare data
+     *
+     * @return Data
+     */
+    public function prepare(): Data
+    {
+        switch ($this->type) {
+            case Request::JSON:
+                $this->prepareJson();
+                break;
+            case Request::XML:
+                $this->prepareXml();
+                break;
+            case Request::URLENCODED:
+                $this->prepareUrlEncoded();
+                break;
+            case Request::MULTIPART:
+                $this->prepareMultipart();
+                break;
+            default:
+                $this->dataContent = ($this->hasRawData()) ? $this->getRawData() : $this->getData();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Method to prepare JSON data content
+     *
+     * @return Data
+     */
+    public function prepareJson(): Data
+    {
+        if ($this->hasRawData()) {
+            $jsonContent = $this->getRawData();
+        } else {
+            $jsonData    = $this->data;
+            $jsonContent = [];
+
+            // Check for JSON files
+            foreach ($jsonData as $jsonDatum) {
+                if (isset($jsonDatum['filename']) && isset($jsonDatum['contentType']) &&
+                    str_contains(strtolower($jsonDatum['contentType']), 'json') && file_exists($jsonDatum['filename'])) {
+                    $jsonContent = array_merge($jsonContent, json_decode(file_get_contents($jsonDatum['filename']), true));
+                }
+            }
+
+            // Else, use JSON data
+            if (empty($jsonContent)) {
+                $jsonContent = $jsonData;
+            }
+        }
+
+        // Only encode if the data isn't already encoded
+        if (!((is_string($jsonContent) && (json_decode($jsonContent) !== false)) && (json_last_error() == JSON_ERROR_NONE))) {
+            $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
+        } else {
+            $this->dataContent = $jsonContent;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Method to prepare XML data content
+     *
+     * @return Data
+     */
+    public function prepareXml(): Data
+    {
+        if ($this->hasRawData()) {
+            $xmlContent = $this->getRawData();
+        } else {
+            $xmlData    = $this->data;
+            $xmlContent = '';
+
+            // Check for XML files
+            foreach ($xmlData as $xmlDatum) {
+                $xmlContent .= (isset($xmlDatum['filename']) && isset($xmlDatum['contentType']) &&
+                    str_contains(strtolower($xmlDatum['contentType']), 'xml') && file_exists($xmlDatum['filename'])) ?
+                    file_get_contents($xmlDatum['filename']) : $xmlDatum;
+            }
+        }
+
+        $this->dataContent = $xmlContent;
+
+        return $this;
+    }
+
+    /**
+     * Method to prepare URL-encoded data content
+     *
+     * @return Data
+     */
+    public function prepareUrlEncoded(): Data
+    {
+        if (!array_key_exists(self::POP_CLIENT_REQUEST_RAW_DATA, $this->data) && !empty($this->data)) {
+            $data = $this->data;
+            if ($this->hasFilters()) {
+                $data = $this->filter($data);
+            }
+            $this->dataContent = http_build_query($data);
+        } else {
+            $this->dataContent = null;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Method to prepare multi-part data content
+     *
+     * @return Data
+     */
+    public function prepareMultipart(): Data
+    {
+        $formMessage             = Message::createForm($this->data);
+        $this->dataContent       = $formMessage->renderRaw();
+        $this->contentTypeHeader = $formMessage->getHeader('Content-Type');
+
+        return $this;
     }
 
     /**
      * Get raw data
      *
-     * @return string|null
+     * @return ?string
      */
-    public function getRawData(): string|null
+    public function getRawData(): ?string
     {
         return $this->data[self::POP_CLIENT_REQUEST_RAW_DATA] ?? null;
     }
@@ -306,6 +529,16 @@ class Data
     public function getRawDataLength(bool $mb = false): int
     {
         return ($mb) ? mb_strlen((string)$this->getRawData()) : strlen((string)$this->getRawData());
+    }
+
+    /**
+     * Get data array
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return $this->data;
     }
 
     /**
@@ -333,9 +566,9 @@ class Data
      * Get mime type
      *
      * @param  string $ext
-     * @return string|null
+     * @return ?string
      */
-    public static function getMimeType(string $ext): string|null
+    public static function getMimeType(string $ext): ?string
     {
         return static::$mimeTypes[$ext] ?? null;
     }

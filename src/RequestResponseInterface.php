@@ -24,10 +24,18 @@ use Pop\Mime\Part\Body;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 interface RequestResponseInterface
 {
+
+    /**
+     * Set all headers (clear out any existing headers)
+     *
+     * @param  array $headers
+     * @return RequestResponseInterface
+     */
+    public function setHeaders(array $headers): RequestResponseInterface;
 
     /**
      * Set a header
@@ -39,7 +47,7 @@ interface RequestResponseInterface
     public function addHeader(Header|string|int $header, ?string $value = null): RequestResponseInterface;
 
     /**
-     * Set all headers
+     * Add all headers
      *
      * @param  array $headers
      * @return RequestResponseInterface

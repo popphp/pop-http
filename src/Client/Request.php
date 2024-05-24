@@ -26,7 +26,7 @@ use Pop\Mime\Part\Header;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 class Request extends AbstractRequest
 {
@@ -35,10 +35,10 @@ class Request extends AbstractRequest
      * Request type constants
      * @var string
      */
-    const JSON      = 'application/json';
-    const XML       = 'application/xml';
-    const URLFORM   = 'application/x-www-form-urlencoded';
-    const MULTIPART = 'multipart/form-data';
+    const JSON       = 'application/json';
+    const XML        = 'application/xml';
+    const URLENCODED = 'application/x-www-form-urlencoded';
+    const MULTIPART  = 'multipart/form-data';
 
     /**
      * Request method
@@ -47,11 +47,26 @@ class Request extends AbstractRequest
     protected ?string $method = null;
 
     /**
+     * Request type
+     * @var ?string
+     */
+    protected ?string $requestType = null;
+
+    /**
+     * Client request query data object
+     *
+     * Can only be a URL-encoded query string on the URI
+     *
+     * @var ?Data
+     */
+    protected ?Data $query = null;
+
+    /**
      * Client request data object
      *
      * Can be any type of supported request data:
-     *     - URI-based encoded query string
-     *     - URL-encoded body
+     *     - URL-encoded query string on the URI (GET method)
+     *     - URL-encoded body (any method other than GET)
      *     - JSON-encoded body
      *     - XML-encoded body
      *     - Multipart/form body
@@ -61,40 +76,17 @@ class Request extends AbstractRequest
     protected ?Data $data = null;
 
     /**
-     * Client request query data
-     *
-     *  Differs from the Data object, as it can only be an encoded query string on the URI.
-     *  It can be used in combination of the main request Data object to force certain data
-     *  to be appended to the URI.
-     *
-     * @var array
-     */
-    protected array $query = [];
-
-    /**
-     * Request type
-     * @var ?string
-     */
-    protected ?string $requestType = null;
-
-    /**
-     * Request data content
-     * @var string|array|null
-     */
-    protected string|array|null $dataContent = null;
-
-    /**
      * Constructor
      *
      * Instantiate the request data object
      *
      * @param  Uri|string|null $uri
      * @param  string          $method
-     * @param  array|Data|null $data
+     * @param  mixed           $data
      * @param  ?string         $type
      * @throws Exception
      */
-    public function __construct(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null)
+    public function __construct(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, ?string $type = null)
     {
         parent::__construct($uri);
 
@@ -113,15 +105,13 @@ class Request extends AbstractRequest
      * Factory method to create a Request object
      *
      * @param  Uri|string|null $uri
-     * @param  string $method
-     * @param  array|Data|null $data
-     * @param  ?string $type
+     * @param  string          $method
+     * @param  mixed           $data
+     * @param  ?string         $type
      * @throws Exception
      * @return Request
      */
-    public static function create(
-        Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null, ?string $type = null
-    ): Request
+    public static function create(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, ?string $type = null): Request
     {
         return new self($uri, $method, $data, $type);
     }
@@ -130,12 +120,12 @@ class Request extends AbstractRequest
      * Factory method to create a JSON Request object
      *
      * @param  Uri|string|null $uri
-     * @param  string $method
-     * @param  array|Data|null $data
+     * @param  string          $method
+     * @param  mixed           $data
      * @throws Exception
      * @return Request
      */
-    public static function createJson(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    public static function createJson(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null): Request
     {
         return new self($uri, $method, $data, Request::JSON);
     }
@@ -144,12 +134,12 @@ class Request extends AbstractRequest
      * Factory method to create an XML Request object
      *
      * @param  Uri|string|null $uri
-     * @param  string $method
-     * @param  array|Data|null $data
+     * @param  string          $method
+     * @param  mixed           $data
      * @throws Exception
      * @return Request
      */
-    public static function createXml(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    public static function createXml(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null): Request
     {
         return new self($uri, $method, $data, Request::XML);
     }
@@ -158,26 +148,26 @@ class Request extends AbstractRequest
      * Factory method to create a URL-encoded Request object
      *
      * @param  Uri|string|null $uri
-     * @param  string $method
-     * @param  array|Data|null $data
+     * @param  string          $method
+     * @param  mixed           $data
      * @throws Exception
      * @return Request
      */
-    public static function createUrlEncoded(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    public static function createUrlEncoded(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null): Request
     {
-        return new self($uri, $method, $data, Request::URLFORM);
+        return new self($uri, $method, $data, Request::URLENCODED);
     }
 
     /**
      * Factory method to create a multipart Request object
      *
      * @param  Uri|string|null $uri
-     * @param  string $method
-     * @param  array|Data|null $data
+     * @param  string          $method
+     * @param  mixed           $data
      * @throws Exception
      * @return Request
      */
-    public static function createMultipart(Uri|string|null $uri = null, string $method = 'GET', array|Data|null $data = null): Request
+    public static function createMultipart(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null): Request
     {
         return new self($uri, $method, $data, Request::MULTIPART);
     }
@@ -241,8 +231,8 @@ class Request extends AbstractRequest
             case Request::XML:
                 $this->requestType = Request::XML;
                 break;
-            case Request::URLFORM:
-                $this->requestType = Request::URLFORM;
+            case Request::URLENCODED:
+                $this->requestType = Request::URLENCODED;
                 break;
             case Request::MULTIPART:
                 $this->requestType = Request::MULTIPART;
@@ -254,19 +244,80 @@ class Request extends AbstractRequest
     }
 
     /**
-     * Add all headers
+     * Set query data
      *
-     * @param  array $headers
+     * @param  mixed $query
+     * @param  mixed $filters
      * @return Request
      */
-    public function addHeaders(array $headers): Request
+    public function setQuery(mixed $query, mixed $filters = null): Request
     {
-        foreach ($headers as $header => $value) {
-            if ($value instanceof Header) {
-                $this->addHeader($value);
-            } else {
-                $this->addHeader($header, $value);
-            }
+        $this->query = ($query instanceof Data) ? $query : new Data($query, $filters, Request::URLENCODED);
+        return $this;
+    }
+
+    /**
+     * Add query data
+     *
+     * @param  mixed $name
+     * @param  mixed $value
+     * @return Request
+     */
+    public function addQuery(mixed $name, mixed $value): Request
+    {
+        if ($this->data === null) {
+            $this->query = new Data([], null, Request::URLENCODED);
+        }
+        $this->query->addData($name, $value);
+
+        return $this;
+    }
+
+    /**
+     * Get query data
+     *
+     * @return ?Data
+     */
+    public function getQuery(): ?Data
+    {
+        return $this->query;
+    }
+
+    /**
+     * Has query data
+     *
+     * @return bool
+     */
+    public function hasQuery(): bool
+    {
+        return !empty($this->query);
+    }
+
+    /**
+     * Remove query data
+     *
+     * @param  string $key
+     * @return Request
+     */
+    public function removeQuery(string $key): Request
+    {
+        if ($this->query->hasData($key)) {
+            $this->query->removeData($key);
+        }
+        return $this;
+    }
+
+    /**
+     * Remove all query data
+     *
+     * @return Request
+     */
+    public function removeAllQuery(): Request
+    {
+        $this->query = null;
+
+        if ($this->hasHeader('Content-Type')) {
+            $this->removeHeader('Content-Type');
         }
         return $this;
     }
@@ -274,30 +325,41 @@ class Request extends AbstractRequest
     /**
      * Set data
      *
-     * @param  array|string|Data $data
+     * @param  mixed $data
+     * @param  mixed $filters
      * @return Request
      */
-    public function setData(array|string|Data $data): Request
+    public function setData(mixed $data, mixed $filters = null): Request
     {
-        if (is_string($data)) {
+        $this->data = ($data instanceof Data) ? $data : new Data($data, $filters);
+        return $this;
+    }
+
+    /**
+     * Add data
+     *
+     * @param  mixed $name
+     * @param  mixed $value
+     * @return Request
+     */
+    public function addData(mixed $name, mixed $value): Request
+    {
+        if ($this->data === null) {
             $this->data = new Data();
-            $this->data->setData($data);
-        } else {
-            $this->data = (is_array($data)) ? new Data($data) : $data;
         }
-        $this->dataContent = null;
+        $this->data->addData($name, $value);
+
         return $this;
     }
 
     /**
      * Get data
      *
-     * @param  bool $asArray
-     * @return Data|array
+     * @return ?Data
      */
-    public function getData(bool $asArray = false): Data|array
+    public function getData(): ?Data
     {
-        return ($asArray) ? $this->data->getData() : $this->data;
+        return $this->data;
     }
 
     /**
@@ -311,40 +373,32 @@ class Request extends AbstractRequest
     }
 
     /**
-     * Set query
+     * Remove data
      *
-     * @param  array $query
+     * @param  string $key
      * @return Request
      */
-    public function setQuery(array $query): Request
+    public function removeData(string $key): Request
     {
-        $this->query = $query;
+        if ($this->data->hasData($key)) {
+            $this->data->removeData($key);
+        }
         return $this;
     }
 
     /**
-     * Get query
+     * Remove all data
      *
-     * @param  ?string $name
-     * @return mixed
+     * @return Request
      */
-    public function getQuery(?string $name = null): mixed
+    public function removeAllData(): Request
     {
-        if ($name !== null) {
-            return $this->query[$name] ?? null;
-        } else {
-            return $this->query;
-        }
-    }
+        $this->data = null;
 
-    /**
-     * Has query
-     *
-     * @return bool
-     */
-    public function hasQuery(): bool
-    {
-        return !empty($this->query);
+        if ($this->hasHeader('Content-Type')) {
+            $this->removeHeader('Content-Type');
+        }
+        return $this;
     }
 
     /**
@@ -357,12 +411,16 @@ class Request extends AbstractRequest
     {
         $uri = parent::getUriAsString();
 
-        if (($this->method == 'GET') && ($query) && ($this->data !== null)) {
+        if ($query) {
             $queryString = null;
-            if ($this->dataContent !== null) {
-                $queryString = ((is_array($this->dataContent)) ? http_build_query($this->dataContent) : $this->dataContent);
-            } else if (($this->requestType === null) || ($this->requestType == self::URLFORM)) {
-                $queryString = $this->data->prepareQueryString($this->query);
+
+            // If request has generic query data
+            if ($this->hasQuery()) {
+                $queryString = $this->query->prepare()->getDataContent();
+            // Else, if request has explicit data configured to be a query string over GET
+            } else if (($this->method == 'GET') && ($this->hasData()) &&
+                (($this->requestType === null) || ($this->requestType == self::URLENCODED))) {
+                $queryString = $this->data->prepare()->getDataContent();
             }
 
             if (!empty($queryString) && !str_contains($uri, $queryString)) {
@@ -388,7 +446,7 @@ class Request extends AbstractRequest
             case self::XML:
                 $this->createAsXml();
                 break;
-            case self::URLFORM:
+            case self::URLENCODED:
                 $this->createAsUrlEncoded();
                 break;
             case self::MULTIPART:
@@ -425,6 +483,17 @@ class Request extends AbstractRequest
     public function hasRequestType(): bool
     {
         return ($this->requestType !== null);
+    }
+
+    /**
+     * Remove request type
+     *
+     * @return Request
+     */
+    public function removeRequestType(): Request
+    {
+        $this->requestType = null;
+        return $this;
     }
 
     /**
@@ -488,7 +557,7 @@ class Request extends AbstractRequest
      */
     public function createAsUrlEncoded(): Request
     {
-        $this->requestType = self::URLFORM;
+        $this->requestType = self::URLENCODED;
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
@@ -505,7 +574,7 @@ class Request extends AbstractRequest
      */
     public function isUrlEncoded(): bool
     {
-        return ($this->requestType == self::URLFORM);
+        return ($this->requestType == self::URLENCODED);
     }
 
     /**
@@ -547,186 +616,59 @@ class Request extends AbstractRequest
      */
     public function hasDataContent(): bool
     {
-        return ($this->dataContent !== null);
+        return (($this->data !== null) && ($this->data->hasDataContent()));
     }
 
     /**
      * Get the data content
      *
-     * @return string|array|null
+     * @return ?string
      */
-    public function getDataContent(): string|array|null
+    public function getDataContent(): ?string
     {
-        return $this->dataContent;
+        return $this->data?->getDataContent();
     }
 
     /**
-     * Get the content length
+     * Get the data content length
      *
+     * @param  bool $mb
      * @return int|null
      */
     public function getDataContentLength(bool $mb = false): int|null
     {
-        if (!is_array($this->dataContent)) {
-            return ($mb) ? mb_strlen($this->dataContent) : strlen($this->dataContent);
-        } else {
-            return null;
-        }
+        return $this->data?->getDataContentLength($mb);
     }
 
     /**
      * Prepare request data
      *
-     * @return void
+     * @return Request
      */
-    public function prepareData(): void
+    public function prepareData(): Request
     {
-        $dataPrepared = false;
+        if ($this->requestType !== null) {
+            $this->data->setType($this->requestType);
+        }
 
-        // Prepare the GET query string
-        if (($this->method == 'GET') && ((!$this->hasHeader('Content-Type')) ||
-                ($this->getHeaderValue('Content-Type') == 'application/x-www-form-urlencoded'))) {
-            $this->dataContent = ($this->data->hasRawData()) ?
-                $this->data->getRawData() : $this->data->prepareQueryString($this->query);
-            $dataPrepared = true;
-            // Else, prepare the data content
-        } else if ($this->method != 'GET') {
-            switch ($this->requestType) {
-                case Request::JSON:
-                    $this->prepareJson();
-                    $dataPrepared = true;
-                    break;
-                case Request::XML:
-                    $this->prepareXml();
-                    $dataPrepared = true;
-                    break;
-                case Request::URLFORM:
-                    $this->prepareUrlEncoded();
-                    $dataPrepared = true;
-                    break;
-                case Request::MULTIPART:
-                    $this->prepareMultipart();
-                    $dataPrepared = true;
-                    break;
-            }
+        $this->data->prepare();
 
-            // Fallback
-            if (!$dataPrepared) {
-                // If the request has raw data
-                if ($this->data->hasRawData()) {
-                    $this->prepareRawData();
-                // Else, use basic data
-                } else if ($this->data !== null) {
-                    $this->dataContent = $this->getData(true);
-                }
+        if ($this->data->hasContentTypeHeader()) {
+            if ($this->hasHeader('Content-Type')) {
+                $this->removeHeader('Content-Type');
             }
+            $this->addHeader($this->data->getContentTypeHeader());
         }
 
         if ($this->method != 'GET') {
             if ($this->getDataContentLength() !== null) {
+                if ($this->hasHeader('Content-Length')) {
+                    $this->removeHeader('Content-Length');
+                }
                 $this->addHeader('Content-Length', $this->getDataContentLength());
             }
         }
-    }
 
-    /**
-     * Method to prepare JSON data content
-     *
-     * @return Request
-     */
-    public function prepareJson(): Request
-    {
-        if ($this->data->hasRawData()) {
-            $jsonContent = $this->data->getRawData();
-        } else {
-            $jsonData    = $this->getData(true);
-            $jsonContent = [];
-
-            // Check for JSON files
-            foreach ($jsonData as $jsonDatum) {
-                if (isset($jsonDatum['filename']) && isset($jsonDatum['contentType']) &&
-                    ($jsonDatum['contentType'] == 'application/json') && file_exists($jsonDatum['filename'])) {
-                    $jsonContent = array_merge($jsonContent, json_decode(file_get_contents($jsonDatum['filename']), true));
-                }
-            }
-
-            // Else, use JSON data
-            if (empty($jsonContent)) {
-                $jsonContent = $jsonData;
-            }
-        }
-
-        // Only encode if the data isn't already encoded
-        if (!((is_string($jsonContent) && (json_decode($jsonContent) !== false)) && (json_last_error() == JSON_ERROR_NONE))) {
-            $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
-        } else {
-            $this->dataContent = $jsonContent;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Method to prepare XML data content
-     *
-     * @return Request
-     */
-    public function prepareXml(): Request
-    {
-        if ($this->data->hasRawData()) {
-            $xmlContent = $this->data->getRawData();
-        } else {
-            $xmlData    = $this->getData(true);
-            $xmlContent = null;
-
-            // Check for XML files
-            foreach ($xmlData as $xmlDatum) {
-                $xmlContent .= (isset($xmlDatum['filename']) && isset($xmlDatum['contentType']) &&
-                    ($xmlDatum['contentType'] == 'application/xml') && file_exists($xmlDatum['filename'])) ?
-                    file_get_contents($xmlDatum['filename']) : $xmlDatum;
-            }
-        }
-
-        $this->dataContent = $xmlContent;
-
-        return $this;
-    }
-
-    /**
-     * Method to prepare URL-encoded data content
-     *
-     * @return Request
-     */
-    public function prepareUrlEncoded(): Request
-    {
-        $this->dataContent = $this->data->prepareQueryString();
-        return $this;
-    }
-
-    /**
-     * Method to prepare multipart data content
-     *
-     * @return Request
-     */
-    public function prepareMultipart(): Request
-    {
-        $formMessage       = Message::createForm($this->data->getData());
-        $this->dataContent = $formMessage->renderRaw();
-        $this->addHeader($formMessage->getHeader('Content-Type'));
-
-
-
-        return $this;
-    }
-
-    /**
-     * Method to prepare raw data content
-     *
-     * @return Request
-     */
-    public function prepareRawData(): Request
-    {
-        $this->dataContent = $this->data->getRawData();
         return $this;
     }
 

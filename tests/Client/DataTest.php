@@ -36,18 +36,6 @@ class DataTest extends TestCase
         $this->assertCount(0, $data->getData());
     }
 
-    public function testQueryString()
-    {
-        $data = new Data();
-        $data->addData('test', 123)
-            ->addData(['foo' => 'bar']);
-
-
-        $this->assertTrue($data->hasQueryString());
-        $this->assertEquals('test=123&foo=bar', $data->getQueryString());
-        $this->assertEquals(16, $data->getQueryStringLength());
-    }
-
     public function testHasData()
     {
         $data = new Data([

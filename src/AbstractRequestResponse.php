@@ -24,7 +24,7 @@ use Pop\Mime\Part\Body;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 abstract class AbstractRequestResponse implements RequestResponseInterface
 {
@@ -40,6 +40,20 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
      * @var ?Body
      */
     protected ?Body $body = null;
+
+    /**
+     * Set all headers (clear out any existing headers)
+     *
+     * @param  array $headers
+     * @return AbstractRequestResponse
+     */
+    public function setHeaders(array $headers): AbstractRequestResponse
+    {
+        $this->headers = [];
+        $this->addHeaders($headers);
+
+        return $this;
+    }
 
     /**
      * Add a header

@@ -13,6 +13,7 @@
  */
 namespace Pop\Http\Client\Handler;
 
+use Pop\Http\AbstractRequest;
 use Pop\Http\Auth;
 use Pop\Http\Parser;
 use Pop\Http\Client\Request;
@@ -27,7 +28,7 @@ use Pop\Mime\Message;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 class Curl extends AbstractCurl
 {
@@ -227,14 +228,14 @@ class Curl extends AbstractCurl
     /**
      * Method to prepare the handler
      *
-     * @param  Request $request
-     * @param  ?Auth   $auth
-     * @param  bool   $forceCustom
-     * @param  bool   $clear
+     * @param  Request|AbstractRequest $request
+     * @param  ?Auth                   $auth
+     * @param  bool                    $forceCustom
+     * @param  bool                    $clear
      * @throws Exception|\Pop\Http\Exception
      * @return Curl
      */
-    public function prepare(Request $request, ?Auth $auth = null, bool $forceCustom = false, bool $clear = true): Curl
+    public function prepare(Request|AbstractRequest $request, ?Auth $auth = null, bool $forceCustom = false, bool $clear = true): Curl
     {
         $this->setMethod($request->getMethod(), $forceCustom);
 
@@ -249,25 +250,7 @@ class Curl extends AbstractCurl
             $request->addHeader($auth->createAuthHeader());
         }
 
-        $queryString = null;
-
-        // If request has data
-        if ($request->hasData()) {
-            $request->prepareData();
-            if (!($request->isGet()) && ($request->hasDataContent())) {
-                $this->setOption(CURLOPT_POSTFIELDS, $request->getDataContent());
-            } else if ($this->hasOption(CURLOPT_POSTFIELDS)) {
-                $this->removeOption(CURLOPT_POSTFIELDS);
-            }
-        // Else, if request has query
-        } else if ($request->hasQuery()) {
-            $queryString = '?' . http_build_query($request->getQuery());
-        // Else, if request has raw body content
-        } else if ($request->hasBodyContent()) {
-            $request->addHeader('Content-Length', $request->getBodyContentLength());
-            $this->setOption(CURLOPT_POSTFIELDS, $request->getBodyContent());
-        }
-
+        // Add headers
         if ($request->hasHeaders()) {
             $headers = [];
 
@@ -283,6 +266,38 @@ class Curl extends AbstractCurl
                 }
             }
             $this->setOption(CURLOPT_HTTPHEADER, $headers);
+        }
+
+        $queryString = null;
+
+        // If request has a query
+        if ($request->hasQuery()) {
+            $queryString = '?' . $request->getQuery()->prepare()->getDataContent();
+        }
+
+        // If request has data
+        if ($request->hasData()) {
+            $request->prepareData();
+
+            // Set request data content
+            if ($request->hasDataContent()) {
+                // If it's a URL-encoded GET request
+                if (($queryString === null) && ($request->isUrlEncoded()) && ($request->isGet())) {
+                    $queryString = '?' . $request->getDataContent();
+
+                    // Clear old request data
+                    if ($this->hasOption(CURLOPT_POSTFIELDS)) {
+                        $this->removeOption(CURLOPT_POSTFIELDS);
+                    }
+                // Else, set data content
+                } else {
+                    $this->setOption(CURLOPT_POSTFIELDS, $request->getDataContent());
+                }
+            }
+        // Else, if there is raw body content
+        } else if ($request->hasBodyContent()) {
+            $request->addHeader('Content-Length', $request->getBodyContentLength());
+            $this->setOption(CURLOPT_POSTFIELDS, $request->getBodyContent());
         }
 
         $this->uri = $request->getUriAsString();

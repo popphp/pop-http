@@ -23,7 +23,7 @@ use Pop\Mime\Part\Header;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 class Auth
 {
@@ -144,9 +144,7 @@ class Auth
     /**
      * Create digest auth
      *
-     * @param  string $username
-     * @param  string $password
-     * @param  array  $digest
+     * @param  Auth\Digest $digest
      * @return Auth
      */
     public static function createDigest(Auth\Digest $digest): Auth

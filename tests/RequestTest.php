@@ -72,8 +72,8 @@ class RequestTest extends TestCase
         $request->setRequestType(Request::XML);
         $this->assertEquals(Request::XML, $request->getRequestType());
         $this->assertTrue($request->isXml());
-        $request->setRequestType(Request::URLFORM);
-        $this->assertEquals(Request::URLFORM, $request->getRequestType());
+        $request->setRequestType(Request::URLENCODED);
+        $this->assertEquals(Request::URLENCODED, $request->getRequestType());
         $this->assertTrue($request->isUrlEncoded());
         $request->setRequestType(Request::MULTIPART);
         $this->assertEquals(Request::MULTIPART, $request->getRequestType());

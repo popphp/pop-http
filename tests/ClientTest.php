@@ -106,7 +106,7 @@ class ClientTest extends TestCase
         $this->assertTrue($client->hasHandler());
         $this->assertTrue($client->getRequest()->hasData());
         $this->assertTrue($client->getRequest()->hasQuery());
-        $this->assertEquals('123', $client->getRequest()->getQuery('baz'));
+        $this->assertEquals('123', $client->getRequest()->getQuery()->getData('baz'));
     }
 
     public function testPrepareStream()
@@ -300,9 +300,9 @@ class ClientTest extends TestCase
             'foo' => 'bar'
         ]);
         $this->assertTrue($client->hasHeader('foo'));
-        $this->assertTrue($client->hasHeader());
+        $this->assertTrue($client->hasHeaders());
         $this->assertEquals('bar', $client->getHeader('foo'));
-        $this->assertCount(1, $client->getHeader());
+        $this->assertCount(1, $client->getHeaders());
     }
 
     public function testAddHeader()
@@ -310,7 +310,7 @@ class ClientTest extends TestCase
         $client = new Client();
         $client->addHeader('foo', 'bar');
         $this->assertEquals('bar', $client->getHeader('foo'));
-        $this->assertCount(1, $client->getHeader());
+        $this->assertCount(1, $client->getHeaders());
     }
 
     public function testRemoveHeader()
@@ -324,15 +324,15 @@ class ClientTest extends TestCase
         $this->assertFalse($client->hasHeader('foo'));
     }
 
-    public function testRemoveAllHeader()
+    public function testRemoveAllHeaders()
     {
         $client = new Client();
         $client->setHeaders([
             'foo' => 'bar'
         ]);
-        $this->assertTrue($client->hasHeader());
+        $this->assertTrue($client->hasHeaders());
         $client->removeAllHeaders();
-        $this->assertFalse($client->hasHeader());
+        $this->assertFalse($client->hasHeaders());
     }
 
     public function testQuery()
@@ -597,7 +597,7 @@ class ClientTest extends TestCase
                 'Authorization' => 'Bearer 123456789',
                 'Accept'        => 'application/json',
             ],
-            'type' => Client\Request::URLFORM
+            'type' => Client\Request::URLENCODED
         ];
         $client  = new Client('http://localhost:8000/post.php', $options);
         $request = $client->render();

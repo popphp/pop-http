@@ -13,6 +13,7 @@
  */
 namespace Pop\Http;
 
+use Pop\Http\Client\Data;
 use Pop\Http\Client\Handler\Stream;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
@@ -20,6 +21,7 @@ use Pop\Http\Client\Handler\Curl;
 use Pop\Http\Client\Handler\CurlMulti;
 use Pop\Http\Client\Handler\HandlerInterface;
 use Pop\Mime\Part\Body;
+use Pop\Mime\Part\Header;
 
 /**
  * HTTP client class
@@ -29,7 +31,7 @@ use Pop\Mime\Part\Body;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    5.0.0
+ * @version    5.2.0
  */
 class Client extends AbstractHttp
 {
@@ -61,8 +63,13 @@ class Client extends AbstractHttp
     /**
      * Instantiate the client object
      *
-     * Optional parameters are a request URI string, client request instance, a client response instance,
-     * a client handler instance, an auth instance, or an options array
+     * Optional parameters are
+     *  - Request URI string
+     *  - Client request instance
+     *  - Client response instance
+     *  - Client handler instance
+     *  - Auth instance
+     *  - Options array
      */
     public function __construct()
     {
@@ -89,11 +96,6 @@ class Client extends AbstractHttp
 
         parent::__construct($request, $response);
 
-        // Set the 'type' option if the incoming request has a request type
-        if (($request !== null) && ($request->hasRequestType()) && (!$this->hasType())) {
-            $this->setType($request->getRequestType());
-        }
-
         if ($handler !== null) {
             if ($handler instanceof CurlMulti) {
                 $this->setMultiHandler($handler);
@@ -106,13 +108,14 @@ class Client extends AbstractHttp
     /**
      * Factory to create a multi-handler object
      *
-     * @param  array $requests
+     * @param  array                    $requests
+     * @param  Client\Handler\CurlMulti $multiHandler
      * @return CurlMulti
      */
-    public static function createMulti(array $requests): CurlMulti
+    public static function createMulti(
+        array $requests, Client\Handler\CurlMulti $multiHandler = new Client\Handler\CurlMulti()
+    ): CurlMulti
     {
-        $multiHandler = new Client\Handler\CurlMulti();
-
         foreach ($requests as $request) {
             $client = new Client($request);
             $client->setMultiHandler($multiHandler);
@@ -125,7 +128,7 @@ class Client extends AbstractHttp
      * Method to convert Curl CLI command to a client object
      *
      * @param  string $command
-     * @throws Exception
+     * @throws Curl\Exception
      * @return Client
      */
     public static function fromCurlCommand(string $command): Client
@@ -153,9 +156,9 @@ class Client extends AbstractHttp
     /**
      * Get method
      *
-     * @return string|null
+     * @return ?string
      */
-    public function getMethod(): string|null
+    public function getMethod(): ?string
     {
         if ($this->hasRequest()) {
             return $this->request->getMethod();
@@ -218,6 +221,7 @@ class Client extends AbstractHttp
     /**
      * Add an option
      *
+     * @param  string $name
      * @param  mixed  $value
      * @return Client
      */
@@ -378,9 +382,9 @@ class Client extends AbstractHttp
     /**
      * Get auth
      *
-     * @return Auth|null
+     * @return ?Auth
      */
-    public function getAuth(): Auth|null
+    public function getAuth(): ?Auth
     {
         return $this->auth;
     }
@@ -396,74 +400,133 @@ class Client extends AbstractHttp
     }
 
     /**
-     * Set headers
+     * Set headers (clear out any existing headers)
      *
      * @param  array $headers
      * @return Client
      */
     public function setHeaders(array $headers): Client
     {
-        $this->options['headers'] = $headers;
+        if ($this->hasRequest()) {
+            $this->request->setHeaders($headers);
+        } else {
+            $this->options['headers'] = $headers;
+        }
+        return $this;
+    }
+
+    /**
+     * Add headers
+     *
+     * @param  array $headers
+     * @return Client
+     */
+    public function addHeaders(array $headers): Client
+    {
+        if ($this->hasRequest()) {
+            $this->request->addHeaders($headers);
+        } else {
+            $this->options['headers'] = $headers;
+        }
         return $this;
     }
 
     /**
      * Add header
      *
-     * @param  string $name
-     * @param  mixed  $value
+     * @param  Header|string|int $header
+     * @param  mixed             $value
      * @return Client
      */
-    public function addHeader(string $name, mixed $value): Client
+    public function addHeader(Header|string|int $header, mixed $value = null): Client
     {
-        if (!isset($this->options['headers'])) {
-            $this->options['headers'] = [];
+        if ($this->hasRequest()) {
+            $this->request->addHeader($header, $value);
+        } else {
+            if (!isset($this->options['headers'])) {
+                $this->options['headers'] = [];
+            }
+            if ($header instanceof Header) {
+                $this->options['headers'][$header->getName()] = $value;
+            } else {
+                $this->options['headers'][$header] = $value;
+            }
         }
-        $this->options['headers'][$name] = $value;
+
         return $this;
     }
 
     /**
-     * Get header
+     * Get headers
      *
-     * @param  ?string $key
      * @return mixed
      */
-    public function getHeader(?string $key = null): mixed
+    public function getHeaders(): mixed
     {
-        if ($key !== null) {
-            return (isset($this->options['headers']) && isset($this->options['headers'][$key])) ?
-                $this->options['headers'][$key] : null;
+        if (($this->hasRequest()) && ($this->request->hasHeaders())) {
+            return $this->request->getHeaders();
         } else {
             return $this->options['headers'] ?? null;
         }
     }
 
     /**
-     * Has header
+     * Get header
      *
-     * @param  ?string $key
+     * @param  string $name
+     * @return mixed
+     */
+    public function getHeader(string $name): mixed
+    {
+        if (($this->hasRequest()) && ($this->request->hasHeader($name))) {
+            return $this->request->getHeader($name);
+        } else {
+            return (isset($this->options['headers'][$name])) ? $this->options['headers'][$name] : null;
+        }
+    }
+
+    /**
+     * Has headers
+     *
      * @return bool
      */
-    public function hasHeader(?string $key = null): bool
+    public function hasHeaders(): bool
     {
-        if ($key !== null) {
-            return (isset($this->options['headers']) && isset($this->options['headers'][$key]));
+        if (($this->hasRequest()) && ($this->request->hasHeaders())) {
+            return true;
         } else {
-            return isset($this->options['headers']);
+            return !empty($this->options['headers']);
+        }
+    }
+
+    /**
+     * Has header
+     *
+     * @param  string $name
+     * @return bool
+     */
+    public function hasHeader(string $name): bool
+    {
+        if (($this->hasRequest()) && ($this->request->hasHeader($name))) {
+            return true;
+        } else {
+            return isset($this->options['headers'][$name]);
         }
     }
 
     /**
      * Remove header
      *
-     * @param  string $key
+     * @param  string $name
      * @return Client
      */
-    public function removeHeader(string $key): Client
+    public function removeHeader(string $name): Client
     {
-        if (isset($this->options['headers']) && isset($this->options['headers'][$key])) {
-            unset($this->options['headers'][$key]);
+        if (($this->hasRequest()) && ($this->request->hasHeader($name))) {
+            $this->request->removeHeader($name);
+        }
+        if (isset($this->options['headers'][$name])) {
+            unset($this->options['headers'][$name]);
         }
 
         return $this;
@@ -476,6 +539,9 @@ class Client extends AbstractHttp
      */
     public function removeAllHeaders(): Client
     {
+        if (($this->hasRequest()) && ($this->request->hasHeaders())) {
+            $this->request->removeHeaders();
+        }
         if (isset($this->options['headers'])) {
             unset($this->options['headers']);
         }
@@ -491,7 +557,12 @@ class Client extends AbstractHttp
      */
     public function setData(array $data): Client
     {
-        $this->options['data'] = $data;
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $this->request->setData($data);
+        } else {
+            $this->options['data'] = $data;
+        }
+
         return $this;
     }
 
@@ -504,10 +575,15 @@ class Client extends AbstractHttp
      */
     public function addData(string $name, mixed $value): Client
     {
-        if (!isset($this->options['data'])) {
-            $this->options['data'] = [];
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $this->request->addData($name, $value);
+        } else {
+            if (!isset($this->options['data'])) {
+                $this->options['data'] = [];
+            }
+            $this->options['data'][$name] = $value;
         }
-        $this->options['data'][$name] = $value;
+
         return $this;
     }
 
@@ -519,12 +595,22 @@ class Client extends AbstractHttp
      */
     public function getData(?string $key = null): mixed
     {
-        if ($key !== null) {
-            return (isset($this->options['data']) && isset($this->options['data'][$key])) ?
-                $this->options['data'][$key] : null;
-        } else {
-            return $this->options['data'] ?? null;
+        $data = null;
+
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $data = $this->request->getData()->getData($key);
         }
+
+        if (($data === null) && isset($this->options['data'])) {
+            if ($key !== null) {
+                $data = (isset($this->options['data'][$key])) ?
+                    $this->options['data'][$key] : null;
+            } else {
+                $data = $this->options['data'] ?? null;
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -535,10 +621,11 @@ class Client extends AbstractHttp
      */
     public function hasData(?string $key = null): bool
     {
-        if ($key !== null) {
-            return (isset($this->options['data']) && isset($this->options['data'][$key]));
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
+            ($this->request->hasData()) && ($this->request->getData()->hasData($key))) {
+            return true;
         } else {
-            return isset($this->options['data']);
+            return ($key !== null) ? isset($this->options['data'][$key]) : isset($this->options['data']);
         }
     }
 
@@ -550,7 +637,11 @@ class Client extends AbstractHttp
      */
     public function removeData(string $key): Client
     {
-        if (isset($this->options['data']) && isset($this->options['data'][$key])) {
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
+            ($this->request->hasData()) && ($this->request->getData()->hasData($key))) {
+            $this->request->removeData($key);
+        }
+        if (isset($this->options['data'][$key])) {
             unset($this->options['data'][$key]);
         }
 
@@ -564,6 +655,9 @@ class Client extends AbstractHttp
      */
     public function removeAllData(): Client
     {
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request) && ($this->request->hasData())) {
+            $this->request->removeAllData();
+        }
         if (isset($this->options['data'])) {
             unset($this->options['data']);
         }
@@ -579,7 +673,12 @@ class Client extends AbstractHttp
      */
     public function setQuery(array $query): Client
     {
-        $this->options['query'] = $query;
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $this->request->setQuery(new Data($query));
+        } else {
+            $this->options['query'] = $query;
+        }
+
         return $this;
     }
 
@@ -592,10 +691,15 @@ class Client extends AbstractHttp
      */
     public function addQuery(string $name, mixed $value): Client
     {
-        if (!isset($this->options['query'])) {
-            $this->options['query'] = [];
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $this->request->addQuery($name, $value);
+        } else {
+            if (!isset($this->options['query'])) {
+                $this->options['query'] = [];
+            }
+            $this->options['query'][$name] = $value;
         }
-        $this->options['query'][$name] = $value;
+
         return $this;
     }
 
@@ -607,12 +711,22 @@ class Client extends AbstractHttp
      */
     public function getQuery(?string $key = null): mixed
     {
-        if ($key !== null) {
-            return (isset($this->options['query']) && isset($this->options['query'][$key])) ?
-                $this->options['query'][$key] : null;
-        } else {
-            return $this->options['query'] ?? null;
+        $query = null;
+
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $query = $this->request->getQuery()->getData($key);
         }
+
+        if (($query === null) && isset($this->options['query'])) {
+            if ($key !== null) {
+                $query = (isset($this->options['query'][$key])) ?
+                    $this->options['query'][$key] : null;
+            } else {
+                $query = $this->options['query'] ?? null;
+            }
+        }
+
+        return $query;
     }
 
     /**
@@ -623,10 +737,11 @@ class Client extends AbstractHttp
      */
     public function hasQuery(?string $key = null): bool
     {
-        if ($key !== null) {
-            return (isset($this->options['query']) && isset($this->options['query'][$key]));
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
+            ($this->request->hasQuery()) && ($this->request->getQuery()->hasData($key))) {
+            return true;
         } else {
-            return isset($this->options['query']);
+            return ($key !== null) ? isset($this->options['query'][$key]) : isset($this->options['query']);
         }
     }
 
@@ -638,7 +753,11 @@ class Client extends AbstractHttp
      */
     public function removeQuery(string $key): Client
     {
-        if (isset($this->options['query']) && isset($this->options['query'][$key])) {
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
+            ($this->request->hasQuery()) && ($this->request->getQuery()->hasData($key))) {
+            $this->request->removeQuery($key);
+        }
+        if (isset($this->options['query'][$key])) {
             unset($this->options['query'][$key]);
         }
 
@@ -652,6 +771,9 @@ class Client extends AbstractHttp
      */
     public function removeAllQuery(): Client
     {
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request) && ($this->request->hasQuery())) {
+            $this->request->removeAllQuery();
+        }
         if (isset($this->options['query'])) {
             unset($this->options['query']);
         }
@@ -667,7 +789,12 @@ class Client extends AbstractHttp
      */
     public function setType(string $type): Client
     {
-        $this->options['type'] = $type;
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $this->request->setRequestType($type);
+        } else {
+            $this->options['type'] = $type;
+        }
+
         return $this;
     }
 
@@ -678,7 +805,11 @@ class Client extends AbstractHttp
      */
     public function getType(): mixed
     {
-        return $this->options['type'] ?? null;
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            return $this->request->getRequestType();
+        } else {
+            return $this->options['type'] ?? null;
+        }
     }
 
     /**
@@ -688,7 +819,8 @@ class Client extends AbstractHttp
      */
     public function hasType(): bool
     {
-        return isset($this->options['type']);
+        return ((($this->hasRequest()) && ($this->request instanceof Client\Request))) ?
+            $this->request->hasRequestType() : isset($this->options['type']);
     }
 
     /**
@@ -698,6 +830,9 @@ class Client extends AbstractHttp
      */
     public function removeType(): Client
     {
+        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+            $this->request->removeRequestType();
+        }
         if (isset($this->options['type'])) {
             unset($this->options['type']);
         }
@@ -783,11 +918,11 @@ class Client extends AbstractHttp
      * Get file
      *
      * @param  string $key
-     * @return string|null
+     * @return ?string
      */
-    public function getFile(string $key): string|null
+    public function getFile(string $key): ?string
     {
-        return (isset($this->options['files']) && isset($this->options['files'][$key])) ?
+        return (isset($this->options['files'][$key])) ?
                 $this->options['files'][$key] : null;
     }
 
@@ -809,7 +944,7 @@ class Client extends AbstractHttp
      */
     public function hasFile(string $key): bool
     {
-        return (isset($this->options['files']) && isset($this->options['files'][$key]));
+        return (isset($this->options['files'][$key]));
     }
 
     /**
@@ -820,7 +955,7 @@ class Client extends AbstractHttp
      */
     public function removeFile(string $key): Client
     {
-        if (isset($this->options['files']) && isset($this->options['files'][$key])) {
+        if (isset($this->options['files'][$key])) {
             unset($this->options['files'][$key]);
         }
 
@@ -845,6 +980,7 @@ class Client extends AbstractHttp
      * Set request body
      *
      * @param  string $body
+     * @throws Exception
      * @return Client
      */
     public function setBody(string $body): Client
@@ -862,6 +998,7 @@ class Client extends AbstractHttp
      * Set request body from file
      *
      * @param  string $file
+     * @throws Exception
      * @return Client
      */
     public function setBodyFromFile(string $file): Client
@@ -891,9 +1028,9 @@ class Client extends AbstractHttp
     /**
      * Get request body
      *
-     * @return Body|null
+     * @return ?Body
      */
-    public function getBody(): Body|null
+    public function getBody(): ?Body
     {
         return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBody() : null;
     }
@@ -901,9 +1038,9 @@ class Client extends AbstractHttp
     /**
      * Get request body content
      *
-     * @return string|null
+     * @return ?string
      */
-    public function getBodyContent(): string|null
+    public function getBodyContent(): ?string
     {
         return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBodyContent() : null;
     }
@@ -911,11 +1048,12 @@ class Client extends AbstractHttp
     /**
      * Get request body content length
      *
+     * @param  bool $mb
      * @return int
      */
-    public function getBodyContentLength(): int
+    public function getBodyContentLength(bool $mb = false): int
     {
-        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBodyContentLength() : 0;
+        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBodyContentLength($mb) : 0;
     }
 
     /**
@@ -935,12 +1073,13 @@ class Client extends AbstractHttp
      * Prepare the client request
      *
      * @param  ?string $uri
-     * @param  ?string  $method
+     * @param  ?string $method
      * @throws Exception|Client\Exception
      * @return Client
      */
     public function prepare(?string $uri = null, string $method = null): Client
     {
+        // Check that there is a request object or a URI
         if ((!$this->hasRequest()) && ($uri === null) && !isset($this->options['base_uri'])) {
             throw new Exception('Error: There is no request URI to send.');
         }
@@ -960,6 +1099,12 @@ class Client extends AbstractHttp
             } else if (isset($this->options['base_uri']) && !str_starts_with($this->request->getUriAsString(), $this->options['base_uri'])) {
                 $this->request->setUri($this->options['base_uri'] . $this->request->getUriAsString());
             }
+
+            // Set method
+            if ($method !== null) {
+                $this->request->setMethod($method);
+            }
+        // Create new request object
         } else {
             if (($uri === null) && isset($this->options['base_uri'])) {
                 $uri = $this->options['base_uri'];
@@ -969,9 +1114,9 @@ class Client extends AbstractHttp
             $this->setRequest(new Request(new Uri($uri), ($method ?? 'GET')));
         }
 
-        // Set method
-        if ($method !== null) {
-            $this->request->setMethod($method);
+        // Set request type
+        if ($this->hasOption('type')) {
+            $this->request->setRequestType($this->options['type']);
         }
 
         // Add headers
@@ -979,12 +1124,18 @@ class Client extends AbstractHttp
             $this->request->addHeaders($this->options['headers']);
         }
 
-        // Add data and files
+        // Add query
+        if ($this->hasOption('query')) {
+            $this->request->setQuery($this->options['query']);
+        }
+
+        // Add data
         $data = [];
         if ($this->hasOption('data')) {
             $data = $this->options['data'];
         }
 
+        // Add files
         if ($this->hasOption('files')) {
             $files = $this->options['files'];
             foreach ($files as $file => $value) {
@@ -999,14 +1150,6 @@ class Client extends AbstractHttp
         if (!empty($data)) {
             $this->request->setData($data);
         }
-
-        // Add query
-        if ($this->hasOption('query')) {
-            $this->request->setQuery($this->options['query']);
-        }
-
-        // Set request type
-        $this->request->setRequestType(($this->hasOption('type') ? $this->options['type'] : null));
 
         // Set (or reset) handler
         if (!$this->hasHandler()) {
@@ -1133,7 +1276,7 @@ class Client extends AbstractHttp
      *
      * @param  string $methodName
      * @param  array  $arguments
-     * @throws Exception|Client\Exception
+     * @throws Exception|Client\Exception|Client\Handler\Exception
      * @return Response|Promise|array|string
      */
     public function __call(string $methodName, array $arguments): Response|Promise|array|string
@@ -1154,7 +1297,7 @@ class Client extends AbstractHttp
      *
      * @param  string $methodName
      * @param  array  $arguments
-     * @throws Exception|Client\Exception
+     * @throws Exception|Client\Exception|Client\Handler\Exception
      * @return Response|Promise|array|string
      */
     public static function __callStatic(string $methodName, array $arguments): Response|Promise|array|string

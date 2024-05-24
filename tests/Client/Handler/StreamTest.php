@@ -98,17 +98,6 @@ class StreamTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Uri', $stream->getUriObject());
     }
 
-    public function testPrepareWithGetData()
-    {
-        $stream  = new Stream();
-        $request = new Request('http://localhost/');
-        $request->setData(['foo' => 'bar']);
-        $client  = new Client($request, $stream);
-        $client->getHandler()->prepare($client->getRequest());
-        $this->assertTrue($request->getData()->hasQueryString());
-        $this->assertEquals('foo=bar', $request->getData()->getQueryString());
-    }
-
     public function testPrepareWithJsonData()
     {
         $stream  = new Stream();
@@ -125,7 +114,7 @@ class StreamTest extends TestCase
     {
         $stream  = new Stream();
         $request = new Request('http://localhost/', 'POST');
-        $request->setRequestType(Request::URLFORM);
+        $request->setRequestType(Request::URLENCODED);
         $request->setData(['foo' => 'bar']);
         $client  = new Client($request, $stream);
         $client->getHandler()->prepare($client->getRequest());
@@ -150,7 +139,7 @@ class StreamTest extends TestCase
         $request->setData(['foo' => 'bar']);
         $client  = new Client($request, $stream);
         $client->getHandler()->prepare($client->getRequest());
-        $this->assertEquals(['foo' => 'bar'], $stream->getContextOption('http')['content']);
+        $this->assertEquals('foo=bar', $stream->getContextOption('http')['content']);
     }
 
     public function testPrepareWithBodyData()
@@ -172,7 +161,7 @@ class StreamTest extends TestCase
         $client->getHandler()->prepare($client->getRequest(), null, true);
         $this->assertNull($stream->getContextOption('http')['header']);
     }
-    
+
     public function testSendException()
     {
         $this->expectException('Pop\Http\Client\Handler\Exception');
