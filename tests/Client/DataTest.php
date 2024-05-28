@@ -4,6 +4,7 @@ namespace Pop\Http\Test\Client;
 
 use Pop\Http\Client\Data;
 use PHPUnit\Framework\TestCase;
+use Pop\Http\Client\Request;
 
 class DataTest extends TestCase
 {
@@ -34,6 +35,78 @@ class DataTest extends TestCase
 
         $data->removeAllData();
         $this->assertCount(0, $data->getData());
+    }
+
+    public function testType()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $data->setType(Request::JSON);
+        $this->assertTrue($data->hasType());
+        $this->assertEquals(Request::JSON, $data->getType());
+    }
+
+    public function testIsJson()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $data->setType(Request::JSON);
+        $this->assertTrue($data->isJson());
+    }
+
+    public function testIsXml()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $data->setType(Request::XML);
+        $this->assertTrue($data->isXml());
+    }
+
+    public function testIsUrlEncoded()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $data->setType(Request::URLENCODED);
+        $this->assertTrue($data->isUrlEncoded());
+    }
+
+    public function testIsMultipart()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $data->setType(Request::MULTIPART);
+        $this->assertTrue($data->isMultipart());
+    }
+
+    public function testIsPrepared1()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($data->isPrepared());
+    }
+
+    public function testIsPrepared2()
+    {
+        $data = new Data([0 => 'This is a string'], null, null);
+        $data->prepare();
+        $this->assertTrue($data->isPrepared());
+    }
+
+    public function testIsPrepared3()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $data->prepare();
+        $this->assertTrue($data->isPrepared());
+        $data->reset();
+        $this->assertFalse($data->isPrepared());
     }
 
     public function testHasData()

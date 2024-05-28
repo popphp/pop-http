@@ -94,6 +94,18 @@ class RequestTest extends TestCase
         $this->assertTrue($request->hasHeader('Content-Type'));
     }
 
+    public function testSetHeaders()
+    {
+        $request = new Request('http://localhost/', 'POST');
+        $request->addHeaders([
+            new Header('Content-Type', 'application/json'),
+            new Header('Authorization', 'Bearer 123456')
+        ]);
+        $this->assertCount(2, $request->getHeaders());
+        $request->setHeaders([new Header('Content-Type', 'application/json')]);
+        $this->assertCount(1, $request->getHeaders());
+    }
+
     public function testAddHeaders()
     {
         $request = new Request('http://localhost/', 'POST');

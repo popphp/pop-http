@@ -447,7 +447,7 @@ class Client extends AbstractHttp
                 $this->options['headers'] = [];
             }
             if ($header instanceof Header) {
-                $this->options['headers'][$header->getName()] = $value;
+                $this->options['headers'][$header->getName()] = $header;
             } else {
                 $this->options['headers'][$header] = $value;
             }

@@ -5,6 +5,8 @@ namespace Pop\Http\Test;
 use Pop\Http\Client;
 use Pop\Http\Auth;
 use PHPUnit\Framework\TestCase;
+use Pop\Http\Uri;
+use Pop\Mime\Part\Header;
 
 class ClientTest extends TestCase
 {
@@ -68,6 +70,33 @@ class ClientTest extends TestCase
         $this->assertTrue($client->hasOption('auto'));
     }
 
+    public function testRemoveOption()
+    {
+        $client = new Client();
+        $client->addOptions([
+            'async' => true,
+            'auto'  => true
+        ]);
+        $this->assertTrue($client->hasOption('async'));
+        $this->assertTrue($client->hasOption('auto'));
+        $client->removeOption('async');
+        $this->assertFalse($client->hasOption('async'));
+    }
+
+    public function testRemoveOptions()
+    {
+        $client = new Client();
+        $client->addOptions([
+            'async' => true,
+            'auto'  => true
+        ]);
+        $this->assertTrue($client->hasOption('async'));
+        $this->assertTrue($client->hasOption('auto'));
+        $client->removeOptions();
+        $this->assertFalse($client->hasOption('async'));
+        $this->assertFalse($client->hasOption('auto'));
+    }
+
     public function testMethod1()
     {
         $client = new Client();
@@ -82,6 +111,42 @@ class ClientTest extends TestCase
         $client->setMethod('POST');
         $this->assertTrue($client->hasMethod());
         $this->assertEquals('POST', $client->getMethod());
+    }
+
+    public function testPrepareBaseUri1()
+    {
+        $client = new Client(new Client\Request(new Uri('/some-uri')),
+            [
+                'base_uri' => 'http://localhost'
+            ]
+        );
+        $client->prepare();
+        $this->assertTrue($client->hasRequest());
+        $this->assertEquals('http://localhost/some-uri', $client->getRequest()->getUriAsString());
+    }
+
+    public function testPrepareBaseUri2()
+    {
+        $client = new Client(new Client\Request(),
+            [
+                'base_uri' => 'http://localhost'
+            ]
+        );
+        $client->prepare('/foo/bar');
+        $this->assertTrue($client->hasRequest());
+        $this->assertEquals('http://localhost/foo/bar', $client->getRequest()->getUriAsString());
+    }
+
+    public function testPrepareBaseUri3()
+    {
+        $client = new Client(
+            [
+                'base_uri' => 'http://localhost/'
+            ]
+        );
+        $client->prepare();
+        $this->assertTrue($client->hasRequest());
+        $this->assertEquals('http://localhost/', $client->getRequest()->getUriAsString());
     }
 
     public function testPrepareCurl()
@@ -251,7 +316,7 @@ class ClientTest extends TestCase
         $this->assertNull($client2->isServerError());
     }
 
-    public function testData()
+    public function testData1()
     {
         $client = new Client();
         $client->setData([
@@ -263,7 +328,19 @@ class ClientTest extends TestCase
         $this->assertCount(1, $client->getData());
     }
 
-    public function testAddData()
+    public function testData2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setData([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasData('foo'));
+        $this->assertTrue($client->hasData());
+        $this->assertEquals('bar', $client->getData('foo'));
+        $this->assertCount(1, $client->getData());
+    }
+
+    public function testAddData1()
     {
         $client = new Client();
         $client->addData('foo', 'bar');
@@ -271,7 +348,15 @@ class ClientTest extends TestCase
         $this->assertCount(1, $client->getData());
     }
 
-    public function testRemoveData()
+    public function testAddData2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->addData('foo', 'bar');
+        $this->assertEquals('bar', $client->getData('foo'));
+        $this->assertCount(1, $client->getData());
+    }
+
+    public function testRemoveData1()
     {
         $client = new Client();
         $client->setData([
@@ -282,7 +367,18 @@ class ClientTest extends TestCase
         $this->assertFalse($client->hasData('foo'));
     }
 
-    public function testRemoveAllData()
+    public function testRemoveData2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setData([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasData('foo'));
+        $client->removeData('foo');
+        $this->assertFalse($client->hasData('foo'));
+    }
+
+    public function testRemoveAllData1()
     {
         $client = new Client();
         $client->setData([
@@ -293,7 +389,18 @@ class ClientTest extends TestCase
         $this->assertFalse($client->hasData());
     }
 
-    public function testHeader()
+    public function testRemoveAllData2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setData([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasData());
+        $client->removeAllData();
+        $this->assertFalse($client->hasData());
+    }
+
+    public function testHeader1()
     {
         $client = new Client();
         $client->setHeaders([
@@ -305,15 +412,69 @@ class ClientTest extends TestCase
         $this->assertCount(1, $client->getHeaders());
     }
 
-    public function testAddHeader()
+    public function testHeader2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setHeaders([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasHeader('foo'));
+        $this->assertTrue($client->hasHeaders());
+        $this->assertEquals('bar', $client->getHeader('foo')->getValue());
+        $this->assertCount(1, $client->getHeaders());
+    }
+
+    public function testAddHeader1()
     {
         $client = new Client();
         $client->addHeader('foo', 'bar');
+        $this->assertTrue($client->hasHeaders());
+        $this->assertTrue($client->hasHeader('foo'));
         $this->assertEquals('bar', $client->getHeader('foo'));
         $this->assertCount(1, $client->getHeaders());
     }
 
-    public function testRemoveHeader()
+    public function testAddHeader2()
+    {
+        $client = new Client();
+        $client->addHeader(new Header('foo', 'bar'));
+        $this->assertTrue($client->hasHeaders());
+        $this->assertTrue($client->hasHeader('foo'));
+        $this->assertEquals('bar', $client->getHeader('foo')->getValue());
+        $this->assertCount(1, $client->getHeaders());
+    }
+
+    public function testAddHeader3()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->addHeader('foo', 'bar');
+        $this->assertTrue($client->hasHeaders());
+        $this->assertTrue($client->hasHeader('foo'));
+        $this->assertEquals('bar', $client->getHeader('foo')->getValue());
+        $this->assertCount(1, $client->getHeaders());
+    }
+
+    public function testAddHeaders1()
+    {
+        $client = new Client();
+        $client->addHeaders(['foo' => 'bar']);
+        $this->assertTrue($client->hasHeaders());
+        $this->assertTrue($client->hasHeader('foo'));
+        $this->assertEquals('bar', $client->getHeader('foo'));
+        $this->assertCount(1, $client->getHeaders());
+    }
+
+    public function testAddHeaders2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->addHeaders(['foo' => 'bar']);
+        $this->assertTrue($client->hasHeaders());
+        $this->assertTrue($client->hasHeader('foo'));
+        $this->assertEquals('bar', $client->getHeader('foo')->getValue());
+        $this->assertCount(1, $client->getHeaders());
+    }
+
+    public function testRemoveHeader1()
     {
         $client = new Client();
         $client->setHeaders([
@@ -324,7 +485,18 @@ class ClientTest extends TestCase
         $this->assertFalse($client->hasHeader('foo'));
     }
 
-    public function testRemoveAllHeaders()
+    public function testRemoveHeader2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setHeaders([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasHeader('foo'));
+        $client->removeHeader('foo');
+        $this->assertFalse($client->hasHeader('foo'));
+    }
+
+    public function testRemoveAllHeaders1()
     {
         $client = new Client();
         $client->setHeaders([
@@ -335,7 +507,18 @@ class ClientTest extends TestCase
         $this->assertFalse($client->hasHeaders());
     }
 
-    public function testQuery()
+    public function testRemoveAllHeaders2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setHeaders([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasHeaders());
+        $client->removeAllHeaders();
+        $this->assertFalse($client->hasHeaders());
+    }
+
+    public function testQuery1()
     {
         $client = new Client();
         $client->setQuery([
@@ -347,7 +530,19 @@ class ClientTest extends TestCase
         $this->assertCount(1, $client->getQuery());
     }
 
-    public function testAddQuery()
+    public function testQuery2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setQuery([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasQuery('foo'));
+        $this->assertTrue($client->hasQuery());
+        $this->assertEquals('bar', $client->getQuery('foo'));
+        $this->assertCount(1, $client->getQuery());
+    }
+
+    public function testAddQuery1()
     {
         $client = new Client();
         $client->addQuery('foo', 'bar');
@@ -355,7 +550,15 @@ class ClientTest extends TestCase
         $this->assertCount(1, $client->getQuery());
     }
 
-    public function testRemoveQuery()
+    public function testAddQuery2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->addQuery('foo', 'bar');
+        $this->assertEquals('bar', $client->getQuery('foo'));
+        $this->assertCount(1, $client->getQuery());
+    }
+
+    public function testRemoveQuery1()
     {
         $client = new Client();
         $client->setQuery([
@@ -366,7 +569,18 @@ class ClientTest extends TestCase
         $this->assertFalse($client->hasQuery('foo'));
     }
 
-    public function testRemoveAllQuery()
+    public function testRemoveQuery2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setQuery([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasQuery('foo'));
+        $client->removeQuery('foo');
+        $this->assertFalse($client->hasQuery('foo'));
+    }
+
+    public function testRemoveAllQuery1()
     {
         $client = new Client();
         $client->setQuery([
@@ -375,6 +589,37 @@ class ClientTest extends TestCase
         $this->assertTrue($client->hasQuery());
         $client->removeAllQuery();
         $this->assertFalse($client->hasQuery());
+    }
+
+    public function testRemoveAllQuery2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setQuery([
+            'foo' => 'bar'
+        ]);
+        $this->assertTrue($client->hasQuery());
+        $client->removeAllQuery();
+        $this->assertFalse($client->hasQuery());
+    }
+
+    public function testType1()
+    {
+        $client = new Client();
+        $client->setType(Client\Request::JSON);
+        $this->assertTrue($client->hasType());
+        $this->assertEquals(Client\Request::JSON, $client->getType());
+        $client->removeType();
+        $this->assertFalse($client->hasType());
+    }
+
+    public function testType2()
+    {
+        $client = new Client(new Client\Request(new Uri('http://localhost/')));
+        $client->setType(Client\Request::JSON);
+        $this->assertTrue($client->hasType());
+        $this->assertEquals(Client\Request::JSON, $client->getType());
+        $client->removeType();
+        $this->assertFalse($client->hasType());
     }
 
     public function testFiles()
@@ -598,6 +843,32 @@ class ClientTest extends TestCase
                 'Accept'        => 'application/json',
             ],
             'type' => Client\Request::URLENCODED
+        ];
+        $client  = new Client('http://localhost:8000/post.php', $options);
+        $request = $client->render();
+
+        $this->assertTrue(str_contains($request, 'POST /post.php HTTP/1.1'));
+        $this->assertTrue(str_contains($request, 'Host: localhost:8000'));
+        $this->assertTrue(str_contains($request, 'Authorization: Bearer 123456789'));
+        $this->assertTrue(str_contains($request, 'Accept: application/json'));
+        $this->assertTrue(str_contains($request, 'Content-Type: application/x-www-form-urlencoded'));
+        $this->assertTrue(str_contains($request, 'Content-Length: 7'));
+        $this->assertTrue(str_contains($request, 'foo=bar'));
+    }
+
+    public function testRender3()
+    {
+        $options = [
+            'method' => 'POST',
+            'data'   => [
+                'foo' => 'bar'
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer 123456789',
+                'Accept'        => 'application/json',
+            ],
+            'type' => Client\Request::URLENCODED,
+            'force_custom_method' => true
         ];
         $client  = new Client('http://localhost:8000/post.php', $options);
         $request = $client->render();

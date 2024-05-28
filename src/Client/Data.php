@@ -74,6 +74,12 @@ class Data
     protected ?string $dataContent = null;
 
     /**
+     * Data content prepared flag
+     * @var bool
+     */
+    protected bool $prepared = false;
+
+    /**
      * Common mime types
      * @var array
      */
@@ -373,7 +379,7 @@ class Data
      */
     public function isPrepared(): bool
     {
-        return !empty($this->dataContent);
+        return $this->prepared;
     }
 
     /**
@@ -400,6 +406,20 @@ class Data
                 $this->dataContent = ($this->hasRawData()) ? $this->getRawData() : $this->getData();
         }
 
+        $this->prepared = true;
+
+        return $this;
+    }
+
+    /**
+     * Reset data
+     *
+     * @return Data
+     */
+    public function reset(): Data
+    {
+        $this->dataContent = null;
+        $this->prepared    = false;
         return $this;
     }
 

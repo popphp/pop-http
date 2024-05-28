@@ -268,7 +268,7 @@ Supported keys in the options array are:
 - `data` - an array of request data - can be any request data
 - `files` - an array of files on disk to be sent with the request
 - `type` - set the request type (URL-form, JSON, XML or multipart/form)
-  + `Request::URLFORM` (`application/x-www-form-urlencoded`)
+  + `Request::URLENCODED` (`application/x-www-form-urlencoded`)
   + `Request::JSON` (`application/json`)
   + `Request::XML` (`application/xml`)
   + `Request::MULTIPART` (`multipart/form-data`)
@@ -443,7 +443,7 @@ $client = new Client('http://localhost:8000/files.php', [
     'headers' => [
         'Authorization' => 'Bearer 123456789',
     ],
-    'type' => Request::URLFORM
+    'type' => Request::URLENCODED
 ]);
 echo $client->render();
 ```
