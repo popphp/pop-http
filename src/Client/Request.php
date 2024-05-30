@@ -35,9 +35,9 @@ class Request extends AbstractRequest
      * Request type constants
      * @var string
      */
+    const URLENCODED = 'application/x-www-form-urlencoded';
     const JSON       = 'application/json';
     const XML        = 'application/xml';
-    const URLENCODED = 'application/x-www-form-urlencoded';
     const MULTIPART  = 'multipart/form-data';
 
     /**
@@ -460,6 +460,10 @@ class Request extends AbstractRequest
                 if ($this->hasHeader('Content-Length')) {
                     $this->removeHeader('Content-Length');
                 }
+        }
+
+        if (($this->requestType !== null) && ($this->hasData())) {
+            $this->data->setType($this->requestType);
         }
 
         return $this;

@@ -282,7 +282,7 @@ class Curl extends AbstractCurl
             // Set request data content
             if ($request->hasDataContent()) {
                 // If it's a URL-encoded GET request
-                if (($queryString === null) && ($request->isUrlEncoded()) && ($request->isGet())) {
+                if (($queryString === null) && ($request->isGet()) && (!$request->hasRequestType() || $request->isUrlEncoded())) {
                     $queryString = '?' . $request->getDataContent();
 
                     // Clear old request data

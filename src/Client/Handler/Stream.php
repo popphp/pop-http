@@ -410,7 +410,7 @@ class Stream extends AbstractHandler
             // Set request data content
             if ($request->hasDataContent()) {
                 // If it's a URL-encoded GET request
-                if (($queryString === null) && ($request->isUrlEncoded()) && ($request->isGet())) {
+                if (($queryString === null) && ($request->isGet()) && (!$request->hasRequestType() || $request->isUrlEncoded())) {
                     $queryString = '?' . $request->getDataContent();
                 // Else, set data content
                 } else {
