@@ -1244,6 +1244,62 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Method to reset the client
+     *
+     * @param  bool $data
+     * @param  bool $headers
+     * @param  bool $clear
+     * @return static
+     */
+    public function reset(?bool $data = true, ?bool $headers = false, bool $clear = false): static
+    {
+        // Fully clear out and reset of client object
+        if ($clear) {
+            $this->request  = null;
+            $this->response = null;
+            $this->handler  = null;
+            $this->auth     = null;
+            $this->options  = [];
+        // Clear out basic client info & data
+        } else {
+            if ($data) {
+                if (isset($this->options['query'])) {
+                    unset($this->options['query']);
+                }
+                if (isset($this->options['data'])) {
+                    unset($this->options['data']);
+                }
+                if (isset($this->options['files'])) {
+                    unset($this->options['files']);
+                }
+                if ($this->request !== null) {
+                    if ($this->request->hasQuery()) {
+                        $this->request->removeAllQuery();
+                    }
+                    if ($this->request->hasData()) {
+                        $this->request->removeAllData();
+                    }
+                }
+            }
+            if ($headers) {
+                if (isset($this->options['headers'])) {
+                    unset($this->options['headers']);
+                }
+                if (isset($this->options['user_agent'])) {
+                    unset($this->options['user_agent']);
+                }
+                if ($this->request !== null) {
+                    if ($this->request->hasHeaders()) {
+                        $this->request->removeHeaders();
+                    }
+                }
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Method to convert client object to a Curl command for the CLI
      *
      * @throws Exception|Curl\Exception

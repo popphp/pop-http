@@ -812,6 +812,83 @@ class ClientTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Promise', Client::getAsync('http://localhost/'));
     }
 
+    public function testReset1()
+    {
+        $options = [
+            'method' => 'GET',
+            'query'   => [
+                'foo' => 'bar'
+            ],
+            'data'   => [
+                'foo' => 'bar'
+            ],
+            'files'   => [
+                'foo' => 'bar'
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer 123456789'
+            ],
+            'user_agent' => 'popphp/pop-http'
+        ];
+        $client = new Client('http://localhost:8000/get.php', $options);
+
+        $this->assertTrue($client->hasOptions());
+        $this->assertTrue($client->hasOption('query'));
+        $this->assertTrue($client->hasOption('data'));
+        $this->assertTrue($client->hasOption('files'));
+        $client->reset(true, true);
+        $this->assertFalse($client->hasOption('query'));
+        $this->assertFalse($client->hasOption('data'));
+        $this->assertFalse($client->hasOption('files'));
+    }
+
+    public function testReset2()
+    {
+        $options = [
+            'method' => 'GET',
+            'query'   => [
+                'foo' => 'bar'
+            ],
+            'data'   => [
+                'foo' => 'bar'
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer 123456789'
+            ],
+            'user_agent' => 'popphp/pop-http'
+        ];
+        $client = new Client('http://localhost:8000/get.php', $options);
+        $client->prepare();
+
+        $this->assertTrue($client->getRequest()->hasHeaders());
+        $this->assertTrue($client->getRequest()->hasQuery());
+        $client->reset(true, true);
+        $this->assertFalse($client->getRequest()->hasHeaders());
+        $this->assertFalse($client->getRequest()->hasQuery());
+    }
+
+    public function testReset3()
+    {
+        $options = [
+            'method' => 'GET',
+            'query'   => [
+                'foo' => 'bar'
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer 123456789'
+            ],
+            'user_agent' => 'popphp/pop-http'
+        ];
+        $client = new Client('http://localhost:8000/get.php', $options);
+        $client->prepare();
+
+        $this->assertTrue($client->hasRequest());
+        $this->assertTrue($client->hasOptions());
+        $client->reset(true, true, true);
+        $this->assertFalse($client->hasRequest());
+        $this->assertFalse($client->hasOptions());
+    }
+
     public function testRender1()
     {
         $options = [
