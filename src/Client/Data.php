@@ -334,6 +334,16 @@ class Data
     }
 
     /**
+     * Check if data is URL-encoded
+     *
+     * @return bool
+     */
+    public function isUrlEncoded(): bool
+    {
+        return ($this->type == Request::URLENCODED);
+    }
+
+    /**
      * Check if data is JSON
      *
      * @return bool
@@ -351,16 +361,6 @@ class Data
     public function isXml(): bool
     {
         return ($this->type == Request::XML);
-    }
-
-    /**
-     * Check if data is URL-encoded
-     *
-     * @return bool
-     */
-    public function isUrlEncoded(): bool
-    {
-        return ($this->type == Request::URLENCODED);
     }
 
     /**
@@ -390,20 +390,24 @@ class Data
     public function prepare(): Data
     {
         switch ($this->type) {
+            case Request::URLENCODED:
+                $this->prepareUrlEncoded();
+                break;
             case Request::JSON:
                 $this->prepareJson();
                 break;
             case Request::XML:
                 $this->prepareXml();
                 break;
-            case Request::URLENCODED:
-                $this->prepareUrlEncoded();
-                break;
             case Request::MULTIPART:
                 $this->prepareMultipart();
                 break;
             default:
-                $this->dataContent = ($this->hasRawData()) ? $this->getRawData() : $this->getData();
+                if ($this->hasRawData()) {
+                    $this->dataContent = $this->getRawData();
+                } else if ($this->hasData()) {
+                    $this->prepareUrlEncoded();
+                }
         }
 
         $this->prepared = true;
@@ -420,6 +424,26 @@ class Data
     {
         $this->dataContent = null;
         $this->prepared    = false;
+        return $this;
+    }
+
+    /**
+     * Method to prepare URL-encoded data content
+     *
+     * @return Data
+     */
+    public function prepareUrlEncoded(): Data
+    {
+        if (!array_key_exists(self::POP_CLIENT_REQUEST_RAW_DATA, $this->data) && !empty($this->data)) {
+            $data = $this->data;
+            if ($this->hasFilters()) {
+                $data = $this->filter($data);
+            }
+            $this->dataContent = http_build_query($data);
+        } else {
+            $this->dataContent = null;
+        }
+
         return $this;
     }
 
@@ -482,26 +506,6 @@ class Data
         }
 
         $this->dataContent = $xmlContent;
-
-        return $this;
-    }
-
-    /**
-     * Method to prepare URL-encoded data content
-     *
-     * @return Data
-     */
-    public function prepareUrlEncoded(): Data
-    {
-        if (!array_key_exists(self::POP_CLIENT_REQUEST_RAW_DATA, $this->data) && !empty($this->data)) {
-            $data = $this->data;
-            if ($this->hasFilters()) {
-                $data = $this->filter($data);
-            }
-            $this->dataContent = http_build_query($data);
-        } else {
-            $this->dataContent = null;
-        }
 
         return $this;
     }
