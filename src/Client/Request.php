@@ -332,6 +332,12 @@ class Request extends AbstractRequest
     public function setData(mixed $data, mixed $filters = null): Request
     {
         $this->data = ($data instanceof Data) ? $data : new Data($data, $filters, $this->requestType);
+        if ($this->data->hasContentTypeHeader()) {
+            $this->addHeader($this->data->getContentTypeHeader());
+        }
+        if ($this->data->hasContentLengthHeader()) {
+            $this->addHeader($this->data->getContentLengthHeader());
+        }
         return $this;
     }
 

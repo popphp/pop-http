@@ -68,6 +68,12 @@ class Data
     protected ?Part\Header $contentTypeHeader = null;
 
     /**
+     * Data content-length header
+     * @var ?Part\Header
+     */
+    protected ?Part\Header $contentLengthHeader = null;
+
+    /**
      * Data content
      * @var ?string
      */
@@ -334,6 +340,26 @@ class Data
     }
 
     /**
+     * Get data content-length header
+     *
+     * @return ?Part\Header
+     */
+    public function getContentLengthHeader(): ?Part\Header
+    {
+        return $this->contentLengthHeader;
+    }
+
+    /**
+     * Has data content-length header
+     *
+     * @return bool
+     */
+    public function hasContentLengthHeader(): bool
+    {
+        return !empty($this->contentLengthHeader);
+    }
+
+    /**
      * Check if data is URL-encoded
      *
      * @return bool
@@ -410,6 +436,10 @@ class Data
                 }
         }
 
+        if (!empty($this->dataContent)) {
+            $this->contentLengthHeader = new Part\Header('Content-Length', strlen($this->dataContent));
+        }
+
         $this->prepared = true;
 
         return $this;
@@ -422,8 +452,10 @@ class Data
      */
     public function reset(): Data
     {
-        $this->dataContent = null;
-        $this->prepared    = false;
+        $this->dataContent         = null;
+        $this->contentTypeHeader   = null;
+        $this->contentLengthHeader = null;
+        $this->prepared            = false;
         return $this;
     }
 
@@ -442,6 +474,10 @@ class Data
             $this->dataContent = http_build_query($data);
         } else {
             $this->dataContent = null;
+        }
+
+        if ($this->hasType()) {
+            $this->contentTypeHeader = new Part\Header('Content-Type', $this->type);
         }
 
         return $this;
@@ -474,6 +510,10 @@ class Data
             }
         }
 
+        if ($this->hasType()) {
+            $this->contentTypeHeader = new Part\Header('Content-Type', $this->type);
+        }
+
         // Only encode if the data isn't already encoded
         if (!((is_string($jsonContent) && (json_decode($jsonContent) !== false)) && (json_last_error() == JSON_ERROR_NONE))) {
             $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
@@ -503,6 +543,10 @@ class Data
                     str_contains(strtolower($xmlDatum['contentType']), 'xml') && file_exists($xmlDatum['filename'])) ?
                     file_get_contents($xmlDatum['filename']) : $xmlDatum;
             }
+        }
+
+        if ($this->hasType()) {
+            $this->contentTypeHeader = new Part\Header('Content-Type', $this->type);
         }
 
         $this->dataContent = $xmlContent;

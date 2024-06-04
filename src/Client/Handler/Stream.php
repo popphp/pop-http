@@ -405,7 +405,9 @@ class Stream extends AbstractHandler
 
         // If request has data
         if ($request->hasData()) {
-            $request->prepareData();
+            if (!$request->getData()->isPrepared()) {
+                $request->prepareData();
+            }
 
             // Set request data content
             if ($request->hasDataContent()) {
@@ -483,9 +485,18 @@ class Stream extends AbstractHandler
 
         // Parse response headers
         $parsedHeaders = Parser::parseHeaders($headers);
-        $response->setVersion($parsedHeaders['version']);
-        $response->setCode($parsedHeaders['code']);
-        $response->setMessage($parsedHeaders['message']);
+        if (!empty($parsedHeaders['version'])) {
+            $response->setVersion($parsedHeaders['version']);
+        }
+        if (!empty($parsedHeaders['code'])) {
+            $response->setCode($parsedHeaders['code']);
+        }
+        if (!empty($parsedHeaders['message'])) {
+            $response->setMessage($parsedHeaders['message']);
+        }
+        if (!empty($parsedHeaders['headers'])) {
+            $response->addHeaders($parsedHeaders['headers']);
+        }
         $response->addHeaders($parsedHeaders['headers']);
         if ($body !== null) {
             $response->setBody($body);

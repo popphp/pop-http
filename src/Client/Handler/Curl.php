@@ -277,7 +277,9 @@ class Curl extends AbstractCurl
 
         // If request has data
         if ($request->hasData()) {
-            $request->prepareData();
+            if (!$request->getData()->isPrepared()) {
+                $request->prepareData();
+            }
 
             // Set request data content
             if ($request->hasDataContent()) {
@@ -341,12 +343,22 @@ class Curl extends AbstractCurl
             $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
             if (isset($this->options[CURLOPT_HEADER]) && ($this->options[CURLOPT_HEADER])) {
                 $parsedHeaders = Parser::parseHeaders(substr($this->response, 0, $headerSize));
-                $response->setVersion($parsedHeaders['version']);
-                $response->setCode($parsedHeaders['code']);
-                $response->setMessage($parsedHeaders['message']);
-                $response->addHeaders($parsedHeaders['headers']);
-                $response->setBody(substr($this->response, $headerSize));
-            } else {
+                if (!empty($parsedHeaders['version'])) {
+                    $response->setVersion($parsedHeaders['version']);
+                }
+                if (!empty($parsedHeaders['code'])) {
+                    $response->setCode($parsedHeaders['code']);
+                }
+                if (!empty($parsedHeaders['message'])) {
+                    $response->setMessage($parsedHeaders['message']);
+                }
+                if (!empty($parsedHeaders['headers'])) {
+                    $response->addHeaders($parsedHeaders['headers']);
+                }
+                if (!empty($this->response)) {
+                    $response->setBody(substr($this->response, $headerSize));
+                }
+            } else if (!empty($this->response)) {
                 $response->setBody($this->response);
             }
         }
