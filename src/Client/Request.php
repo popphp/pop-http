@@ -351,7 +351,7 @@ class Request extends AbstractRequest
     public function addData(mixed $name, mixed $value): Request
     {
         if ($this->data === null) {
-            $this->data = new Data();
+            $this->data = new Data([], null, $this->requestType);
         }
         $this->data->addData($name, $value);
 
