@@ -2,6 +2,7 @@
 
 namespace Pop\Http\Test;
 
+use Pop\Http\Client\Data;
 use Pop\Http\Client\Request;
 use PHPUnit\Framework\TestCase;
 use Pop\Mime\Part\Header;
@@ -51,13 +52,14 @@ class RequestTest extends TestCase
     public function testMethod()
     {
         $request = new Request('http://localhost/', 'POST');
+        $this->assertTrue($request->hasMethod());
         $this->assertEquals('POST', $request->getMethod());
     }
 
     public function testMethodException()
     {
         $this->expectException('Pop\Http\Client\Exception');
-        $request = new Request('http://localhost/', 'BAD');
+        $request = new Request('http://localhost/', 'BAD', null, null, true);
         $this->assertEquals('POST', $request->getMethod());
     }
 
@@ -65,6 +67,7 @@ class RequestTest extends TestCase
     {
         $request = new Request('http://localhost/');
         $request->addHeader('Content-Type', 'text/html');
+        $request->addHeader('Content-Length', 'text/html');
         $request->setRequestType(Request::JSON);
         $this->assertEquals(Request::JSON, $request->getRequestType());
         $this->assertTrue($request->isJson());
@@ -78,6 +81,8 @@ class RequestTest extends TestCase
         $request->setRequestType(Request::MULTIPART);
         $this->assertEquals(Request::MULTIPART, $request->getRequestType());
         $this->assertTrue($request->isMultipart());
+        $request->setRequestType(null);
+        $this->assertFalse($request->hasRequestType());
     }
 
     public function testAddHeader()
@@ -117,7 +122,17 @@ class RequestTest extends TestCase
     {
         $request = new Request('http://localhost/', 'POST');
         $request->setData('foo=bar');
+        $request->prepareData();
         $this->assertTrue($request->hasData());
+        $this->assertEquals(7, $request->getDataContentLength());
+    }
+
+    public function testDataObject()
+    {
+        $request = new Request('http://localhost/', 'POST');
+        $request->setData(new Data(['foo' => 'bar']));
+        $this->assertTrue($request->hasData());
+        $this->assertTrue($request->getData()->hasRequest());
     }
 
     public function testGetUriAsString()

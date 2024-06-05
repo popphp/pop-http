@@ -82,7 +82,8 @@ class Command
         // Handle headers
         if ($client->getRequest()->hasHeaders()) {
             foreach ($client->getRequest()->getHeaders() as $header) {
-                if ((!str_contains($header->getValueAsString(), 'multipart/form-data')) && ($header->getName() != 'Content-Length')) {
+                if ((!str_contains($header->getValueAsString(), 'multipart/form-data')) &&
+                    (!str_contains($header->getValueAsString(), 'x-www-form-urlencoded')) && ($header->getName() != 'Content-Length')) {
                     $command .= ' --header "' . $header  . '"';
                 }
             }

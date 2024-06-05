@@ -37,50 +37,16 @@ class DataTest extends TestCase
         $this->assertCount(0, $data->getData());
     }
 
-    public function testType()
+    public function testRequest()
     {
+        $request = new Request();
         $data = new Data([
             'foo' => 'bar'
         ]);
-        $data->setType(Request::JSON);
-        $this->assertTrue($data->hasType());
-        $this->assertEquals(Request::JSON, $data->getType());
-    }
-
-    public function testIsJson()
-    {
-        $data = new Data([
-            'foo' => 'bar'
-        ]);
-        $data->setType(Request::JSON);
-        $this->assertTrue($data->isJson());
-    }
-
-    public function testIsXml()
-    {
-        $data = new Data([
-            'foo' => 'bar'
-        ]);
-        $data->setType(Request::XML);
-        $this->assertTrue($data->isXml());
-    }
-
-    public function testIsUrlEncoded()
-    {
-        $data = new Data([
-            'foo' => 'bar'
-        ]);
-        $data->setType(Request::URLENCODED);
-        $this->assertTrue($data->isUrlEncoded());
-    }
-
-    public function testIsMultipart()
-    {
-        $data = new Data([
-            'foo' => 'bar'
-        ]);
-        $data->setType(Request::MULTIPART);
-        $this->assertTrue($data->isMultipart());
+        $this->assertFalse($data->hasRequest());
+        $data->setRequest($request);
+        $this->assertTrue($data->hasRequest());
+        $this->assertInstanceOf('Pop\Http\Client\Request', $data->getRequest());
     }
 
     public function testIsPrepared1()

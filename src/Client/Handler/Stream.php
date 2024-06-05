@@ -370,15 +370,20 @@ class Stream extends AbstractHandler
             $this->contextOptions['http']['header'] = null;
         }
 
+        $headers = [];
+
         // Add auth header
         if ($auth !== null) {
             $request->addHeader($auth->createAuthHeader());
         }
 
+        // Prepare data and data headers
+        if (($request->hasData()) && (!$request->getData()->isPrepared())) {
+            $request->prepareData();
+        }
+
         // Add headers
         if ($request->hasHeaders()) {
-            $headers = [];
-
             foreach ($request->getHeaders() as $value) {
                 if (is_array($value)) {
                     foreach ($value as $val) {
@@ -405,10 +410,6 @@ class Stream extends AbstractHandler
 
         // If request has data
         if ($request->hasData()) {
-            if (!$request->getData()->isPrepared()) {
-                $request->prepareData();
-            }
-
             // Set request data content
             if ($request->hasDataContent()) {
                 // If it's a URL-encoded GET request

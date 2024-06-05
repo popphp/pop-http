@@ -84,14 +84,15 @@ class Request extends AbstractRequest
      * @param  string          $method
      * @param  mixed           $data
      * @param  ?string         $type
-     * @throws Exception
+     * @param  bool            $strict
+     * @throws Exception|\Pop\Http\Exception
      */
-    public function __construct(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, ?string $type = null)
+    public function __construct(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, ?string $type = null, bool $strict = false)
     {
         parent::__construct($uri);
 
         if ($method !== null) {
-            $this->setMethod($method);
+            $this->setMethod($method, $strict);
         }
         if ($data !== null) {
             $this->setData($data);
@@ -108,12 +109,13 @@ class Request extends AbstractRequest
      * @param  string          $method
      * @param  mixed           $data
      * @param  ?string         $type
-     * @throws Exception
+     * @param  bool            $strict
+     * @throws Exception|\Pop\Http\Exception
      * @return Request
      */
-    public static function create(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, ?string $type = null): Request
+    public static function create(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, ?string $type = null, bool $strict = false): Request
     {
-        return new self($uri, $method, $data, $type);
+        return new self($uri, $method, $data, $type, $strict);
     }
 
     /**
@@ -122,12 +124,13 @@ class Request extends AbstractRequest
      * @param  Uri|string|null $uri
      * @param  string          $method
      * @param  mixed           $data
-     * @throws Exception
+     * @param  bool            $strict
+     * @throws Exception|\Pop\Http\Exception
      * @return Request
      */
-    public static function createJson(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null): Request
+    public static function createJson(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null, bool $strict = false): Request
     {
-        return new self($uri, $method, $data, Request::JSON);
+        return new self($uri, $method, $data, Request::JSON, $strict);
     }
 
     /**
@@ -136,12 +139,13 @@ class Request extends AbstractRequest
      * @param  Uri|string|null $uri
      * @param  string          $method
      * @param  mixed           $data
-     * @throws Exception
+     * @param  bool            $strict
+     * @throws Exception|\Pop\Http\Exception
      * @return Request
      */
-    public static function createXml(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null): Request
+    public static function createXml(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null, bool $strict = false): Request
     {
-        return new self($uri, $method, $data, Request::XML);
+        return new self($uri, $method, $data, Request::XML, $strict);
     }
 
     /**
@@ -150,12 +154,13 @@ class Request extends AbstractRequest
      * @param  Uri|string|null $uri
      * @param  string          $method
      * @param  mixed           $data
-     * @throws Exception
+     * @param  bool            $strict
+     * @throws Exception|\Pop\Http\Exception
      * @return Request
      */
-    public static function createUrlEncoded(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null): Request
+    public static function createUrlEncoded(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, bool $strict = false): Request
     {
-        return new self($uri, $method, $data, Request::URLENCODED);
+        return new self($uri, $method, $data, Request::URLENCODED, $strict);
     }
 
     /**
@@ -164,12 +169,13 @@ class Request extends AbstractRequest
      * @param  Uri|string|null $uri
      * @param  string          $method
      * @param  mixed           $data
-     * @throws Exception
+     * @param  bool            $strict
+     * @throws Exception|\Pop\Http\Exception
      * @return Request
      */
-    public static function createMultipart(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null): Request
+    public static function createMultipart(Uri|string|null $uri = null, string $method = 'POST', mixed $data = null, bool $strict = false): Request
     {
-        return new self($uri, $method, $data, Request::MULTIPART);
+        return new self($uri, $method, $data, Request::MULTIPART, $strict);
     }
 
     /**
@@ -180,7 +186,7 @@ class Request extends AbstractRequest
      * @throws Exception
      * @return Request
      */
-    public function setMethod(string $method, bool $strict = true): Request
+    public function setMethod(string $method, bool $strict = false): Request
     {
         $method = strtoupper($method);
 
@@ -197,11 +203,21 @@ class Request extends AbstractRequest
     /**
      * Get method
      *
-     * @return string
+     * @return ?string
      */
-    public function getMethod(): string
+    public function getMethod(): ?string
     {
         return $this->method;
+    }
+
+    /**
+     * Has method
+     *
+     * @return bool
+     */
+    public function hasMethod(): bool
+    {
+        return ($this->method !== null);
     }
 
     /**
@@ -252,7 +268,8 @@ class Request extends AbstractRequest
      */
     public function setQuery(mixed $query, mixed $filters = null): Request
     {
-        $this->query = ($query instanceof Data) ? $query : new Data($query, $filters, Request::URLENCODED);
+        $this->setRequestType(Request::URLENCODED);
+        $this->query = ($query instanceof Data) ? $query : new Data($query, $filters, $this);
         return $this;
     }
 
@@ -265,8 +282,12 @@ class Request extends AbstractRequest
      */
     public function addQuery(mixed $name, mixed $value): Request
     {
-        if ($this->data === null) {
-            $this->query = new Data([], null, Request::URLENCODED);
+        $this->setRequestType(Request::URLENCODED);
+        if ($this->query === null) {
+            $this->setRequestType(Request::URLENCODED);
+            $this->query = new Data([], null, $this);
+        } else if (!$this->query->hasRequest()) {
+            $this->query->setRequest($this);
         }
         $this->query->addData($name, $value);
 
@@ -331,13 +352,16 @@ class Request extends AbstractRequest
      */
     public function setData(mixed $data, mixed $filters = null): Request
     {
-        $this->data = ($data instanceof Data) ? $data : new Data($data, $filters, $this->requestType);
-        if ($this->data->hasContentTypeHeader()) {
-            $this->addHeader($this->data->getContentTypeHeader());
+        if ($data instanceof Data) {
+            if (!$data->hasRequest()) {
+                $data->setRequest($this);
+            }
+        } else {
+            $data = new Data($data, $filters, $this);
         }
-        if ($this->data->hasContentLengthHeader()) {
-            $this->addHeader($this->data->getContentLengthHeader());
-        }
+
+        $this->data = $data;
+
         return $this;
     }
 
@@ -351,7 +375,9 @@ class Request extends AbstractRequest
     public function addData(mixed $name, mixed $value): Request
     {
         if ($this->data === null) {
-            $this->data = new Data([], null, $this->requestType);
+            $this->data = new Data([], null, $this);
+        } else if (!$this->data->hasRequest()) {
+            $this->data->setRequest($this);
         }
         $this->data->addData($name, $value);
 
@@ -403,6 +429,9 @@ class Request extends AbstractRequest
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
+        }
+        if ($this->hasHeader('Content-Length')) {
+            $this->removeHeader('Content-Length');
         }
         return $this;
     }
@@ -468,19 +497,15 @@ class Request extends AbstractRequest
                 }
         }
 
-        if (($this->requestType !== null) && ($this->hasData())) {
-            $this->data->setType($this->requestType);
-        }
-
         return $this;
     }
 
     /**
      * Get request type
      *
-     * @return string
+     * @return ?string
      */
-    public function getRequestType(): string
+    public function getRequestType(): ?string
     {
         return $this->requestType;
     }
@@ -657,27 +682,11 @@ class Request extends AbstractRequest
      */
     public function prepareData(): Request
     {
-        if ($this->requestType !== null) {
-            $this->data->setType($this->requestType);
+        if (!$this->data->hasRequest()) {
+            $this->data->setRequest($this);
         }
 
         $this->data->prepare();
-
-        if ($this->data->hasContentTypeHeader()) {
-            if ($this->hasHeader('Content-Type')) {
-                $this->removeHeader('Content-Type');
-            }
-            $this->addHeader($this->data->getContentTypeHeader());
-        }
-
-        if ($this->method != 'GET') {
-            if ($this->getDataContentLength() !== null) {
-                if ($this->hasHeader('Content-Length')) {
-                    $this->removeHeader('Content-Length');
-                }
-                $this->addHeader('Content-Length', $this->getDataContentLength());
-            }
-        }
 
         return $this;
     }

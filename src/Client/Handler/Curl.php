@@ -250,6 +250,11 @@ class Curl extends AbstractCurl
             $request->addHeader($auth->createAuthHeader());
         }
 
+        // Prepare data and data headers
+        if (($request->hasData()) && (!$request->getData()->isPrepared())) {
+            $request->prepareData();
+        }
+
         // Add headers
         if ($request->hasHeaders()) {
             $headers = [];
@@ -277,10 +282,6 @@ class Curl extends AbstractCurl
 
         // If request has data
         if ($request->hasData()) {
-            if (!$request->getData()->isPrepared()) {
-                $request->prepareData();
-            }
-
             // Set request data content
             if ($request->hasDataContent()) {
                 // If it's a URL-encoded GET request

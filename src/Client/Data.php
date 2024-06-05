@@ -56,22 +56,10 @@ class Data
     protected array $data = [];
 
     /**
-     * Data type
-     * @var ?string
+     * Data parent request
+     * @var ?Request
      */
-    protected ?string $type = null;
-
-    /**
-     * Data content-type header
-     * @var ?Part\Header
-     */
-    protected ?Part\Header $contentTypeHeader = null;
-
-    /**
-     * Data content-length header
-     * @var ?Part\Header
-     */
-    protected ?Part\Header $contentLengthHeader = null;
+    protected ?Request $request = null;
 
     /**
      * Data content
@@ -137,7 +125,7 @@ class Data
      * @param mixed        $filters
      * @param ?string      $type
      */
-    public function __construct(array|string $data = [], mixed $filters = null, ?string $type = Request::URLENCODED)
+    public function __construct(array|string $data = [], mixed $filters = null, ?Request $request = null)
     {
         if ($filters !== null) {
             if (is_array($filters)) {
@@ -147,8 +135,8 @@ class Data
             }
         }
 
-        if ($type !== null) {
-            $this->setType($type);
+        if ($request !== null) {
+            $this->setRequest($request);
         }
 
         if (!empty($data)) {
@@ -257,35 +245,35 @@ class Data
     }
 
     /**
-     * Set data type
+     * Set data parent request
      *
-     * @param  string $type
+     * @param  Request $request
      * @return Data
      */
-    public function setType(string $type): Data
+    public function setRequest(Request $request): Data
     {
-        $this->type = $type;
+        $this->request = $request;
         return $this;
     }
 
     /**
-     * Get data type
+     * Get data parent request
      *
-     * @return ?string
+     * @return ?Request
      */
-    public function getType(): ?string
+    public function getRequest(): ?Request
     {
-        return $this->type;
+        return $this->request;
     }
 
     /**
-     * Has data type
+     * Has data parent request
      *
      * @return bool
      */
-    public function hasType(): bool
+    public function hasRequest(): bool
     {
-        return !empty($this->type);
+        return !empty($this->request);
     }
 
     /**
@@ -320,85 +308,6 @@ class Data
     }
 
     /**
-     * Get data content-type header
-     *
-     * @return ?Part\Header
-     */
-    public function getContentTypeHeader(): ?Part\Header
-    {
-        return $this->contentTypeHeader;
-    }
-
-    /**
-     * Has data content-type header
-     *
-     * @return bool
-     */
-    public function hasContentTypeHeader(): bool
-    {
-        return !empty($this->contentTypeHeader);
-    }
-
-    /**
-     * Get data content-length header
-     *
-     * @return ?Part\Header
-     */
-    public function getContentLengthHeader(): ?Part\Header
-    {
-        return $this->contentLengthHeader;
-    }
-
-    /**
-     * Has data content-length header
-     *
-     * @return bool
-     */
-    public function hasContentLengthHeader(): bool
-    {
-        return !empty($this->contentLengthHeader);
-    }
-
-    /**
-     * Check if data is URL-encoded
-     *
-     * @return bool
-     */
-    public function isUrlEncoded(): bool
-    {
-        return ($this->type == Request::URLENCODED);
-    }
-
-    /**
-     * Check if data is JSON
-     *
-     * @return bool
-     */
-    public function isJson(): bool
-    {
-        return ($this->type == Request::JSON);
-    }
-
-    /**
-     * Check if data is XML
-     *
-     * @return bool
-     */
-    public function isXml(): bool
-    {
-        return ($this->type == Request::XML);
-    }
-
-    /**
-     * Check if data is multi-part
-     * @return bool
-     */
-    public function isMultipart(): bool
-    {
-        return ($this->type == Request::MULTIPART);
-    }
-
-    /**
      * Check if the data content has been prepared (alias to hasDataContent)
      *
      * @return bool
@@ -411,11 +320,12 @@ class Data
     /**
      * Prepare data
      *
+     * @param  bool $mb
      * @return Data
      */
-    public function prepare(): Data
+    public function prepare(bool $mb = false): Data
     {
-        switch ($this->type) {
+        switch ($this->request?->getRequestType()) {
             case Request::URLENCODED:
                 $this->prepareUrlEncoded();
                 break;
@@ -436,8 +346,11 @@ class Data
                 }
         }
 
-        if (!empty($this->dataContent)) {
-            $this->contentLengthHeader = new Part\Header('Content-Length', strlen($this->dataContent));
+        if (!empty($this->dataContent) && ($this->hasRequest())) {
+            if ($this->request->hasHeader('Content-Length')) {
+                $this->request->removeHeader('Content-Length');
+            }
+            $this->request->addHeader('Content-Length', strlen($this->dataContent));
         }
 
         $this->prepared = true;
@@ -452,10 +365,8 @@ class Data
      */
     public function reset(): Data
     {
-        $this->dataContent         = null;
-        $this->contentTypeHeader   = null;
-        $this->contentLengthHeader = null;
-        $this->prepared            = false;
+        $this->dataContent = null;
+        $this->prepared    = false;
         return $this;
     }
 
@@ -476,8 +387,11 @@ class Data
             $this->dataContent = null;
         }
 
-        if ($this->hasType()) {
-            $this->contentTypeHeader = new Part\Header('Content-Type', $this->type);
+        if ($this->hasRequest()) {
+            if ($this->request->hasHeader('Content-Type')) {
+                $this->request->removeHeader('Content-Type');
+            }
+            $this->request->addHeader('Content-Type', Request::URLENCODED);
         }
 
         return $this;
@@ -510,8 +424,11 @@ class Data
             }
         }
 
-        if ($this->hasType()) {
-            $this->contentTypeHeader = new Part\Header('Content-Type', $this->type);
+        if ($this->hasRequest()) {
+            if ($this->request->hasHeader('Content-Type')) {
+                $this->request->removeHeader('Content-Type');
+            }
+            $this->request->addHeader('Content-Type', Request::JSON);
         }
 
         // Only encode if the data isn't already encoded
@@ -545,8 +462,11 @@ class Data
             }
         }
 
-        if ($this->hasType()) {
-            $this->contentTypeHeader = new Part\Header('Content-Type', $this->type);
+        if ($this->hasRequest()) {
+            if ($this->request->hasHeader('Content-Type')) {
+                $this->request->removeHeader('Content-Type');
+            }
+            $this->request->addHeader('Content-Type', Request::XML);
         }
 
         $this->dataContent = $xmlContent;
@@ -561,9 +481,15 @@ class Data
      */
     public function prepareMultipart(): Data
     {
-        $formMessage             = Message::createForm($this->data);
-        $this->dataContent       = $formMessage->renderRaw();
-        $this->contentTypeHeader = $formMessage->getHeader('Content-Type');
+        $formMessage       = Message::createForm($this->data);
+        $this->dataContent = $formMessage->renderRaw();
+
+        if ($this->hasRequest()) {
+            if ($this->request->hasHeader('Content-Type')) {
+                $this->request->removeHeader('Content-Type');
+            }
+            $this->request->addHeader($formMessage->getHeader('Content-Type'));
+        }
 
         return $this;
     }
