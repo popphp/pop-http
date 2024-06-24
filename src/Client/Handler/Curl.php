@@ -259,8 +259,10 @@ class Curl extends AbstractCurl
         if ($request->hasHeaders()) {
             $headers = [];
 
-            foreach ($request->getHeaders() as $header) {
-                $headers[] = $header->render();
+            foreach ($request->getHeaders() as $header => $value) {
+                if (!(($request->getMethod() == 'GET') && (($header == 'Content-Length') || ($header == 'Content-Type')))) {
+                    $headers[] = $value->render();
+                }
             }
             if ($this->hasOption(CURLOPT_HTTPHEADER)) {
                 $customHeaders = $this->getOption(CURLOPT_HTTPHEADER);
