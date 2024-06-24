@@ -384,13 +384,15 @@ class Stream extends AbstractHandler
 
         // Add headers
         if ($request->hasHeaders()) {
-            foreach ($request->getHeaders() as $value) {
-                if (is_array($value)) {
-                    foreach ($value as $val) {
-                        $headers[] = (string)$val;
+            foreach ($request->getHeaders() as $header => $value) {
+                if (!(($request->getMethod() == 'GET') && (($header == 'Content-Length') || ($header == 'Content-Type')))) {
+                    if (is_array($value)) {
+                        foreach ($value as $val) {
+                            $headers[] = (string)$val;
+                        }
+                    } else {
+                        $headers[] = (string)$value;
                     }
-                } else {
-                    $headers[] = (string)$value;
                 }
             }
 
