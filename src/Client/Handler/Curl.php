@@ -260,7 +260,7 @@ class Curl extends AbstractCurl
             $headers = [];
 
             foreach ($request->getHeaders() as $header => $value) {
-                if (!(($request->getMethod() == 'GET') && (($header == 'Content-Length') || ($header == 'Content-Type')))) {
+                if (!(($request->getMethod() == 'GET') && ($header == 'Content-Length'))) {
                     if (is_array($value)) {
                         foreach ($value as $val) {
                             $headers[] = (string)$val;
