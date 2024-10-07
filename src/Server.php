@@ -45,11 +45,13 @@ class Server extends AbstractHttp
      * Create server object with a base path reference for the request URI
      *
      * @param  string $basePath
+     * @param  mixed  $filters
+     * @param  mixed  $streamToFile
      * @return Server
      */
-    public static function createWithBasePath(string $basePath): Server
+    public static function createWithBasePath(string $basePath, mixed $filters = null, mixed $streamToFile = null): Server
     {
-        return new self(new Server\Request(new Uri(null, $basePath)));
+        return new self(Server\Request::createWithBasePath($basePath, $filters, $streamToFile));
     }
 
     /**

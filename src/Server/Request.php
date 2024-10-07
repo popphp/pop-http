@@ -126,6 +126,19 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Factory to create a new request object with a base path reference for the request URI
+     *
+     * @param  string $basePath
+     * @param  mixed  $filters
+     * @param  mixed  $streamToFile
+     * @return Request
+     */
+    public static function createWithBasePath(string $basePath, mixed $filters = null, mixed $streamToFile = null): Request
+    {
+        return new self(new Uri(null, $basePath), $filters, $streamToFile);
+    }
+
+    /**
      * Set the auth object
      *
      * @param  Auth $auth
