@@ -425,10 +425,12 @@ class Data
         }
 
         if ($this->hasRequest()) {
-            if ($this->request->hasHeader('Content-Type')) {
+            if ($this->request->hasHeader('Content-Type') && !str_contains(strtolower((string)$this->request->getHeader('Content-Type')), 'json')) {
                 $this->request->removeHeader('Content-Type');
             }
-            $this->request->addHeader('Content-Type', Request::JSON);
+            if (!$this->request->hasHeader('Content-Type')) {
+                $this->request->addHeader('Content-Type', Request::JSON);
+            }
         }
 
         // Only encode if the data isn't already encoded
@@ -463,10 +465,12 @@ class Data
         }
 
         if ($this->hasRequest()) {
-            if ($this->request->hasHeader('Content-Type')) {
+            if ($this->request->hasHeader('Content-Type') && !str_contains(strtolower((string)$this->request->getHeader('Content-Type')), 'xml')) {
                 $this->request->removeHeader('Content-Type');
             }
-            $this->request->addHeader('Content-Type', Request::XML);
+            if (!$this->request->hasHeader('Content-Type')) {
+                $this->request->addHeader('Content-Type', Request::XML);
+            }
         }
 
         $this->dataContent = $xmlContent;
