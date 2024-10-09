@@ -555,7 +555,7 @@ class Request extends AbstractRequest
      */
     public function isJson(): bool
     {
-        return ($this->requestType == self::JSON);
+        return str_contains(strtolower($this->requestType), 'json');
     }
 
     /**
@@ -582,7 +582,7 @@ class Request extends AbstractRequest
      */
     public function isXml(): bool
     {
-        return ($this->requestType == self::XML);
+        return str_contains(strtolower($this->requestType), 'xml');
     }
 
     /**
@@ -630,7 +630,7 @@ class Request extends AbstractRequest
      */
     public function isMultipart(): bool
     {
-        return ($this->requestType == self::MULTIPART);
+        return str_contains(strtolower($this->requestType), self::MULTIPART);
     }
 
     /**
