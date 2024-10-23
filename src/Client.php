@@ -785,12 +785,13 @@ class Client extends AbstractHttp
      * Set type
      *
      * @param  string $type
+     * @param  bool   $addHeader
      * @return Client
      */
-    public function setType(string $type): Client
+    public function setType(string $type, bool $addHeader = true): Client
     {
         if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $this->request->setRequestType($type);
+            $this->request->setRequestType($type, $addHeader);
         } else {
             $this->options['type'] = $type;
         }

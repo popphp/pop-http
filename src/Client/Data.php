@@ -325,25 +325,34 @@ class Data
      */
     public function prepare(bool $mb = false): Data
     {
-        switch ($this->request?->getRequestType()) {
-            case Request::URLENCODED:
-                $this->prepareUrlEncoded();
-                break;
+        $type = $this->request?->getRequestType();
+        switch ($type) {
             case Request::JSON:
                 $this->prepareJson();
                 break;
             case Request::XML:
                 $this->prepareXml();
                 break;
+            case Request::URLENCODED:
+                $this->prepareUrlEncoded();
+                break;
             case Request::MULTIPART:
                 $this->prepareMultipart();
                 break;
             default:
-                if ($this->hasRawData()) {
-                    $this->dataContent = $this->getRawData();
-                } else if ($this->hasData()) {
-                    $this->prepareUrlEncoded();
+                // Custom types
+                if (($type !== null) && (strrpos($type, 'json') !== false)) {
+                    $this->prepareJson();
+                } else if (($type !== null) && (strrpos($type, 'xml') !== false)) {
+                    $this->prepareXml();
+                } else {
+                    if ($this->hasRawData()) {
+                        $this->dataContent = $this->getRawData();
+                    } else if ($this->hasData()) {
+                        $this->prepareUrlEncoded();
+                    }
                 }
+
         }
 
         if (!empty($this->dataContent) && ($this->hasRequest())) {
@@ -429,7 +438,12 @@ class Data
                 $this->request->removeHeader('Content-Type');
             }
             if (!$this->request->hasHeader('Content-Type')) {
-                $this->request->addHeader('Content-Type', Request::JSON);
+                $type = $this->request?->getRequestType();
+                if (!empty($type) && (strrpos($type, 'json') !== false)) {
+                    $this->request->addHeader('Content-Type', $type);
+                } else {
+                    $this->request->addHeader('Content-Type', Request::JSON);
+                }
             }
         }
 
@@ -469,7 +483,12 @@ class Data
                 $this->request->removeHeader('Content-Type');
             }
             if (!$this->request->hasHeader('Content-Type')) {
-                $this->request->addHeader('Content-Type', Request::XML);
+                $type = $this->request?->getRequestType();
+                if (!empty($type) && (strrpos($type, 'xml') !== false)) {
+                    $this->request->addHeader('Content-Type', $type);
+                } else {
+                    $this->request->addHeader('Content-Type', Request::XML);
+                }
             }
         }
 

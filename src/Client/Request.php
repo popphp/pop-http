@@ -240,19 +240,8 @@ class Request extends AbstractRequest
             $contentType = $header->getValue()->getValue();
         }
 
-        switch ($contentType) {
-            case Request::JSON:
-                $this->requestType = Request::JSON;
-                break;
-            case Request::XML:
-                $this->requestType = Request::XML;
-                break;
-            case Request::URLENCODED:
-                $this->requestType = Request::URLENCODED;
-                break;
-            case Request::MULTIPART:
-                $this->requestType = Request::MULTIPART;
-                break;
+        if (($contentType !== null) && ($this->requestType === null)) {
+            $this->requestType = $contentType;
         }
 
         parent::addHeader($header, $value);
@@ -470,31 +459,38 @@ class Request extends AbstractRequest
      * Set request type
      *
      * @param  ?string $type
+     * @param  bool    $handleHeader
      * @return Request
      */
-    public function setRequestType(string $type = null): Request
+    public function setRequestType(string $type = null, bool $handleHeader = true): Request
     {
         switch ($type) {
             case self::JSON:
-                $this->createAsJson();
+                $this->createAsJson($type, $handleHeader);
                 break;
             case self::XML:
-                $this->createAsXml();
+                $this->createAsXml($type, $handleHeader);
                 break;
             case self::URLENCODED:
-                $this->createAsUrlEncoded();
+                $this->createAsUrlEncoded($type, $handleHeader);
                 break;
             case self::MULTIPART:
-                $this->createAsMultipart();
+                $this->createAsMultipart($type);
                 break;
             default:
-                $this->requestType = null;
-                if ($this->hasHeader('Content-Type')) {
-                    $this->removeHeader('Content-Type');
+                // Custom content-types
+                if ($type !== null) {
+                    if (strrpos($type, 'json') !== false) {
+                        $this->createAsJson($type);
+                    } else if (strrpos($type, 'xml') !== false) {
+                        $this->createAsXml($type);
+                    } else {
+                        $this->createAsCustomType($type);
+                    }
+                } else {
+                    $this->removeRequestType($handleHeader);
                 }
-                if ($this->hasHeader('Content-Length')) {
-                    $this->removeHeader('Content-Length');
-                }
+
         }
 
         return $this;
@@ -523,25 +519,34 @@ class Request extends AbstractRequest
     /**
      * Remove request type
      *
+     * @param  bool $removeHeader
      * @return Request
      */
-    public function removeRequestType(): Request
+    public function removeRequestType(bool $removeHeader = false): Request
     {
         $this->requestType = null;
+        if (($removeHeader) && ($this->hasHeader('Content-Type'))) {
+            $this->removeHeader('Content-Type');
+        }
         return $this;
     }
 
     /**
      * Create request as JSON
      *
+     * @param  string $type
+     * @param  bool   $addHeader
      * @return Request
      */
-    public function createAsJson(): Request
+    public function createAsJson(string $type = self::JSON, bool $addHeader = true): Request
     {
-        $this->requestType = self::JSON;
+        $this->requestType = $type;
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
+        }
+        if ($addHeader) {
+            $this->addHeader('Content-Type', $this->requestType);
         }
         $this->addHeader('Content-Type', $this->requestType);
 
@@ -561,16 +566,21 @@ class Request extends AbstractRequest
     /**
      * Create request as XML
      *
+     * @param  string $type
+     * @param  bool   $addHeader
      * @return Request
      */
-    public function createAsXml(): Request
+    public function createAsXml(string $type = self::XML, bool $addHeader = true): Request
     {
-        $this->requestType = self::XML;
+        $this->requestType = $type;
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
         }
-        $this->addHeader('Content-Type', $this->requestType);
+
+        if ($addHeader) {
+            $this->addHeader('Content-Type', $this->requestType);
+        }
 
         return $this;
     }
@@ -588,16 +598,21 @@ class Request extends AbstractRequest
     /**
      * Create request as a URL-encoded form
      *
+     * @param  string $type
+     * @param  bool   $addHeader
      * @return Request
      */
-    public function createAsUrlEncoded(): Request
+    public function createAsUrlEncoded(string $type = self::URLENCODED, bool $addHeader = true): Request
     {
-        $this->requestType = self::URLENCODED;
+        $this->requestType = $type;
 
         if ($this->hasHeader('Content-Type')) {
             $this->removeHeader('Content-Type');
         }
-        $this->addHeader('Content-Type', $this->requestType);
+
+        if ($addHeader) {
+            $this->addHeader('Content-Type', $this->requestType);
+        }
 
         return $this;
     }
@@ -615,11 +630,12 @@ class Request extends AbstractRequest
     /**
      * Create request as a multipart form
      *
+     * @param  string $type
      * @return Request
      */
-    public function createAsMultipart(): Request
+    public function createAsMultipart(string $type = self::MULTIPART): Request
     {
-        $this->requestType = self::MULTIPART;
+        $this->requestType = $type;
         return $this;
     }
 
@@ -631,6 +647,35 @@ class Request extends AbstractRequest
     public function isMultipart(): bool
     {
         return str_contains(strtolower($this->requestType), self::MULTIPART);
+    }
+
+    /**
+     * Create request as custom content type
+     *
+     * @param  string $type
+     * @param  bool   $addHeader
+     * @return Request
+     */
+    public function createAsCustomType(string $type, bool $addHeader = true): Request
+    {
+        $this->requestType = $type;
+
+        if ($addHeader) {
+            $this->addHeader('Content-Type', $this->requestType);
+        }
+        return $this;
+    }
+
+    /**
+     * Check if request is a custom content type
+     *
+     * @return bool
+     */
+    public function isCustomType(): bool
+    {
+        return (!empty($this->requestType) && (strrpos($this->requestType, 'json') !== false) &&
+            (strrpos($this->requestType, 'xml') !== false) && ($this->requestType !== self::URLENCODED) &&
+            ($this->requestType !== self::MULTIPART));
     }
 
     /**
