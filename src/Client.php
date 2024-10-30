@@ -76,6 +76,7 @@ class Client extends AbstractHttp
         $args     = func_get_args();
         $request  = null;
         $response = null;
+        $options  = null;
         $handler  = null;
 
         foreach ($args as $arg) {
@@ -90,11 +91,15 @@ class Client extends AbstractHttp
             } else if ($arg instanceof Auth) {
                 $this->setAuth($arg);
             } else if (is_array($arg)) {
-                $this->setOptions($arg);
+                $options = $arg;
             }
         }
 
         parent::__construct($request, $response);
+
+        if ($options !== null) {
+            $this->setOptions($options);
+        }
 
         if ($handler !== null) {
             if ($handler instanceof CurlMulti) {
@@ -201,6 +206,12 @@ class Client extends AbstractHttp
     public function setOptions(array $options): Client
     {
         $this->options = $options;
+
+        if (isset($this->options['type']) && ($this->hasRequest()) &&
+            ($this->request instanceof Client\Request) && (!$this->request->hasRequestType())) {
+            $this->request->setRequestType($this->options['type']);
+        }
+
         return $this;
     }
 
@@ -228,6 +239,12 @@ class Client extends AbstractHttp
     public function addOption(string $name, mixed $value): Client
     {
         $this->options[$name] = $value;
+
+        if (isset($this->options['type']) && ($this->hasRequest()) &&
+            ($this->request instanceof Client\Request) && (!$this->request->hasRequestType())) {
+            $this->request->setRequestType($this->options['type']);
+        }
+
         return $this;
     }
 
