@@ -37,17 +37,24 @@ class Response extends AbstractResponse
      */
     public function getParsedResponse(): mixed
     {
-        $parsedResponse     = null;
-        $contentTypeHeaders = ['Content-Type', 'Content-type', 'content-type'];
+        $parsedResponse         = null;
+        $contentType            = null;
+        $contentEncoding        = null;
+        $contentTypeHeaders     = ['Content-Type', 'Content-type', 'content-type'];
+        $contentEncodingHeaders = ['Content-Encoding', 'Content-encoding', 'content-encoding'];
 
         if ($this->hasBody()) {
-            $rawResponse     = $this->getBody()->getContent();
-            $contentEncoding = ($this->hasHeader('Content-Encoding') && (count($this->getHeader('Content-Encoding')->getValues()) == 1)) ?
-                $this->getHeader('Content-Encoding')->getValue(0) : null;
+            $rawResponse = $this->getBody()->getContent();
+            foreach ($contentEncodingHeaders as $contentEncodingHeader) {
+                if ($this->hasHeader($contentEncodingHeader) && (count($this->getHeader($contentEncodingHeader)->getValues()) == 1)) {
+                    $contentEncoding = (string)$this->getHeader($contentEncodingHeader)->getValue(0);
+                    break;
+                }
+            }
 
             foreach ($contentTypeHeaders as $contentTypeHeader) {
                 if ($this->hasHeader($contentTypeHeader) && (count($this->getHeader($contentTypeHeader)->getValues()) == 1)) {
-                    $contentType    = $this->getHeader($contentTypeHeader)->getValue(0);
+                    $contentType    = (string)$this->getHeader($contentTypeHeader)->getValue(0);
                     $parsedResponse = Parser::parseDataByContentType($rawResponse, $contentType, $contentEncoding);
                     if ($parsedResponse != $rawResponse) {
                         break;

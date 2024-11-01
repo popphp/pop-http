@@ -129,15 +129,15 @@ class Parser
             parse_str(self::decodeData($rawData, $encoding, $chunked), $parsedResult);
         // Multipart form data
         } else if (($contentType !== null) && (str_contains($contentType, 'multipart/form-data'))) {
-            $formContent  = (!str_contains($rawData, 'Content-Type:')) ?
+            $formContent = (!str_contains($rawData, 'Content-Type:')) ?
                 'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
             $parsedResult = Message::parseForm($formContent);
-        // HTML text or plain text
-        } else if (($contentType !== null) && (str_contains($contentType, 'text/html') || str_contains($contentType, 'text/plain'))) {
-            $parsedResult = $rawData;
-        // Fallback to just the encoding
+        // If only encoded, decode
         } else if ($encoding !== null) {
             $parsedResult = self::decodeData($rawData, $encoding, $chunked);
+        // Else, raw data, e.g. HTML text or plain text
+        } else {
+            $parsedResult = $rawData;
         }
 
         return $parsedResult;
