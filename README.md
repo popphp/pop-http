@@ -4,7 +4,6 @@ pop-http
 [![Build Status](https://github.com/popphp/pop-http/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-http/actions)
 [![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-http)](http://cc.popphp.org/pop-http/)
 
-[![Join the chat at https://popphp.slack.com](https://media.popphp.org/img/slack.svg)](https://popphp.slack.com)
 [![Join the chat at https://discord.gg/TZjgT74U7E](https://media.popphp.org/img/discord.svg)](https://discord.gg/TZjgT74U7E)
 
 * [Overview](#overview)
@@ -56,7 +55,7 @@ for the following:
   - Render server responses out to a raw string
   - Easily handle file uploads and apply server-side settings and restrictions
 
-`pop-http` is a component of the [Pop PHP Framework](http://www.popphp.org/).
+`pop-http` is a component of the [Pop PHP Framework](https://www.popphp.org/).
 
 Install
 -------
@@ -68,7 +67,7 @@ Install `pop-http` using Composer.
 Or, require it in your composer.json file
 
     "require": {
-        "popphp/pop-http" : "^5.0.0"
+        "popphp/pop-http" : "^5.2.11"
     }
 
 [Top](#pop-http)

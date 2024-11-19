@@ -13,28 +13,30 @@
         "pop",
         "pop php"
     ],
-    "homepage": "http://www.popphp.org/",
+    "homepage": "https://github.com/popphp/pop-http",
     "license": "BSD-3-Clause",
     "authors": [
         {
             "name": "Nick Sagona",
-            "email": "dev@nolainteractive.com",
-            "homepage": "http://www.nolainteractive.com/"
+            "email": "dev@noladev.com",
+            "homepage": "https://www.popphp.org/"
         }
     ],
     "require": {
-        "php": ">=8.1.0",
-        "popphp/pop-filter": "^4.0.0",
+        "php": ">=8.2.0",
+        "popphp/pop-filter": "^4.0.1",
         "popphp/pop-mime": "^2.0.0",
-        "popphp/pop-utils": "^2.1.0",
-        "ext-curl": "*",
-        "ext-simplexml": "*",
-        "ext-json": "*",
-        "ext-zlib": "*",
-        "ext-mbstring": "*"
+        "popphp/pop-utils": "^2.1.2",
+        "ext-curl": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0.0"
+        "phpunit/phpunit": "^11.0.0"
+    },
+    "suggest": {
+        "ext-json": "For JSON data",
+        "ext-simplexml": "For XML data",
+        "ext-zlib": "For compression",
+        "ext-mbstring": "For multi-byte strings"
     },
     "autoload": {
         "psr-4": {
@@ -51,7 +53,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "5.0.x-dev"
+            "dev-master": "5.2.x-dev"
         }
     }
 }

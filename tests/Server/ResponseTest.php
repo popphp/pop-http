@@ -150,7 +150,7 @@ BODY;
     public function testRedirect()
     {
         ob_start();
-        Response::redirect('http://www.popphp.org/version');
+        Response::redirect('https://www.popphp.org/version');
         $result = ob_get_clean();
         $this->assertEquals('', $result);
     }
@@ -178,7 +178,7 @@ BODY;
     public function testRedirectBadCodeException()
     {
         $this->expectException('Pop\Http\Server\Exception');
-        Response::redirect('http://www.popphp.org/version', 700);
+        Response::redirect('https://www.popphp.org/version', 700);
     }
 
     public function testToString()
