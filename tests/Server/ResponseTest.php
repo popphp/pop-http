@@ -144,9 +144,7 @@ BODY;
     }
 
 
-    /**
-     * @runInSeparateProcess
-     */
+    #[runInSeparateProcess]
     public function testRedirect()
     {
         ob_start();
@@ -155,9 +153,7 @@ BODY;
         $this->assertEquals('', $result);
     }
 
-    /**
-     * @runInSeparateProcess
-     */
+    #[runInSeparateProcess]
     public function testForward()
     {
         $client = new Client('http://localhost/');
@@ -172,9 +168,7 @@ BODY;
         $this->assertNotEmpty($result);
     }
 
-    /**
-     * @runInSeparateProcess
-     */
+    #[runInSeparateProcess]
     public function testRedirectBadCodeException()
     {
         $this->expectException('Pop\Http\Server\Exception');
@@ -190,9 +184,7 @@ BODY;
         $this->assertStringContainsString('200 OK', $r);
     }
 
-    /**
-     * @runInSeparateProcess
-     */
+    #[runInSeparateProcess]
     public function testSend()
     {
         $response = new Response(['headers' => ['Content-Type' => 'text/plain', 'Content-Encoding' => 'deflate']]);
