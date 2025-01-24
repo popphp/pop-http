@@ -370,7 +370,7 @@ class Data
 
         // Process query string
         if (isset($_SERVER['QUERY_STRING'])) {
-            $this->queryData = rawurldecode($_SERVER['QUERY_STRING']);
+            $this->queryData = $_SERVER['QUERY_STRING'];
             $this->queryData = (($contentType !== null) && ((stripos($contentType, 'json') !== false) || (stripos($contentType, 'xml') !== false))) ?
                 Parser::parseDataByContentType($this->queryData, $contentType, $encoding) :
                 Parser::parseDataByContentType($this->queryData, 'application/x-www-form-urlencoded', $encoding);
