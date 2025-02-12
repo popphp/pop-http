@@ -67,7 +67,7 @@ Install `pop-http` using Composer.
 Or, require it in your composer.json file
 
     "require": {
-        "popphp/pop-http" : "^5.3.0"
+        "popphp/pop-http" : "^5.3.2"
     }
 
 [Top](#pop-http)
