@@ -355,7 +355,7 @@ class Data
 
         }
 
-        if (!empty($this->dataContent) && ($this->hasRequest())) {
+        if (!empty($this->dataContent) && ($this->hasRequest()) && ($this->request->getMethod() != 'GET')) {
             if ($this->request->hasHeader('Content-Length')) {
                 $this->request->removeHeader('Content-Length');
             }
