@@ -108,7 +108,7 @@ class Parser
         if (($contentType !== null) && (str_contains($contentType, 'json'))) {
             $parsedResult = json_decode(self::decodeData($rawData, $encoding, $chunked), true);
         // XML data
-        } else if (($contentType !== null) && (str_contains($contentType, 'xml'))) {
+        } else if (($contentType !== null) && (str_contains($contentType, 'xml') && !self::isOfficeDocument($contentType))) {
             $rawData = self::decodeData($rawData, $encoding, $chunked);
             $matches = [];
             preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
@@ -315,6 +315,29 @@ class Parser
         }
 
         return $decoded;
+    }
+
+    /**
+     * Determine if the content-type is that of an office document
+     *
+     * @param  string $contentType
+     * @return bool
+     */
+    public static function isOfficeDocument(string $contentType): bool
+    {
+        $keywords = [
+            'open', 'office', 'ms-', 'word', 'excel', 'powerpoint', 'document',
+            'presentation', 'sheet', 'template', 'slideshow', 'addin'
+        ];
+        $contentType = strtolower($contentType);
+
+        foreach ($keywords as $keyword) {
+            if (str_contains($contentType, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
