@@ -221,6 +221,17 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Clear method
+     *
+     * @return Request
+     */
+    public function clearMethod(): Request
+    {
+        $this->method = null;
+        return $this;
+    }
+
+    /**
      * Add a header
      *
      * @param  Header|string|int $header

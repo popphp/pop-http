@@ -1166,7 +1166,11 @@ class Client extends AbstractHttp
         }
 
         if (!empty($data)) {
-            $this->request->setData($data);
+            if ($this->request->hasData()) {
+                $this->request->getData()->addData($data);
+            } else {
+                $this->request->setData($data);
+            }
         }
 
         // Set (or reset) handler
@@ -1273,11 +1277,12 @@ class Client extends AbstractHttp
     {
         // Fully clear out and reset of client object
         if ($clear) {
-            $this->request  = null;
-            $this->response = null;
-            $this->handler  = null;
-            $this->auth     = null;
-            $this->options  = [];
+            $this->request      = null;
+            $this->response     = null;
+            $this->handler      = null;
+            $this->multiHandler = null;
+            $this->auth         = null;
+            $this->options      = [];
         // Clear out basic client info & data
         } else {
             if ($data) {
@@ -1296,6 +1301,12 @@ class Client extends AbstractHttp
                     }
                     if ($this->request->hasData()) {
                         $this->request->removeAllData();
+                    }
+                    if ($this->request->hasMethod()) {
+                        $this->request->clearMethod();
+                    }
+                    if ($this->request->hasUri()) {
+                        $this->request->clearUri();
                     }
                 }
             }

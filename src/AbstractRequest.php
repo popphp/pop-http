@@ -90,4 +90,15 @@ abstract class AbstractRequest extends AbstractRequestResponse
         return ($this->uri !== null);
     }
 
+    /**
+     * Clear URI
+     *
+     * @return AbstractRequest
+     */
+    public function clearUri(): AbstractRequest
+    {
+        $this->uri = null;
+        return $this;
+    }
+
 }
