@@ -1302,12 +1302,6 @@ class Client extends AbstractHttp
                     if ($this->request->hasData()) {
                         $this->request->removeAllData();
                     }
-                    if ($this->request->hasMethod()) {
-                        $this->request->clearMethod();
-                    }
-                    if ($this->request->hasUri()) {
-                        $this->request->clearUri();
-                    }
                 }
             }
             if ($headers) {
