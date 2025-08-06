@@ -385,7 +385,7 @@ class Stream extends AbstractHandler
         // Add headers
         if ($request->hasHeaders()) {
             foreach ($request->getHeaders() as $header => $value) {
-                if (!(($request->getMethod() == 'GET') && ($header == 'Content-Length'))) {
+                if (($header != 'Content-Length') || (!($request->isNoContentLength()) && ($request->getMethod() != 'GET'))) {
                     if (is_array($value)) {
                         foreach ($value as $val) {
                             $headers[] = (string)$val;
@@ -419,7 +419,7 @@ class Stream extends AbstractHandler
                     $queryString = '?' . $request->getDataContent();
                 // Else, set data content
                 } else {
-                    $this->contextOptions['http']['content'] = $request->getDataContent();
+                    $this->contextOptions['http']['content'] = (($request->useRawData()) ? $request->getData()->getData() : $request->getDataContent());
                 }
             }
         // Else, if there is raw body content

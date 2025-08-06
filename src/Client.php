@@ -198,6 +198,8 @@ class Client extends AbstractHttp
      *  - 'async'
      *  - 'verify_peer'
      *  - 'allow_self_signed'
+     *  - 'no_content_length'
+     *  - 'raw_data'
      *  - 'force_custom_method' (Curl only - forces CURLOPT_CUSTOMREQUEST)
      *
      * @param  array $options
@@ -1140,6 +1142,16 @@ class Client extends AbstractHttp
         // Add headers
         if (($this->hasOption('headers')) && is_array($this->options['headers'])) {
             $this->request->addHeaders($this->options['headers']);
+        }
+
+        // Set no Content-Length header flag
+        if ($this->hasOption('no_content_length')) {
+            $this->request->setNoContentLength($this->options['no_content_length']);
+        }
+
+        // Set raw data flag
+        if ($this->hasOption('raw_data')) {
+            $this->request->setRawData($this->options['raw_data']);
         }
 
         // Add query

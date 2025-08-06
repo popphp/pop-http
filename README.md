@@ -275,6 +275,8 @@ Supported keys in the options array are:
 - `async` - trigger an asynchronous request (boolean)
 - `verify_peer` - enforce or disallow verifying the host for SSL connections (boolean)
 - `allow_self_signed` - allow or disallow the use of self-signed certificates for SSL connections (boolean)
+- `no_content_length` - omit content length header
+- `raw_data` - use raw data contents
 - `force_custom_method` - for Curl only. Forces the use of `CURLOPT_CUSTOMREQUEST` (boolean)
 
 Here is an example using a `base_uri`:

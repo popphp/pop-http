@@ -260,7 +260,7 @@ class Curl extends AbstractCurl
             $headers = [];
 
             foreach ($request->getHeaders() as $header => $value) {
-                if (!(($request->getMethod() == 'GET') && ($header == 'Content-Length'))) {
+                if (($header != 'Content-Length') || (!($request->isNoContentLength()) && ($request->getMethod() != 'GET'))) {
                     if (is_array($value)) {
                         foreach ($value as $val) {
                             $headers[] = (string)$val;
@@ -302,7 +302,7 @@ class Curl extends AbstractCurl
                     }
                 // Else, set data content
                 } else {
-                    $this->setOption(CURLOPT_POSTFIELDS, $request->getDataContent());
+                    $this->setOption(CURLOPT_POSTFIELDS, (($request->useRawData()) ? $request->getData()->getData() : $request->getDataContent()));
                 }
             }
         // Else, if there is raw body content

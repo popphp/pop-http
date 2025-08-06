@@ -53,6 +53,18 @@ class Request extends AbstractRequest
     protected ?string $requestType = null;
 
     /**
+     * No Content-Length header flag
+     * @var bool
+     */
+    protected bool $noContentLength = false;
+
+    /**
+     * Raw data flag
+     * @var bool
+     */
+    protected bool $rawData = false;
+
+    /**
      * Client request query data object
      *
      * Can only be a URL-encoded query string on the URI
@@ -257,6 +269,50 @@ class Request extends AbstractRequest
 
         parent::addHeader($header, $value);
         return $this;
+    }
+
+    /**
+     * Set no Content-Length header flag
+     *
+     * @param  bool $noContentLength
+     * @return Request
+     */
+    public function setNoContentLength(bool $noContentLength): Request
+    {
+        $this->noContentLength = $noContentLength;
+        return $this;
+    }
+
+    /**
+     * Is no Content-Length header flag
+     *
+     * @return bool
+     */
+    public function isNoContentLength(): bool
+    {
+        return $this->noContentLength;
+    }
+
+    /**
+     * Set raw data flag
+     *
+     * @param  bool $rawData
+     * @return Request
+     */
+    public function setRawData(bool $rawData): Request
+    {
+        $this->rawData = $rawData;
+        return $this;
+    }
+
+    /**
+     * Use raw data
+     *
+     * @return bool
+     */
+    public function useRawData(): bool
+    {
+        return $this->rawData;
     }
 
     /**
