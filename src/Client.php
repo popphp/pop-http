@@ -1097,7 +1097,7 @@ class Client extends AbstractHttp
      * @throws Exception|Client\Exception
      * @return Client
      */
-    public function prepare(?string $uri = null, string $method = null): Client
+    public function prepare(?string $uri = null, ?string $method = null): Client
     {
         // Check that there is a request object or a URI
         if ((!$this->hasRequest()) && ($uri === null) && !isset($this->options['base_uri'])) {
@@ -1222,7 +1222,7 @@ class Client extends AbstractHttp
      * @throws Exception|Client\Exception|Client\Handler\Exception
      * @return Response|Promise|array|string
      */
-    public function send(?string $uri = null, string $method = null): Response|Promise|array|string
+    public function send(?string $uri = null, ?string $method = null): Response|Promise|array|string
     {
         if (isset($this->options['async']) && ($this->options['async'] === true)) {
             return $this->sendAsync();

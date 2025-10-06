@@ -529,7 +529,7 @@ class Request extends AbstractRequest
      * @param  bool    $handleHeader
      * @return Request
      */
-    public function setRequestType(string $type = null, bool $handleHeader = true): Request
+    public function setRequestType(?string $type = null, bool $handleHeader = true): Request
     {
         switch ($type) {
             case self::JSON:
