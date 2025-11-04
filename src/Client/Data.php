@@ -154,7 +154,7 @@ class Data
     {
         if (is_string($data)) {
             $this->data = [self::POP_CLIENT_REQUEST_RAW_DATA => $data];
-        } else if (is_array($data) && (count($data) == 1) && isset($data[0])) {
+        } else if (is_array($data) && (count($data) == 1) && isset($data[0]) && is_string($data[0])) {
             $this->data = [self::POP_CLIENT_REQUEST_RAW_DATA => $data[0]];
         } else {
             $this->data = $data;
