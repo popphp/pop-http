@@ -4,6 +4,7 @@ namespace Pop\Http\Test;
 
 use Pop\Http\Promise;
 use Pop\Http\Client;
+use Pop\Http\Client\Handler\Mock;
 use PHPUnit\Framework\TestCase;
 
 class PromiseTest extends TestCase
@@ -203,6 +204,37 @@ class PromiseTest extends TestCase
         }, true);
 
         $this->assertEquals(456, $var);
+    }
+
+    public function testWaitCompletesWhenClientHasAsyncOptionSet()
+    {
+        $mock = new Mock();
+        $mock->queue(new Client\Response(['code' => 200, 'body' => 'Hello Async!']));
+
+        $client  = new Client('http://localhost/', $mock, ['async' => true]);
+        $promise = $client->sendAsync();
+        $response = $promise->wait();
+
+        $this->assertInstanceOf('Pop\Http\Client\Response', $response);
+        $this->assertEquals(200, $response->getCode());
+        $this->assertEquals('Hello Async!', $response->getBody()->getContent());
+        $this->assertCount(1, $mock->getRequests());
+    }
+
+    public function testResolveCompletesWhenClientHasAsyncOptionSet()
+    {
+        $mock = new Mock();
+        $mock->queue(new Client\Response(['code' => 200, 'body' => 'Hello Async!']));
+
+        $client  = new Client('http://localhost/', $mock, ['async' => true]);
+        $var     = null;
+        $promise = $client->sendAsync();
+        $promise->then(function(Client\Response $response) use (&$var) {
+            $var = $response->getBody()->getContent();
+        }, true);
+
+        $this->assertEquals('Hello Async!', $var);
+        $this->assertCount(1, $mock->getRequests());
     }
 
     public function testForward()

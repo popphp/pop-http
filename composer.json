@@ -23,14 +23,18 @@
         }
     ],
     "require": {
-        "php": ">=8.3.0",
-        "popphp/pop-filter": "^4.0.4",
-        "popphp/pop-mime": "^2.0.3",
-        "popphp/pop-utils": "^2.3.0",
+        "php": ">=8.4.0",
+        "popphp/pop-filter": "^4.1.0-beta.2",
+        "popphp/pop-mime": "^3.0.0-beta.2",
+        "popphp/pop-utils": "^3.0.0-beta.1",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.1",
+        "psr/http-message": "^2.0",
+        "psr/log": "^3.0",
         "ext-curl": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "^12.0.0"
+        "phpunit/phpunit": "^12.5.0"
     },
     "suggest": {
         "ext-json": "For JSON data",
@@ -53,7 +57,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "5.3.x-dev"
+            "dev-master": "6.0.x-dev"
         }
     }
 }

@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Http\Server;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Upload
 {
@@ -523,12 +523,13 @@ class Upload
             if (!isset($file['error']) || !isset($file['size']) || !isset($file['tmp_name']) || !isset($file['name'])) {
                 return false;
             } else {
-                $this->error = $file['error'];
+                $uploadedFile = UploadedFile::fromFile($file);
+                $this->error  = $uploadedFile->getError();
                 if ($this->error != 0) {
                     return false;
                 } else {
-                    $fileSize  = $file['size'];
-                    $fileParts = pathinfo($file['name']);
+                    $fileSize  = $uploadedFile->getSize();
+                    $fileParts = pathinfo($uploadedFile->getClientFilename());
                     $ext       = (isset($fileParts['extension'])) ? $fileParts['extension'] : null;
 
                     if (($this->maxSize > 0) && ($fileSize > $this->maxSize)) {
@@ -569,27 +570,28 @@ class Upload
             $this->uploadedFile = $to;
             $to = $this->uploadDir . DIRECTORY_SEPARATOR . $to;
 
-            $isUploaded = is_uploaded_file($file['tmp_name']);
+            $uploadedFile = UploadedFile::fromFile($file);
+            $isUploaded   = is_uploaded_file($file['tmp_name']);
 
-            // Move the uploaded file, creating a file object with it.
-            if (($secure) && !($isUploaded)) {
+            if ($secure && !$isUploaded) {
                 $this->error = self::UPLOAD_ERR_FILE_NOT_SECURE;
                 return false;
-            } else {
-                $result = ((!$secure) && !($isUploaded)) ?
-                    rename($file['tmp_name'], $to) : move_uploaded_file($file['tmp_name'], $to);
-
-                if ($result) {
-                    return $this->uploadedFile;
-                } else {
-                    $this->error = self::UPLOAD_ERR_UNEXPECTED;
-                    return false;
-                }
             }
+
+            // The exception's message is deliberately discarded: Upload already decided which error
+            // code to report by checking is_uploaded_file() itself above, before calling moveTo(), so
+            // nothing diagnostic is lost by not inspecting what moveTo() throws.
+            try {
+                $uploadedFile->moveTo($to, $secure);
+            } catch (\Exception) {
+                $this->error = self::UPLOAD_ERR_UNEXPECTED;
+                return false;
+            }
+
+            return $this->uploadedFile;
         } else {
             return false;
         }
-
     }
 
 }

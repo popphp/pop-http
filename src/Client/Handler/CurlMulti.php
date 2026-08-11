@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -25,9 +25,9 @@ use Pop\Http\Promise;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class CurlMulti extends AbstractCurl
 {
@@ -291,12 +291,12 @@ class CurlMulti extends AbstractCurl
     }
 
     /**
-     * Determine if the response is a success
+     * Determine if the batch is a success
      *
      * @param  bool $strict
      * @return bool|null
      */
-    public function isSuccess(bool $strict = true): bool|null
+    public function isBatchSuccess(bool $strict = true): bool|null
     {
         $result = null;
 
@@ -321,12 +321,12 @@ class CurlMulti extends AbstractCurl
     }
 
     /**
-     * Determine if the response is an error
+     * Determine if the batch has an error
      *
      * @param  bool $strict
      * @return bool|null
      */
-    public function isError(bool $strict = false): bool|null
+    public function isBatchError(bool $strict = false): bool|null
     {
         $result = null;
 
@@ -350,6 +350,32 @@ class CurlMulti extends AbstractCurl
     }
 
     /**
+     * Determine if the batch is a success
+     *
+     * @deprecated Use isBatchSuccess() - this name collides with the per-response
+     *             isSuccess() convention used everywhere else in the codebase.
+     * @param  bool $strict
+     * @return bool|null
+     */
+    public function isSuccess(bool $strict = true): bool|null
+    {
+        return $this->isBatchSuccess($strict);
+    }
+
+    /**
+     * Determine if the batch has an error
+     *
+     * @deprecated Use isBatchError() - this name collides with the per-response
+     *             isError() convention used everywhere else in the codebase.
+     * @param  bool $strict
+     * @return bool|null
+     */
+    public function isError(bool $strict = false): bool|null
+    {
+        return $this->isBatchError($strict);
+    }
+
+    /**
      * Method to send the multiple Curl connections
      *
      * @param  ?int $active
@@ -368,6 +394,24 @@ class CurlMulti extends AbstractCurl
     public function sendAsync(): Promise
     {
         return new Promise($this);
+    }
+
+    /**
+     * Prepare the multi-handler. CurlMulti has no single request to prepare against -
+     * per-client preparation happens in addClient() - this exists only so CurlMulti
+     * satisfies HandlerInterface like every other handler.
+     *
+     * @param  \Pop\Http\AbstractRequest $request
+     * @param  ?\Pop\Http\Auth           $auth
+     * @return HandlerInterface
+     */
+    public function prepare(\Pop\Http\AbstractRequest $request, ?\Pop\Http\Auth $auth = null): HandlerInterface
+    {
+        if ($request instanceof \Pop\Http\Client\Request) {
+            $this->request = $request;
+        }
+
+        return $this;
     }
 
     /**

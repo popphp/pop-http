@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -16,7 +16,8 @@ namespace Pop\Http\Server;
 use Pop\Http\Auth;
 use Pop\Http\Uri;
 use Pop\Http\AbstractRequest;
-use Pop\Mime\Part\Body;
+use Pop\Http\Body;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * HTTP server request class
@@ -24,11 +25,11 @@ use Pop\Mime\Part\Body;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
-class Request extends AbstractRequest
+class Request extends AbstractRequest implements ServerRequestInterface
 {
 
     /**
@@ -62,6 +63,48 @@ class Request extends AbstractRequest
     protected ?Auth $auth = null;
 
     /**
+     * Method override (from withMethod)
+     * @var ?string
+     */
+    protected ?string $methodOverride = null;
+
+    /**
+     * Cookie params override, per PSR-7 withCookieParams() (null = derive from $this->cookie)
+     * @var ?array
+     */
+    protected ?array $cookieParamsOverride = null;
+
+    /**
+     * Query params override, per PSR-7 withQueryParams() (null = derive from $this->data)
+     * @var ?array
+     */
+    protected ?array $queryParamsOverride = null;
+
+    /**
+     * Uploaded files override, per PSR-7 withUploadedFiles() (null = derive from $this->data)
+     * @var ?array
+     */
+    protected ?array $uploadedFilesOverride = null;
+
+    /**
+     * Parsed body override, per PSR-7 withParsedBody()
+     * @var mixed
+     */
+    protected mixed $parsedBodyOverride = null;
+
+    /**
+     * Whether withParsedBody() has been called (distinguishes "not set" from "set to null")
+     * @var bool
+     */
+    protected bool $parsedBodyOverridden = false;
+
+    /**
+     * Request attributes, per PSR-7 (middleware-style per-request key-value bag)
+     * @var array
+     */
+    protected array $attributes = [];
+
+    /**
      * Constructor
      *
      * Instantiate the request object
@@ -69,41 +112,50 @@ class Request extends AbstractRequest
      * @param  Uri|string|null $uri
      * @param  mixed           $filters
      * @param  mixed           $streamToFile
+     * @param  bool            $populateFromGlobals
+     * @param  array           $serverParams
      * @throws Exception|\Pop\Http\Exception
      */
-    public function __construct(Uri|string|null $uri = null, mixed $filters = null, mixed $streamToFile = null)
+    public function __construct(
+        Uri|string|null $uri = null, mixed $filters = null, mixed $streamToFile = null,
+        bool $populateFromGlobals = true, array $serverParams = []
+    )
     {
         parent::__construct($uri);
 
-        $this->cookie = (isset($_COOKIE)) ? $_COOKIE : [];
-        $this->server = (isset($_SERVER)) ? $_SERVER : [];
-        $this->env    = (isset($_ENV))    ? $_ENV    : [];
+        if ($populateFromGlobals) {
+            $this->cookie = (isset($_COOKIE)) ? $_COOKIE : [];
+            $this->server = (isset($_SERVER)) ? $_SERVER : [];
+            $this->env    = (isset($_ENV))    ? $_ENV    : [];
 
-        // Get any possible request headers
-        if (function_exists('getallheaders')) {
-            $this->addHeaders(getallheaders());
-        } else {
-            foreach ($_SERVER as $key => $value) {
-                if (str_starts_with($key, 'HTTP_')) {
-                    $key = ucfirst(strtolower(str_replace('HTTP_', '', $key)));
-                    if (str_contains($key, '_')) {
-                        $ary = explode('_', $key);
-                        foreach ($ary as $k => $v){
-                            $ary[$k] = ucfirst(strtolower($v));
+            // Get any possible request headers
+            if (function_exists('getallheaders')) {
+                $this->addHeaders(getallheaders());
+            } else {
+                foreach ($_SERVER as $key => $value) {
+                    if (str_starts_with($key, 'HTTP_')) {
+                        $key = ucfirst(strtolower(str_replace('HTTP_', '', $key)));
+                        if (str_contains($key, '_')) {
+                            $ary = explode('_', $key);
+                            foreach ($ary as $k => $v){
+                                $ary[$k] = ucfirst(strtolower($v));
+                            }
+                            $key = implode('-', $ary);
                         }
-                        $key = implode('-', $ary);
+                        $this->addHeader($key, $value);
                     }
-                    $this->addHeader($key, $value);
                 }
             }
-        }
 
-        if ($this->hasHeader('Authorization')) {
-            $this->setAuth(Auth::parse($this->getHeader('Authorization')));
+            if ($this->hasHeader('Authorization')) {
+                $this->setAuth(Auth::parse($this->getHeaderObject('Authorization')));
+            }
+        } else {
+            $this->server = $serverParams;
         }
 
         $this->data = new Data(
-            $this->getHeaderValue('Content-Type'), $this->getHeaderValue('Content-Encoding'), $filters, $streamToFile
+            $this->getHeaderValue('Content-Type'), $this->getHeaderValue('Content-Encoding'), $filters, $streamToFile, $populateFromGlobals
         );
 
         if ($this->data->hasRawData()) {
@@ -171,13 +223,26 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Return a new request with the specified request method
+     *
+     * @param  string $method
+     * @return static
+     */
+    public function withMethod(string $method): static
+    {
+        $clone = clone $this;
+        $clone->methodOverride = $method;
+        return $clone;
+    }
+
+    /**
      * Return whether or not the method is GET
      *
      * @return bool
      */
     public function isGet(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'GET'));
+        return ($this->getMethod() == 'GET');
     }
 
     /**
@@ -187,7 +252,7 @@ class Request extends AbstractRequest
      */
     public function isHead(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'HEAD'));
+        return ($this->getMethod() == 'HEAD');
     }
 
     /**
@@ -197,7 +262,7 @@ class Request extends AbstractRequest
      */
     public function isPost(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'POST'));
+        return ($this->getMethod() == 'POST');
     }
 
     /**
@@ -207,7 +272,7 @@ class Request extends AbstractRequest
      */
     public function isPut(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'PUT'));
+        return ($this->getMethod() == 'PUT');
     }
 
     /**
@@ -217,7 +282,7 @@ class Request extends AbstractRequest
      */
     public function isDelete(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'DELETE'));
+        return ($this->getMethod() == 'DELETE');
     }
 
     /**
@@ -227,7 +292,7 @@ class Request extends AbstractRequest
      */
     public function isTrace(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'TRACE'));
+        return ($this->getMethod() == 'TRACE');
     }
 
     /**
@@ -237,7 +302,7 @@ class Request extends AbstractRequest
      */
     public function isOptions(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'OPTIONS'));
+        return ($this->getMethod() == 'OPTIONS');
     }
 
     /**
@@ -247,7 +312,7 @@ class Request extends AbstractRequest
      */
     public function isConnect(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'CONNECT'));
+        return ($this->getMethod() == 'CONNECT');
     }
 
     /**
@@ -257,7 +322,7 @@ class Request extends AbstractRequest
      */
     public function isPatch(): bool
     {
-        return (isset($this->server['REQUEST_METHOD']) && ($this->server['REQUEST_METHOD'] == 'PATCH'));
+        return ($this->getMethod() == 'PATCH');
     }
 
     /**
@@ -283,11 +348,11 @@ class Request extends AbstractRequest
     /**
      * Get the method
      *
-     * @return string|null
+     * @return string
      */
-    public function getMethod(): string|null
+    public function getMethod(): string
     {
-        return $this->server['REQUEST_METHOD'] ?? null;
+        return $this->methodOverride ?? ($this->server['REQUEST_METHOD'] ?? 'GET');
     }
 
     /**
@@ -571,6 +636,9 @@ class Request extends AbstractRequest
      *
      * @param  ?string $key
      * @return string|array|null
+     * @deprecated This always returns null now: the QUERY_STRING re-parse that used to populate
+     *             $queryData was removed. Use getQuery() instead, which reads directly from PHP's
+     *             native $_GET.
      */
     public function getQueryData(?string $key = null): string|array|null
     {
@@ -581,6 +649,9 @@ class Request extends AbstractRequest
      * Has query data
      *
      * @return bool
+     * @deprecated This always returns false now: the QUERY_STRING re-parse that used to populate
+     *             $queryData was removed. Check getQuery() instead (e.g. !empty($this->getQuery())),
+     *             which reads directly from PHP's native $_GET.
      */
     public function hasQueryData(): bool
     {
@@ -646,6 +717,173 @@ class Request extends AbstractRequest
     public function hasData(): bool
     {
         return ($this->data !== null);
+    }
+
+    /**
+     * Get the server params, per PSR-7 (alias of getServer())
+     *
+     * @return array
+     */
+    public function getServerParams(): array
+    {
+        return $this->server;
+    }
+
+    /**
+     * Get the cookie params, per PSR-7
+     *
+     * @return array
+     */
+    public function getCookieParams(): array
+    {
+        return $this->cookieParamsOverride ?? $this->cookie;
+    }
+
+    /**
+     * Return an instance with the specified cookie params, per PSR-7
+     *
+     * @param  array $cookies
+     * @return static
+     */
+    public function withCookieParams(array $cookies): static
+    {
+        $clone                       = clone $this;
+        $clone->cookieParamsOverride = $cookies;
+        return $clone;
+    }
+
+    /**
+     * Get the query params, per PSR-7
+     *
+     * @return array
+     */
+    public function getQueryParams(): array
+    {
+        if ($this->queryParamsOverride !== null) {
+            return $this->queryParamsOverride;
+        }
+
+        $query = $this->data->getQuery();
+        return is_array($query) ? $query : [];
+    }
+
+    /**
+     * Return an instance with the specified query params, per PSR-7
+     *
+     * @param  array $query
+     * @return static
+     */
+    public function withQueryParams(array $query): static
+    {
+        $clone                      = clone $this;
+        $clone->queryParamsOverride = $query;
+        return $clone;
+    }
+
+    /**
+     * Get the uploaded files, per PSR-7 - an array of UploadedFileInterface instances
+     * built from the native $_FILES-shaped data, unless overridden
+     *
+     * @return array
+     */
+    public function getUploadedFiles(): array
+    {
+        if ($this->uploadedFilesOverride !== null) {
+            return $this->uploadedFilesOverride;
+        }
+
+        return UploadedFile::createFromFilesArray($this->data->getFiles());
+    }
+
+    /**
+     * Return an instance with the specified uploaded files, per PSR-7
+     *
+     * @param  array $uploadedFiles
+     * @return static
+     */
+    public function withUploadedFiles(array $uploadedFiles): static
+    {
+        $clone                        = clone $this;
+        $clone->uploadedFilesOverride = $uploadedFiles;
+        return $clone;
+    }
+
+    /**
+     * Get the parsed body, per PSR-7
+     *
+     * @return array|object|null
+     */
+    public function getParsedBody(): array|object|null
+    {
+        if ($this->parsedBodyOverridden) {
+            return $this->parsedBodyOverride;
+        }
+
+        $parsed = $this->data->getParsedData();
+        return (!empty($parsed)) ? $parsed : null;
+    }
+
+    /**
+     * Return an instance with the specified parsed body, per PSR-7
+     *
+     * @param  array|object|null $data
+     * @return static
+     */
+    public function withParsedBody($data): static
+    {
+        $clone                        = clone $this;
+        $clone->parsedBodyOverride    = $data;
+        $clone->parsedBodyOverridden  = true;
+        return $clone;
+    }
+
+    /**
+     * Get all request attributes, per PSR-7
+     *
+     * @return array
+     */
+    public function getAttributes(): array
+    {
+        return $this->attributes;
+    }
+
+    /**
+     * Get a request attribute, per PSR-7
+     *
+     * @param  string $name
+     * @param  mixed  $default
+     * @return mixed
+     */
+    public function getAttribute(string $name, mixed $default = null): mixed
+    {
+        return $this->attributes[$name] ?? $default;
+    }
+
+    /**
+     * Return an instance with the specified attribute set, per PSR-7
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return static
+     */
+    public function withAttribute(string $name, mixed $value): static
+    {
+        $clone                    = clone $this;
+        $clone->attributes[$name] = $value;
+        return $clone;
+    }
+
+    /**
+     * Return an instance without the specified attribute, per PSR-7
+     *
+     * @param  string $name
+     * @return static
+     */
+    public function withoutAttribute(string $name): static
+    {
+        $clone = clone $this;
+        unset($clone->attributes[$name]);
+        return $clone;
     }
 
     /**

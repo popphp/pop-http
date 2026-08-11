@@ -110,4 +110,96 @@ class DataTest extends TestCase
         $this->assertEquals('application/octet-stream', Data::getDefaultMimeType());
     }
 
+    public function testJsonStringValueIsAlwaysEncoded()
+    {
+        $request = new Request('http://localhost/', 'POST', null, Request::JSON);
+        $data    = new Data(['flag' => 'true'], null, $request);
+        $data->prepare();
+
+        // 'true' as a JSON *value* must be encoded as the JSON string "true",
+        // not silently treated as the already-encoded boolean literal true.
+        // (prepareJson() renders with JSON_PRETTY_PRINT, matching existing behavior.)
+        $this->assertEquals(json_encode(['flag' => 'true'], JSON_PRETTY_PRINT), $data->getDataContent());
+    }
+
+    public function testExplicitRawDataStillBypassesEncoding()
+    {
+        $request = new Request('http://localhost/', 'POST', null, Request::JSON);
+        $request->setRawData(true);
+        $preEncoded = '{"already":"encoded"}';
+        $data       = new Data($preEncoded, null, $request);
+        $data->prepare();
+
+        $this->assertEquals($preEncoded, $data->getDataContent());
+    }
+
+    public function testMultipartPreparationIsLazyAndOnlyDeclaresTheBoundary()
+    {
+        $request = new Request('http://localhost/', 'POST', null, Request::MULTIPART);
+        $data    = new Data(['username' => 'admin'], null, $request);
+        $data->prepare();
+
+        // The multipart body is NEVER rendered here - Curl hands the curl-native array shape
+        // straight to CURLOPT_POSTFIELDS and Stream renders the string itself, exactly once.
+        $this->assertEmpty($data->getDataContent());
+        $this->assertFalse($data->hasDataContent());
+
+        // The boundary declaration on the Content-Type header is the only observable effect
+        $contentType = $request->getHeaderValueAsString('Content-Type');
+        $this->assertStringStartsWith('multipart/form-data; boundary=', $contentType);
+        $this->assertStringContainsString('----PopHttpBoundary', $contentType);
+
+        // Content-Length is left to the transport: curl builds the multipart framing itself for
+        // an array POSTFIELDS, and PHP's http:// stream wrapper derives it from 'content'.
+        $this->assertFalse($request->hasHeader('Content-Length'));
+    }
+
+    public function testMultipartPreparationClearsContentFromAPriorPreparation()
+    {
+        $request = new Request('http://localhost/', 'POST', null, Request::URLENCODED);
+        $data    = new Data(['username' => 'admin'], null, $request);
+        $data->prepare();
+
+        $this->assertNotEmpty($data->getDataContent());
+        $this->assertTrue($request->hasHeader('Content-Length'));
+
+        $request->setRequestType(Request::MULTIPART);
+        $data->reset();
+        $data->prepare();
+
+        $this->assertEmpty($data->getDataContent());
+        $this->assertFalse($request->hasHeader('Content-Length'));
+        $this->assertStringStartsWith('multipart/form-data; boundary=', $request->getHeaderValueAsString('Content-Type'));
+    }
+
+    public function testMultipartPreparationDoesNotBufferFileContentIntoMemory()
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pop-http-lazy-multipart-');
+        // 8MB, comfortably larger than any incidental allocation during prepare()
+        $size = 8 * 1024 * 1024;
+        file_put_contents($file, str_repeat('X', $size));
+
+        $request = new Request('http://localhost/', 'POST', null, Request::MULTIPART);
+        $data    = new Data([], null, $request);
+
+        // Deliberately measured with memory_get_usage() (current usage), not
+        // memory_get_peak_usage(): a peak delta only registers when the allocation exceeds the
+        // process's existing high-water mark, so whatever else the suite ran first could silently
+        // neuter this assertion. Current usage is unaffected by that ordering. Note setData()
+        // prepares as a side effect, so it has to sit inside the measured window too.
+        gc_collect_cycles();
+        $usageBefore = memory_get_usage();
+        $data->setData(['file1' => ['filename' => $file, 'contentType' => 'application/octet-stream']]);
+        $data->prepare();
+        $usageAfter = memory_get_usage();
+
+        unlink($file);
+
+        // Before the lazy-multipart fix this delta was ~8MB - the whole file, rendered and held
+        // in $dataContent only to be thrown away unread. It must now stay a small fraction of
+        // the file size.
+        $this->assertLessThan($size / 4, $usageAfter - $usageBefore);
+        $this->assertEmpty($data->getDataContent());
+    }
+
 }

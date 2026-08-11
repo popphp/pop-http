@@ -107,4 +107,55 @@ class UploadTest extends TestCase
         $this->assertEquals(Upload::UPLOAD_ERR_NOT_ALLOWED, $upload->getErrorCode());
     }
 
+    public function testUploadMovesFileSuccessfully()
+    {
+        $source = tempnam(sys_get_temp_dir(), 'pop-http-upload-test-');
+        file_put_contents($source, 'file contents');
+
+        $file = [
+            'name'     => 'moved.txt',
+            'type'     => 'text/plain',
+            'size'     => filesize($source),
+            'tmp_name' => $source,
+            'error'    => 0
+        ];
+
+        $upload = new Upload(__DIR__ . '/../tmp');
+
+        try {
+            $result = $upload->upload($file, null, false);
+
+            $this->assertEquals('moved.txt', $result);
+            $this->assertTrue($upload->isSuccess());
+            $this->assertFileExists(__DIR__ . '/../tmp/moved.txt');
+        } finally {
+            if (file_exists(__DIR__ . '/../tmp/moved.txt')) {
+                unlink(__DIR__ . '/../tmp/moved.txt');
+            }
+        }
+    }
+
+    public function testUploadFailsSecurelyWhenNotAnUploadedFile()
+    {
+        $source = tempnam(sys_get_temp_dir(), 'pop-http-upload-test-');
+        file_put_contents($source, 'file contents');
+
+        $file = [
+            'name'     => 'insecure.txt',
+            'type'     => 'text/plain',
+            'size'     => filesize($source),
+            'tmp_name' => $source,
+            'error'    => 0
+        ];
+
+        $upload = new Upload(__DIR__ . '/../tmp');
+        $result = $upload->upload($file);
+
+        $this->assertFalse($result);
+        $this->assertEquals(Upload::UPLOAD_ERR_FILE_NOT_SECURE, $upload->getErrorCode());
+        $this->assertFileDoesNotExist(__DIR__ . '/../tmp/insecure.txt');
+
+        unlink($source);
+    }
+
 }

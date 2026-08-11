@@ -15,7 +15,7 @@ class ResponseTest extends TestCase
         $response = new Response();
         $response->addHeader('Content-Type', 'text/plain');
         $this->assertInstanceOf('Pop\Http\Server\Response', $response);
-        $this->assertEquals('text/plain', $response->getHeader('Content-Type')->getValue(0));
+        $this->assertEquals('text/plain', $response->getHeaderObject('Content-Type')->getValue(0));
     }
 
     public function testConstructorBadHeaderCodeException()
@@ -49,8 +49,8 @@ class ResponseTest extends TestCase
         $response = Parser::parseResponseFromString(str_replace("\n", "\r\n", file_get_contents(__DIR__ . '/../tmp/response.txt')));
         $this->assertEquals(200, $response->getCode());
         $this->assertStringContainsString('<html', $response->getBody()->getContent());
-        $this->assertEquals('text/html', $response->getHeader('Content-Type')->getValue(0));
-        $this->assertEquals('text/html', $response->getHeaders()['Content-Type']->getValue(0));
+        $this->assertEquals('text/html', $response->getHeaderObject('Content-Type')->getValue(0));
+        $this->assertEquals('text/html', $response->getHeaderObjects()['Content-Type']->getValue(0));
         $this->assertStringContainsString('ETag: "84f-509414fcd0819"', $response->getHeadersAsString());
     }
 

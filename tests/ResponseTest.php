@@ -80,4 +80,44 @@ class ResponseTest extends TestCase
         $this->assertFalse($response->hasBody());
     }
 
+    public function testImplementsResponseInterface()
+    {
+        $response = new Response();
+        $this->assertInstanceOf('Psr\Http\Message\ResponseInterface', $response);
+    }
+
+    public function testGetProtocolVersionDelegatesToVersion()
+    {
+        $response = new Response(['version' => '2.0']);
+        $this->assertEquals('2.0', $response->getProtocolVersion());
+    }
+
+    public function testWithProtocolVersionReturnsDistinctClone()
+    {
+        $response = new Response();
+        $clone    = $response->withProtocolVersion('2.0');
+
+        $this->assertNotSame($response, $clone);
+        $this->assertEquals('1.1', $response->getProtocolVersion());
+        $this->assertEquals('2.0', $clone->getProtocolVersion());
+    }
+
+    public function testGetStatusCodeAndReasonPhrase()
+    {
+        $response = new Response(['code' => 404]);
+        $this->assertEquals(404, $response->getStatusCode());
+        $this->assertEquals('Not Found', $response->getReasonPhrase());
+    }
+
+    public function testWithStatusReturnsDistinctClone()
+    {
+        $response = new Response();
+        $clone    = $response->withStatus(201, 'Custom Created');
+
+        $this->assertNotSame($response, $clone);
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(201, $clone->getStatusCode());
+        $this->assertEquals('Custom Created', $clone->getReasonPhrase());
+    }
+
 }

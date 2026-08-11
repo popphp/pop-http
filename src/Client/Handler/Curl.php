@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -18,7 +18,6 @@ use Pop\Http\Auth;
 use Pop\Http\Parser;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
-use Pop\Mime\Message;
 
 /**
  * HTTP client curl handler class
@@ -26,9 +25,9 @@ use Pop\Mime\Message;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Curl extends AbstractCurl
 {
@@ -108,13 +107,23 @@ class Curl extends AbstractCurl
             if ($this->hasOption(CURLOPT_CUSTOMREQUEST)) {
                 $this->removeOption(CURLOPT_CUSTOMREQUEST);
             }
-        } else if (($method == 'POST') && (!$forceCustom)) {
-            $this->setOption(CURLOPT_POST, true);
-            if ($this->hasOption(CURLOPT_CUSTOMREQUEST)) {
-                $this->removeOption(CURLOPT_CUSTOMREQUEST);
-            }
+            // libcurl does NOT revert a handle to GET when CURLOPT_POST/CURLOPT_POSTFIELDS are
+            // unset - it stays in POST mode until GET is asserted explicitly. Only matters when a
+            // handler instance is reused, but there the request would otherwise silently go out
+            // as a POST (verified on the wire).
+            $this->setOption(CURLOPT_HTTPGET, true);
         } else {
-            $this->setOption(CURLOPT_CUSTOMREQUEST, $method);
+            if ($this->hasOption(CURLOPT_HTTPGET)) {
+                $this->removeOption(CURLOPT_HTTPGET);
+            }
+            if (($method == 'POST') && (!$forceCustom)) {
+                $this->setOption(CURLOPT_POST, true);
+                if ($this->hasOption(CURLOPT_CUSTOMREQUEST)) {
+                    $this->removeOption(CURLOPT_CUSTOMREQUEST);
+                }
+            } else {
+                $this->setOption(CURLOPT_CUSTOMREQUEST, $method);
+            }
         }
 
         if ($method == 'HEAD') {
@@ -237,6 +246,10 @@ class Curl extends AbstractCurl
      */
     public function prepare(Request|AbstractRequest $request, ?Auth $auth = null, bool $forceCustom = false, bool $clear = true): Curl
     {
+        if ($request instanceof Request) {
+            $this->request = $request;
+        }
+
         $this->setMethod($request->getMethod(), $forceCustom);
 
         // Clear headers for a fresh request based on the headers in the request object,
@@ -255,60 +268,43 @@ class Curl extends AbstractCurl
             $request->prepareData();
         }
 
-        // Add headers
-        if ($request->hasHeaders()) {
-            $headers = [];
-
-            foreach ($request->getHeaders() as $header => $value) {
-                if (($header != 'Content-Length') || (!($request->isNoContentLength()) && ($request->getMethod() != 'GET'))) {
-                    if (is_array($value)) {
-                        foreach ($value as $val) {
-                            $headers[] = (string)$val;
-                        }
-                    } else {
-                        $headers[] = (string)$value;
-                    }
+        $headers = $this->collectRequestHeaders($request);
+        if ($this->hasOption(CURLOPT_HTTPHEADER)) {
+            $customHeaders = $this->getOption(CURLOPT_HTTPHEADER);
+            foreach ($customHeaders as $customHeader) {
+                if (!in_array($customHeader, $headers)) {
+                    $headers[] = $customHeader;
                 }
             }
-            if ($this->hasOption(CURLOPT_HTTPHEADER)) {
-                $customHeaders = $this->getOption(CURLOPT_HTTPHEADER);
-                foreach ($customHeaders as $customHeader) {
-                    if (!in_array($customHeader, $headers)) {
-                        $headers[] = $customHeader;
-                    }
-                }
-            }
-            $this->setOption(CURLOPT_HTTPHEADER, $headers);
         }
 
-        $queryString = null;
+        ['queryString' => $queryString, 'body' => $body] = $this->resolveRequestBody($request);
 
-        // If request has a query
-        if ($request->hasQuery()) {
-            $queryString = '?' . $request->getQuery()->prepare()->getDataContent();
+        // Multipart bodies are handed to curl as an array (scalars + CURLFile) so it can build
+        // its own matching multipart framing; pop-http's own Content-Type/boundary header (set by
+        // prepareData() above) would otherwise disagree with the boundary curl actually generates.
+        // Matched case-insensitively: HTTP header names are case-insensitive on the wire, so a
+        // user-supplied 'content-type: ...' would otherwise survive this strip and be sent
+        // alongside curl's own auto-generated multipart Content-Type.
+        if (is_array($body)) {
+            $headers = array_values(array_filter($headers, fn($header) => stripos($header, 'content-type:') !== 0));
         }
 
-        // If request has data
-        if ($request->hasData()) {
-            // Set request data content
-            if ($request->hasDataContent()) {
-                // If it's a URL-encoded GET request
-                if (($queryString === null) && ($request->isGet()) && (!$request->hasRequestType() || $request->isUrlEncoded())) {
-                    $queryString = '?' . $request->getDataContent();
+        $this->setOption(CURLOPT_HTTPHEADER, $headers);
 
-                    // Clear old request data
-                    if ($this->hasOption(CURLOPT_POSTFIELDS)) {
-                        $this->removeOption(CURLOPT_POSTFIELDS);
-                    }
-                // Else, set data content
-                } else {
-                    $this->setOption(CURLOPT_POSTFIELDS, (($request->useRawData()) ? $request->getData()->getData() : $request->getDataContent()));
-                }
-            }
-        // Else, if there is raw body content
-        } else if ($request->hasBodyContent()) {
-            $request->addHeader('Content-Length', $request->getBodyContentLength());
-            $this->setOption(CURLOPT_POSTFIELDS, $request->getBodyContent());
+        if ($body !== null) {
+            $this->setOption(CURLOPT_POSTFIELDS, $body);
+        // A reused handler must not carry a previous request's body forward: curl switches the
+        // method to POST whenever CURLOPT_POSTFIELDS is set, so a stale value would silently
+        // turn a subsequent body-less GET into a POST. Gated on $clear for the same reason the
+        // header handling above is: with $clear = false the caller is explicitly asking to fall
+        // back to whatever was pre-defined on the handler itself.
+        } else if (($clear) && $this->hasOption(CURLOPT_POSTFIELDS)) {
+            $this->removeOption(CURLOPT_POSTFIELDS);
+            // Clearing CURLOPT_POSTFIELDS is itself a curl_setopt(..., null) call, which puts
+            // the handle right back into POST mode - so the method has to be re-asserted AFTER
+            // the removal, not just once at the top of prepare().
+            $this->setMethod($request->getMethod(), $forceCustom);
         }
 
         $this->uri = $request->getUriAsString();
@@ -332,7 +328,10 @@ class Curl extends AbstractCurl
         $this->response = curl_exec($this->resource);
 
         if ($this->response === false) {
-            throw new Exception('Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.');
+            throw new Exception(
+                'Error: ' . curl_errno($this->resource) . ' => ' . curl_error($this->resource) . '.',
+                0, null, curl_errno($this->resource), $this->request
+            );
         }
 
         return $this->parseResponse();

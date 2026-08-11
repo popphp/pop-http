@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -23,9 +23,9 @@ use Pop\Http\Client;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Response extends AbstractResponse
 {
@@ -41,8 +41,8 @@ class Response extends AbstractResponse
     {
         $body = $this->body->render();
 
-        if ($this->hasHeader('Content-Encoding') && (count($this->getHeader('Content-Encoding')->getValues()) == 1)) {
-            $body = Parser::encodeData($body, strtoupper($this->getHeader('Content-Encoding')->getValue(0)));
+        if ($this->hasHeader('Content-Encoding') && (count($this->getHeaderObject('Content-Encoding')->getValues()) == 1)) {
+            $body = Parser::encodeData($body, strtoupper($this->getHeaderObject('Content-Encoding')->getValue(0)));
             if ($length) {
                 $this->addHeader('Content-Length', (($mb) ? mb_strlen($body) : strlen($body)));
             }
@@ -199,7 +199,7 @@ class Response extends AbstractResponse
             'version' => $clientResponse->getVersion(),
             'code'    => $clientResponse->getCode(),
             'message' => $clientResponse->getMessage(),
-            'headers' => $clientResponse->getHeaders(),
+            'headers' => $clientResponse->getHeaderObjects(),
             'body'    => $clientResponse->getBody()
         ]);
         $serverResponse->send();

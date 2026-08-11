@@ -16,7 +16,11 @@ pop-http
   - [Requests](#requests)
   - [Rendering Requests](#rendering-requests)
   - [Responses](#responses)
+  - [PSR-7 / PSR-17 / PSR-18 Conformance](#psr-7--psr-17--psr-18-conformance)
   - [Handlers](#handlers)
+  - [Middleware](#middleware)
+  - [Retry Middleware](#retry-middleware)
+  - [Logging Middleware](#logging-middleware)
 * [Promises](#promises)
   - [Wait](#wait)
   - [Then](#then)
@@ -43,11 +47,13 @@ for the following:
   - Manage authorization
   - Manage and parse different request & response data types
   - Automatic content negotiation of response data, where possible
-  - Use the request handler of your choice: curl, stream or curl-multi (defaults to curl)
+  - Use the request handler of your choice: curl, stream, curl-multi or a mock handler for testing (defaults to curl)
   - Send sync or async requests
   - Support for promises
   - Render client requests out to a raw string
   - 2-way client to curl CLI command conversions
+  - Full PSR-7, PSR-17 and PSR-18 conformance, for interoperability with other PSR-compatible libraries
+  - A composable middleware pipeline for intercepting, retrying or logging outbound requests
 - **HTTP Server Transactions**
   - Manage inbound HTTP server requests, headers and data
   - Create and manage outbound HTTP server responses, headers and data
@@ -67,7 +73,7 @@ Install `pop-http` using Composer.
 Or, require it in your composer.json file
 
     "require": {
-        "popphp/pop-http" : "^5.3.8"
+        "popphp/pop-http" : "^6.0.0"
     }
 
 [Top](#pop-http)
@@ -219,7 +225,7 @@ $response = Client::post('http://localhost/auth', Auth::createBearer('MY_AUTH_TO
 use Pop\Http\Auth;
 use Pop\Http\Client;
 
-$response = Client::post('http://localhost/auth', Auth::createKey('MY_API_KEY')));
+$response = Client::post('http://localhost/auth', Auth::createKey('MY_API_KEY'));
 ```
 
 **Digest**
@@ -288,7 +294,7 @@ use Pop\Http\Client\Request;
 $client    = new Client(['base_uri' => 'http://localhost']);
 $response1 = $client->get('/page1'); // Will request http://localhost/page1
 $response2 = $client->get('/page2'); // Will request http://localhost/page2
-$response2 = $client->get('/page3'); // Will request http://localhost/page3
+$response3 = $client->get('/page3'); // Will request http://localhost/page3
 ```
 
 Here is an example to send some JSON data:
@@ -480,7 +486,7 @@ $response = Client::post('http://localhost/post', [
 
 echo $response->getCode();                      // 200
 echo $response->getMessage();                   // OK
-var_dump($response->getHeaders());              // An array of HTTP header objects
+var_dump($response->getHeaders());              // An array of header name => array of string values
 var_dump($response->hasHeader('Content-Type')); // Boolean result
 var_dump($response->getBody());                 // A body object than contains the response content
 ```
@@ -535,6 +541,75 @@ $response->isServiceUnavailable();   // Bool on 503 response
 
 [Top](#pop-http)
 
+### PSR-7 / PSR-17 / PSR-18 Conformance
+
+`pop-http`'s request, response, URI and body objects implement the standard PSR-7 HTTP message interfaces
+(`psr/http-message`), and `Client` implements the PSR-18 HTTP client interface (`psr/http-client`). A set of
+PSR-17 factories (`psr/http-factory`) is also available under `Pop\Http\Factory`. This means `pop-http` objects
+can be passed to, or accepted from, any other library that speaks PSR-7/17/18, without any adapter layer.
+
+| pop-http class | PSR interface |
+|---|---|
+| `Client\Request` | `Psr\Http\Message\RequestInterface` |
+| `Client\Response`, `Server\Response` | `Psr\Http\Message\ResponseInterface` |
+| `Server\Request` | `Psr\Http\Message\ServerRequestInterface` |
+| `Uri` | `Psr\Http\Message\UriInterface` |
+| `Body` | `Psr\Http\Message\StreamInterface` |
+| `Server\UploadedFile` | `Psr\Http\Message\UploadedFileInterface` |
+| `Client` (via `sendRequest()`) | `Psr\Http\Client\ClientInterface` |
+
+Alongside `pop-http`'s existing mutable API (`addHeader()`, `setBody()`, etc.), every request/response/URI/body
+object also supports the PSR-7 immutable `with*()`/`without*()` methods, which return a new instance rather than
+modifying the original:
+
+```php
+use Pop\Http\Client\Request;
+
+$request     = new Request('http://localhost/');
+$withHeader  = $request->withHeader('X-Custom-Header', 'Custom-Value'); // A new instance
+$withoutData = $withHeader->withoutHeader('X-Custom-Header');           // Another new instance
+```
+
+`Client::sendRequest()` implements PSR-18, so a `Client` can be handed to any code written against
+`Psr\Http\Client\ClientInterface`:
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Request;
+
+$client   = new Client();
+$request  = new Request('http://localhost/');
+$response = $client->sendRequest($request); // Returns a Psr\Http\Message\ResponseInterface
+```
+
+The PSR-17 factories build the corresponding native `pop-http` objects, for code that only knows the factory
+interfaces:
+
+```php
+use Pop\Http\Factory\RequestFactory;
+use Pop\Http\Factory\UriFactory;
+use Pop\Http\Factory\StreamFactory;
+
+$requestFactory = new RequestFactory();
+$uriFactory     = new UriFactory();
+$streamFactory  = new StreamFactory();
+
+$request = $requestFactory->createRequest('POST', 'http://localhost/');
+$uri     = $uriFactory->createUri('http://localhost/');
+$body    = $streamFactory->createStream('some content');
+```
+
+The other available factories are `ResponseFactory`, `ServerRequestFactory` and `UploadedFileFactory`.
+
+**Backward-compatibility note:** PSR-7 reserves the method names `getHeader()` and `getHeaders()` for returning
+plain string values, which collided with this library's pre-existing methods of the same name that returned
+`Pop\Mime\Part\Header` object(s). To satisfy both contracts without breaking either, the old object-returning
+methods were renamed to **`getHeaderObject(string $name)`** and **`getHeaderObjects()`**. If you were relying on
+`getHeader()`/`getHeaders()` returning `Header` objects prior to this change, switch to `getHeaderObject()`/
+`getHeaderObjects()`; `getHeader()`/`getHeaders()` now return plain string arrays, per PSR-7.
+
+[Top](#pop-http)
+
 ### Handlers
 
 You can choose to use a different handler with the client object. The available handlers are:
@@ -542,6 +617,7 @@ You can choose to use a different handler with the client object. The available 
 - `Pop\Http\Client\Handler\Curl` - uses the PHP curl extension (default)
 - `Pop\Http\Client\Handler\Stream` - uses PHP stream functionality
 - `Pop\Http\Client\Handler\CurlMulti` - reserved for multiple parallel/concurrent requests at the same time
+- `Pop\Http\Client\Handler\Mock` - queues canned responses (or throwables) for tests, with no real network I/O
 
 You can inject the handler into the client's constructor:
 
@@ -676,6 +752,188 @@ $client3      = new Client('http://localhost/test3.php', $multiHandler);
 
 [Top](#pop-http)
 
+#### Mock
+
+The `Mock` handler is a drop-in replacement for `Curl`/`Stream` that never sends real network traffic - useful for
+both testing this library itself and testing your own application code against a `Client`. It supports two ways
+to configure canned results:
+
+- `queue()` - a FIFO queue of responses (or exceptions) to return, one per request
+- `when()` - a callback matcher, checked before the queue, for returning a specific response based on the request
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Handler\Mock;
+use Pop\Http\Client\Response;
+
+$mock = new Mock();
+$mock->queue(new Response(['code' => 200, 'body' => '{"result":"ok"}']));
+$mock->queue(new Response(['code' => 404]));
+
+$client = new Client('http://localhost/', $mock);
+
+$response = $client->send(); // Returns the first queued response (200)
+$response = $client->send(); // Returns the second queued response (404)
+```
+
+`when()` takes a callback of the shape `function (Client\Request $request): bool` and is checked first, in
+registration order - the first matching callback wins, falling back to the queue if none match:
+
+```php
+$mock->when(
+    fn($request) => $request->getMethod() === 'POST',
+    new Response(['code' => 201])
+);
+```
+
+You can also queue a `\Throwable` to simulate a network failure:
+
+```php
+use Pop\Http\Client\Handler\Exception;
+
+$mock->queue(new Exception('Simulated connection failure.'));
+```
+
+Every request actually dispatched through the mock handler is recorded and available for assertions:
+
+```php
+$mock->getRequests();    // An array of every Client\Request dispatched, in order
+$mock->getLastRequest(); // The most recently dispatched Client\Request, or null
+```
+
+[Top](#pop-http)
+
+### Middleware
+
+`Client` supports a composable middleware pipeline around its outbound dispatch - registered via
+`addMiddleware()`, applied uniformly to `send()`, `sendAsync()` and `sendRequest()`. It follows the familiar
+onion/interceptor pattern (in the style of PSR-15, though typed for `Client`'s outbound flow rather than a
+literal PSR-15 implementation): registration order is wrap order, so the first-registered middleware runs first
+on the way in and last on the way out.
+
+```php
+use Pop\Http\Client;
+
+$client = new Client('http://localhost/');
+
+$client->addMiddleware(function ($request, $handler) {
+    // Before: inspect or modify $request
+    $response = $handler->handle($request);
+    // After: inspect or modify $response
+    return $response;
+});
+
+$response = $client->send();
+```
+
+A plain closure of the shape `function ($request, $handler)` is accepted directly, or you can implement
+`Pop\Http\Client\Middleware\MiddlewareInterface` for a reusable class-based middleware. A middleware can also
+short-circuit the chain entirely by simply not calling `$handler->handle($request)` - useful for things like
+returning a cached response without ever touching the network:
+
+```php
+$client->addMiddleware(function ($request, $handler) {
+    if ($cached = getFromCache($request)) {
+        return $cached; // $handler->handle() is never called
+    }
+    return $handler->handle($request);
+});
+```
+
+**Note:** middleware does not apply to a `Client` driven via `Client::createMulti()`/`CurlMulti` - the
+multi-handler runs its own request loop independently of the middleware pipeline.
+
+[Top](#pop-http)
+
+### Retry Middleware
+
+`Pop\Http\Client\Middleware\RetryMiddleware` is a ready-made middleware that retries a request on transient
+network failures and/or specific response status codes, with exponential backoff and jitter between attempts.
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Middleware\RetryMiddleware;
+
+$client = new Client('http://localhost/');
+$client->addMiddleware(new RetryMiddleware(3)); // Up to 3 retries
+
+$response = $client->send();
+```
+
+With no further configuration, it retries up to 3 times on network exceptions or a `429`/`502`/`503`/`504`
+response, and only for idempotent-safe methods (`GET`, `HEAD`, `PUT`, `DELETE`, `OPTIONS`) - `POST`/`PATCH`
+requests are never retried by default, since retrying a non-idempotent request risks duplicating a side effect
+(e.g. double-charging, double-creating a resource). Every aspect of this is configurable:
+
+```php
+$retry = new RetryMiddleware();
+$retry->setMaxRetries(5)
+    ->setRetryableMethods(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'POST'])
+    ->setRetryableStatusCodes([429, 500, 502, 503, 504])
+    ->setBaseDelay(0.1)   // Base delay, in seconds, for the exponential backoff
+    ->setMaxDelay(10.0)   // Maximum delay, in seconds, before jitter is applied
+    ->setOnRetry(function ($attempt, $request, $response, $exception, $delaySeconds) {
+        // Fires once per retry attempt, before that attempt's sleep - useful for
+        // logging or metrics (see the LoggingMiddleware section below)
+    });
+
+$client->addMiddleware($retry);
+```
+
+If the server responds with a `Retry-After` header, that value is honored over the computed backoff delay for
+that attempt (capped at `setMaxDelay()`). If the request has a body, it must be seekable for a retry to happen at
+all - a non-seekable body (e.g. streamed from a non-rewindable source) causes the retry to be skipped entirely,
+since resending a partially-consumed stream would corrupt the payload.
+
+[Top](#pop-http)
+
+### Logging Middleware
+
+`Pop\Http\Client\Middleware\LoggingMiddleware` is a ready-made middleware that logs one line per dispatch attempt
+to any [PSR-3](https://www.php-fig.org/psr/psr-3/) `Psr\Log\LoggerInterface`, at a level derived from the outcome:
+`info` for a successful response, `warning` for a `4xx`, `error` for a `5xx` or a thrown exception.
+
+```php
+use Pop\Http\Client;
+use Pop\Http\Client\Middleware\LoggingMiddleware;
+
+$client = new Client('http://localhost/');
+$client->addMiddleware(new LoggingMiddleware($logger)); // Any PSR-3 logger
+
+$response = $client->send();
+```
+
+Known-sensitive request headers (`Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key`, `Proxy-Authorization`) are
+redacted to `[REDACTED]` in the logged context by default - configurable via `setRedactedHeaders()`/
+`addRedactedHeader()`. Only the request's headers are ever logged, never the response's. Request/response bodies
+are excluded from the log entirely unless explicitly opted in:
+
+```php
+$logging = new LoggingMiddleware($logger);
+$logging->setIncludeBody(true)
+    ->setMaxBodyLength(500); // Truncate logged body content to 500 characters
+```
+
+`LoggingMiddleware` has no special coupling with `RetryMiddleware` - the two compose purely through registration
+order. Register `LoggingMiddleware` *after* `RetryMiddleware` (closer to the actual dispatch) to log every
+individual retry attempt; register it *before* to log only the final outcome:
+
+```php
+$client->addMiddleware(new RetryMiddleware(3))
+    ->addMiddleware(new LoggingMiddleware($logger)); // Logs every attempt
+```
+
+For a structured "why did this retry happen" log line with the failure reason and computed delay,
+`LoggingMiddleware::logRetriesTo()` adapts a logger onto `RetryMiddleware`'s `setOnRetry()` hook:
+
+```php
+$client->addMiddleware(
+    (new RetryMiddleware(3))->setOnRetry(LoggingMiddleware::logRetriesTo($logger))
+)->addMiddleware(new LoggingMiddleware($logger));
+```
+
+[Top](#pop-http)
+
 Promises
 --------
 
@@ -783,7 +1041,7 @@ $promise->setCancel(function(Promise $promise) {
 
 $promise->then(function(Response $response) {
     // Do something on success
-})->catch(function(Response $response)) {
+})->catch(function(Response $response) {
     // Do something on failure
 })->finally(function(Promise $promise) {
     // Do something at the end
@@ -916,7 +1174,7 @@ Server
 ------
 
 The server object and its components provide convenient and robust functionality to manage inbound server requests
-and outbound responses. At its core, and like the client object, the server object is compromised of a request object
+and outbound responses. At its core, and like the client object, the server object is comprised of a request object
 and a response object. However, opposite to the client object, the server object's request is typically auto-populated
 from the incoming request headers and data, while the response object is available to be configured as required to
 produce and send a response to the calling client.
@@ -935,9 +1193,9 @@ in from an inbound client request. This includes:
 **Headers**
 
 ```php
-$headers = $reqeuest->getHeaders();
+$headers = $request->getHeaders();
 if ($request->hasHeader('Content-Type')) {
-    $contentType = $request->getHeader('Content-Type');         // Header object
+    $contentType = $request->getHeaderObject('Content-Type');   // Header object
     var_dump($request->getHeaderValueAsString('Content-Type')); // Header value as string
 }
 ```
@@ -1005,7 +1263,7 @@ use Pop\Http\Server;
 
 $server = new Server();
 
-echo $server->request->getHeader('Authorization')->getValue();
+echo $server->request->getHeaderObject('Authorization')->getValue();
 if ($server->request->isPost()) {
     print_r($server->request->getPost());
 }
@@ -1055,7 +1313,7 @@ use Pop\Http\Server\Response;
 $myRequest  = new Request();
 $myResponse = new Response();
 $server     = new Server($myRequest, $myResponse);
-````
+```
 
 [Top](#pop-http)
 
@@ -1065,7 +1323,7 @@ As an extra layer of protection, you can add filters to the request object to fi
 
 ```php
 use Pop\Http\Server;
-use Pop\Http\Server\Reqeust;
+use Pop\Http\Server\Request;
 
 $filters = ['strip_tags', 'addslashes'];
 $server  = new Server(new Request(null, $filters));
@@ -1086,7 +1344,6 @@ if ($server->request->isPost()) {
 the data will be filtered:
 
 ```text
-Bearer 123456
 Array
 (
     [foo] => bad\'s script

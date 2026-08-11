@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -14,19 +14,31 @@
 namespace Pop\Http;
 
 use Pop\Mime\Part\Header;
-use Pop\Mime\Part\Body;
+use Pop\Http\Body;
+use Psr\Http\Message\MessageInterface;
 
 /**
  * Abstract HTTP request/response class
  *
+ * Declares `implements MessageInterface` here (in addition to the concrete
+ * `implements RequestInterface`/`ResponseInterface` added to AbstractRequest/
+ * AbstractResponse) because PHP's covariant-return check for `static` requires
+ * the class where a method is physically defined to already be provably
+ * compatible with the interface's return type; without this, PHP fatals on
+ * `withHeader()`/`withAddedHeader()`/`withoutHeader()`/`withBody()` as soon as
+ * a subclass implements MessageInterface, even though those methods'
+ * behavior already satisfies it. `getProtocolVersion()`/`withProtocolVersion()`
+ * remain unimplemented here (legal since this class stays abstract) — added by
+ * AbstractRequest/AbstractResponse per PSR-7 message methods task.
+ *
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
-abstract class AbstractRequestResponse implements RequestResponseInterface
+abstract class AbstractRequestResponse implements RequestResponseInterface, MessageInterface
 {
 
     /**
@@ -102,7 +114,7 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
      * @param  string $name
      * @return mixed
      */
-    public function getHeader(string $name): mixed
+    public function getHeaderObject(string $name): mixed
     {
         return $this->headers[$name] ?? null;
     }
@@ -147,9 +159,81 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
      *
      * @return array
      */
-    public function getHeaders(): array
+    public function getHeaderObjects(): array
     {
         return $this->headers;
+    }
+
+    /**
+     * Resolve a header name to whatever key is actually stored, matching
+     * case-insensitively per PSR-7. Returns the input unchanged if no
+     * existing header matches. Only PSR-7-facing methods route through
+     * this - the non-PSR addHeader()/removeHeader()/hasHeader()/
+     * getHeaderObject()/getHeaderObjects() methods keep their existing
+     * exact-match storage keying.
+     *
+     * @param  string $name
+     * @return string
+     */
+    private function resolveHeaderName(string $name): string
+    {
+        if (isset($this->headers[$name])) {
+            return $name;
+        }
+
+        foreach (array_keys($this->headers) as $existingName) {
+            if (strcasecmp($existingName, $name) === 0) {
+                return $existingName;
+            }
+        }
+
+        return $name;
+    }
+
+    /**
+     * Get all string values for a header, per PSR-7 (empty array if absent, case-insensitive)
+     *
+     * @param  string $name
+     * @return array
+     */
+    public function getHeader(string $name): array
+    {
+        $name = $this->resolveHeaderName($name);
+
+        if (!isset($this->headers[$name])) {
+            return [];
+        }
+
+        $values = $this->headers[$name]->getValuesAsStrings();
+
+        return is_array($values) ? $values : [$values];
+    }
+
+    /**
+     * Get all headers, per PSR-7 (each header's values array-wrapped)
+     *
+     * @return array
+     */
+    public function getHeaders(): array
+    {
+        $headers = [];
+
+        foreach ($this->headers as $name => $header) {
+            $headers[$name] = $this->getHeader($name);
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Get a header's values comma-joined into one string, per PSR-7
+     *
+     * @param  string $name
+     * @return string
+     */
+    public function getHeaderLine(string $name): string
+    {
+        return implode(', ', $this->getHeader($name));
     }
 
     /**
@@ -242,6 +326,77 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
     }
 
     /**
+     * Return an instance with the specified header, replacing any existing values, per PSR-7
+     *
+     * Parameter is typed `mixed` (rather than `string|array`) only to satisfy PSR-7's
+     * untyped `MessageInterface::withHeader()` signature per PHP's LSP variance rules;
+     * the supported values remain a string or an array of strings.
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return static
+     */
+    public function withHeader(string $name, mixed $value): static
+    {
+        $name  = $this->resolveHeaderName($name);
+        $clone = clone $this;
+        $clone->removeHeader($name);
+
+        $values = is_array($value) ? $value : [$value];
+        $clone->addHeader($name, array_shift($values));
+        foreach ($values as $v) {
+            $clone->headers[$name]->addValue($v);
+        }
+
+        return $clone;
+    }
+
+    /**
+     * Return an instance with the specified header value(s) appended, per PSR-7
+     *
+     * Parameter is typed `mixed` (rather than `string|array`) only to satisfy PSR-7's
+     * untyped `MessageInterface::withAddedHeader()` signature per PHP's LSP variance
+     * rules; the supported values remain a string or an array of strings.
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return static
+     */
+    public function withAddedHeader(string $name, mixed $value): static
+    {
+        $name   = $this->resolveHeaderName($name);
+        $clone  = clone $this;
+        $values = is_array($value) ? $value : [$value];
+
+        if ($clone->hasHeader($name)) {
+            foreach ($values as $v) {
+                $clone->headers[$name]->addValue($v);
+            }
+        } else {
+            $clone->addHeader($name, array_shift($values));
+            foreach ($values as $v) {
+                $clone->headers[$name]->addValue($v);
+            }
+        }
+
+        return $clone;
+    }
+
+    /**
+     * Return an instance without the specified header, per PSR-7
+     *
+     * @param  string $name
+     * @return static
+     */
+    public function withoutHeader(string $name): static
+    {
+        $name  = $this->resolveHeaderName($name);
+        $clone = clone $this;
+        $clone->removeHeader($name);
+        return $clone;
+    }
+
+    /**
      * Set the body
      *
      * @param  string|Body $body
@@ -254,13 +409,14 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
     }
 
     /**
-     * Get the body
+     * Get the body, per PSR-7 (a transient, never-stored empty Body when none is set,
+     * so hasBody() remains unaffected by calling this)
      *
      * @return Body
      */
     public function getBody(): Body
     {
-        return $this->body;
+        return $this->body ?? new Body();
     }
 
     /**
@@ -281,11 +437,10 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
      */
     public function getBodyContentLength(bool $mb = false): int
     {
-        if ($this->body !== null) {
-            return ($mb) ? mb_strlen($this->body->getContent()) : strlen($this->body->getContent());
-        } else {
+        if ($this->body === null) {
             return 0;
         }
+        return ($mb) ? mb_strlen($this->body->getContent()) : ($this->body->getSize() ?? 0);
     }
 
     /**
@@ -319,12 +474,12 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
         if ($body !== null) {
             $this->setBody($body);
         }
-        if (($this->hasHeader('Transfer-Encoding')) && (count($this->getHeader('Transfer-Encoding')->getValues()) == 1) &&
-            (strtolower($this->getHeader('Transfer-Encoding')->getValue(0)) == 'chunked')) {
+        if (($this->hasHeader('Transfer-Encoding')) && (count($this->getHeaderObject('Transfer-Encoding')->getValues()) == 1) &&
+            (strtolower($this->getHeaderObject('Transfer-Encoding')->getValue(0)) == 'chunked')) {
             $this->body->setContent(Parser::decodeChunkedData($this->body->getContent()));
         }
-        $contentEncoding = ($this->hasHeader('Content-Encoding') && (count($this->getHeader('Content-Encoding')->getValues()) == 1)) ?
-            $this->getHeader('Content-Encoding')->getValue(0) : null;
+        $contentEncoding = ($this->hasHeader('Content-Encoding') && (count($this->getHeaderObject('Content-Encoding')->getValues()) == 1)) ?
+            $this->getHeaderObject('Content-Encoding')->getValue(0) : null;
         $this->body->setContent(Parser::decodeData($this->body->getContent(), $contentEncoding));
 
         return $this->body;
@@ -342,6 +497,19 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
     }
 
     /**
+     * Return an instance with the specified body, per PSR-7
+     *
+     * @param  Body|\Psr\Http\Message\StreamInterface $body
+     * @return static
+     */
+    public function withBody(Body|\Psr\Http\Message\StreamInterface $body): static
+    {
+        $clone       = clone $this;
+        $clone->body = ($body instanceof Body) ? $body : new Body((string)$body);
+        return $clone;
+    }
+
+    /**
      * Magic method to get either the headers or body
      *
      * @param  string $name
@@ -354,6 +522,23 @@ abstract class AbstractRequestResponse implements RequestResponseInterface
             'body'    => $this->body,
             default   => null,
         };
+    }
+
+    /**
+     * Deep-clone headers and body so a with*() clone never shares mutable state
+     * with the instance it was cloned from
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        foreach ($this->headers as $name => $header) {
+            $this->headers[$name] = clone $header;
+        }
+
+        if ($this->body !== null) {
+            $this->body = clone $this->body;
+        }
     }
 
 }

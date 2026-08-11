@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -18,7 +18,6 @@ use Pop\Http\Auth;
 use Pop\Http\Parser;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
-use Pop\Mime\Message;
 
 /**
  * HTTP client stream handler class
@@ -26,9 +25,9 @@ use Pop\Mime\Message;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Stream extends AbstractHandler
 {
@@ -362,6 +361,10 @@ class Stream extends AbstractHandler
      */
     public function prepare(Request|AbstractRequest $request, ?Auth $auth = null, bool $clear = true): Stream
     {
+        if ($request instanceof Request) {
+            $this->request = $request;
+        }
+
         $this->setMethod($request->getMethod());
 
         // Clear headers for a fresh request based on the headers in the request object,
@@ -369,8 +372,6 @@ class Stream extends AbstractHandler
         if (($clear) && isset($this->contextOptions['http']['header'])) {
             $this->contextOptions['http']['header'] = null;
         }
-
-        $headers = [];
 
         // Add auth header
         if ($auth !== null) {
@@ -382,54 +383,37 @@ class Stream extends AbstractHandler
             $request->prepareData();
         }
 
-        // Add headers
-        if ($request->hasHeaders()) {
-            foreach ($request->getHeaders() as $header => $value) {
-                if (($header != 'Content-Length') || (!($request->isNoContentLength()) && ($request->getMethod() != 'GET'))) {
-                    if (is_array($value)) {
-                        foreach ($value as $val) {
-                            $headers[] = (string)$val;
-                        }
-                    } else {
-                        $headers[] = (string)$value;
-                    }
-                }
-            }
-
-            if (isset($this->contextOptions['http']['header'])) {
+        $headers = $this->collectRequestHeaders($request);
+        if (!empty($headers)) {
+            if (!empty($this->contextOptions['http']['header'])) {
                 $this->contextOptions['http']['header'] .= "\r\n" . implode("\r\n", $headers) . "\r\n";
             } else {
                 $this->contextOptions['http']['header'] = implode("\r\n", $headers) . "\r\n";
             }
         }
 
-        $queryString = null;
+        ['queryString' => $queryString, 'body' => $body] = $this->resolveRequestBody($request);
 
-        // If request has a query
-        if ($request->hasQuery()) {
-            $queryString = '?' . $request->getQuery()->prepare()->getDataContent();
-        }
-
-        // If request has data
-        if ($request->hasData()) {
-            // Set request data content
-            if ($request->hasDataContent()) {
-                // If it's a URL-encoded GET request
-                if (($queryString === null) && ($request->isGet()) && (!$request->hasRequestType() || $request->isUrlEncoded())) {
-                    $queryString = '?' . $request->getDataContent();
-                // Else, set data content
-                } else {
-                    $this->contextOptions['http']['content'] = (($request->useRawData()) ? $request->getData()->getData() : $request->getDataContent());
-                }
+        if (is_array($body)) {
+            // Stream can't use curl's native multipart array - render it to a string,
+            // reusing the boundary already declared in the Content-Type header (set by
+            // prepareData() above) so the header and the rendered body agree.
+            $boundary    = null;
+            $contentType = $request->getHeaderValueAsString('Content-Type');
+            if ($contentType !== null) {
+                $boundary = Parser::parseMediaType($contentType)['params']['boundary'] ?? null;
             }
-        // Else, if there is raw body content
-        } else if ($request->hasBodyContent()) {
-            $request->addHeader('Content-Length', $request->getBodyContentLength());
-            $this->contextOptions['http']['content'] = $request->getBodyContent();
-        }
 
-        // If there is no data or body content, unset HTTP content
-        if (!($request->hasDataContent()) && !($request->hasBodyContent()) && !empty($this->contextOptions['http']['content'])) {
+            $this->contextOptions['http']['content'] = \Pop\Http\Body\Multipart::build(
+                $request->getData()->getData(), $boundary
+            )->getContent();
+        } else if ($body !== null) {
+            $this->contextOptions['http']['content'] = $body;
+        // A reused handler must not carry a previous request's body forward - a stale 'content'
+        // would be sent as the body of a subsequent body-less request. Gated on $clear for the
+        // same reason the header handling above is: with $clear = false the caller is explicitly
+        // asking to fall back to whatever was pre-defined in the stream context.
+        } else if ($clear) {
             unset($this->contextOptions['http']['content']);
         }
 
@@ -454,7 +438,7 @@ class Stream extends AbstractHandler
     public function send(): Response
     {
         if ($this->uri === null) {
-            throw new Exception('Error: The request handler has not been prepared.');
+            throw new Exception('Error: The request handler has not been prepared.', 0, null, 0, $this->request);
         }
         $http_response_header = null;
 

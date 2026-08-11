@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -15,7 +15,6 @@ namespace Pop\Http\Client;
 
 use Pop\Http\Uri;
 use Pop\Http\AbstractRequest;
-use Pop\Mime\Message;
 use Pop\Mime\Part\Header;
 
 /**
@@ -24,9 +23,9 @@ use Pop\Mime\Part\Header;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Request extends AbstractRequest
 {
@@ -93,13 +92,13 @@ class Request extends AbstractRequest
      * Instantiate the request data object
      *
      * @param  Uri|string|null $uri
-     * @param  string          $method
+     * @param  ?string         $method
      * @param  mixed           $data
      * @param  ?string         $type
      * @param  bool            $strict
      * @throws Exception|\Pop\Http\Exception
      */
-    public function __construct(Uri|string|null $uri = null, string $method = 'GET', mixed $data = null, ?string $type = null, bool $strict = false)
+    public function __construct(Uri|string|null $uri = null, ?string $method = 'GET', mixed $data = null, ?string $type = null, bool $strict = false)
     {
         parent::__construct($uri);
 
@@ -215,11 +214,24 @@ class Request extends AbstractRequest
     /**
      * Get method
      *
-     * @return ?string
+     * @return string
      */
-    public function getMethod(): ?string
+    public function getMethod(): string
     {
-        return $this->method;
+        return $this->method ?? 'GET';
+    }
+
+    /**
+     * Return an instance with the specified method, per PSR-7
+     *
+     * @param  string $method
+     * @return static
+     */
+    public function withMethod(string $method): static
+    {
+        $clone = clone $this;
+        $clone->setMethod($method);
+        return $clone;
     }
 
     /**
@@ -241,6 +253,28 @@ class Request extends AbstractRequest
     {
         $this->method = null;
         return $this;
+    }
+
+    /**
+     * Deep-clone the query and data objects so a with*() clone never shares
+     * mutable Data state (or its back-reference) with the instance it was
+     * cloned from
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        parent::__clone();
+
+        if ($this->query !== null) {
+            $this->query = clone $this->query;
+            $this->query->setRequest($this);
+        }
+
+        if ($this->data !== null) {
+            $this->data = clone $this->data;
+            $this->data->setRequest($this);
+        }
     }
 
     /**
@@ -599,6 +633,23 @@ class Request extends AbstractRequest
     }
 
     /**
+     * Reset the data object's prepared state if it was already prepared
+     *
+     * Guards against Data::setData() having eagerly prepared its content against
+     * whatever request type was set before this createAsXxx() call - without this,
+     * the stale Content-Type/dataContent baked in at that earlier setData() time
+     * would survive, since the handlers only re-prepare when isPrepared() is false.
+     *
+     * @return void
+     */
+    protected function resetDataIfAlreadyPrepared(): void
+    {
+        if ($this->hasData() && $this->data->isPrepared()) {
+            $this->data->reset();
+        }
+    }
+
+    /**
      * Create request as JSON
      *
      * @param  string $type
@@ -607,6 +658,8 @@ class Request extends AbstractRequest
      */
     public function createAsJson(string $type = self::JSON, bool $addHeader = true): Request
     {
+        $this->resetDataIfAlreadyPrepared();
+
         $this->requestType = $type;
 
         if ($this->hasHeader('Content-Type')) {
@@ -639,6 +692,8 @@ class Request extends AbstractRequest
      */
     public function createAsXml(string $type = self::XML, bool $addHeader = true): Request
     {
+        $this->resetDataIfAlreadyPrepared();
+
         $this->requestType = $type;
 
         if ($this->hasHeader('Content-Type')) {
@@ -671,6 +726,8 @@ class Request extends AbstractRequest
      */
     public function createAsUrlEncoded(string $type = self::URLENCODED, bool $addHeader = true): Request
     {
+        $this->resetDataIfAlreadyPrepared();
+
         $this->requestType = $type;
 
         if ($this->hasHeader('Content-Type')) {
@@ -702,6 +759,8 @@ class Request extends AbstractRequest
      */
     public function createAsMultipart(string $type = self::MULTIPART): Request
     {
+        $this->resetDataIfAlreadyPrepared();
+
         $this->requestType = $type;
         return $this;
     }

@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Http\Client\Handler\Curl;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Options
 {
@@ -37,7 +37,7 @@ class Options
         '--aws-sigv4'                 => 'CURLOPT_AWS_SIGV4',                                              // --aws-sigv4 <provider1[:provider2[:region[:service]]]>
         '--cacert'                    => 'CURLOPT_CAINFO',                                                 // --cacert <file>
         '--capath'                    => 'CURLOPT_CAPATH',                                                 // --capath <dir>
-        '--connect-timeout'           => ['CURLOPT_TIMEOUT', 'CURLOPT_CONNECTTIMEOUT', 'CURLOPT_TIMEOUT'], // --connect-timeout <fractional seconds> (MS needs to be converted to seconds)
+        '--connect-timeout'           => ['CURLOPT_CONNECTTIMEOUT', 'CURLOPT_TIMEOUT', 'CURLOPT_TIMEOUT_MS'], // --connect-timeout <fractional seconds> (CURLOPT_CONNECTTIMEOUT is the semantically-correct target and must resolve first; MS needs to be converted to seconds)
         '--connect-to'                => 'CURLOPT_CONNECT_TO',                                             // --connect-to <HOST1:PORT1:HOST2:PORT2>
         '-b'                          => 'CURLOPT_COOKIE',                                                 // -b, --cookie <data|filename>
         '--cookie'                    => 'CURLOPT_COOKIE',                                                 // -b, --cookie <data|filename>
@@ -57,14 +57,16 @@ class Options
         '--doh-cert-status'           => 'CURLOPT_DOH_SSL_VERIFYSTATUS',                                   // Tell cURL to verify the status of the DNS-over-HTTPS server certificate using the "Certificate Status Request" TLS extension (OCSP stapling). Available as of PHP 8.2.0 and cURL 7.76.0.
         '--doh-url'                   => 'CURLOPT_DOH_URL',                                                // --doh-url <url> Provides the DNS-over-HTTPS URL. Available as of PHP 8.1.0 and cURL 7.62.0.
         '--expect100-timeout'         => 'CURLOPT_EXPECT_100_TIMEOUT_MS',                                  // --expect100-timeout <seconds>
+        '-L'                          => 'CURLOPT_FOLLOWLOCATION',                                         // Not available when open_basedir is enabled.
+        '--location'                  => 'CURLOPT_FOLLOWLOCATION',                                         // Not available when open_basedir is enabled.
         '-P'                          => 'CURLOPT_FTPPORT',                                                // -P, --ftp-port <address>
         '--ftp-port'                  => 'CURLOPT_FTPPORT',                                                // -P, --ftp-port <address>
         '--ftp-account'               => 'CURLOPT_FTP_ACCOUNT',                                            // --ftp-account <data>
         '--ftp-alternative-to-user'   => 'CURLOPT_FTP_ALTERNATIVE_TO_USER',                                // --ftp-alternative-to-user <command>
         '--ftp-create-dirs'           => 'CURLOPT_FTP_CREATE_MISSING_DIRS',
         '--ftp-method'                => 'CURLOPT_FTP_FILEMETHOD',                                         // --ftp-method <method>
-        '--ftp-pasv'                  => 'CURLOPT_FTP_SKIP_PASV_IP',
         '--ftp-skip-pasv-ip'          => 'CURLOPT_FTP_SKIP_PASV_IP',
+        '--ftp-pasv'                  => 'CURLOPT_FTP_SKIP_PASV_IP',
         '--ftp-ssl-ccc'               => 'CURLOPT_FTP_SSL_CCC',
         '--disable-eprt'              => 'CURLOPT_FTP_USE_EPRT',
         '--disable-epsv'              => 'CURLOPT_FTP_USE_EPSV',
@@ -111,7 +113,9 @@ class Options
         '-u'                          => ['CURLOPT_USERPWD', 'CURLOPT_USERNAME', 'CURLOPT_PASSWORD'],      // -u, --user <user:password>
         '--user'                      => ['CURLOPT_USERPWD', 'CURLOPT_USERNAME', 'CURLOPT_PASSWORD'],      // -u, --user <user:password>
         '-d'                          => 'CURLOPT_POSTFIELDS',                                             // -d, --data <data>
-        '-data'                       => 'CURLOPT_POSTFIELDS',                                             // -d, --data <data>
+        '--data'                      => 'CURLOPT_POSTFIELDS',                                             // -d, --data <data> (was mistyped as '-data', a single dash, so it was never recognized as a real CLI flag by isCommandOption())
+        '-F'                          => 'CURLOPT_POSTFIELDS',                                             // -F, --form <name=content>
+        '--form'                      => 'CURLOPT_POSTFIELDS',                                             // -F, --form <name=content>
         '-x'                          => 'CURLOPT_PROXY',                                                  // -x, --proxy [protocol://]host[:port]
         '--proxy'                     => 'CURLOPT_PROXY',                                                  // -x, --proxy [protocol://]host[:port]
         '--proxy-basic'               => 'CURLOPT_PROXYAUTH',
@@ -184,7 +188,8 @@ class Options
         '--telnet-option'             => 'CURLOPT_TELNETOPTIONS',                                          // -t, --telnet-option <opt=val>
         '--tftp-blksize'              => 'CURLOPT_TFTP_BLKSIZE',                                           // --tftp-blksize <value>
         '--tftp-no-options'           => 'CURLOPT_TFTP_NO_OPTIONS',
-        '-z --time-cond'              => 'CURLOPT_TIMECONDITION',                                          // -z, --time-cond <time>
+        '-z'                          => 'CURLOPT_TIMECONDITION',                                          // -z, --time-cond <time>
+        '--time-cond'                 => 'CURLOPT_TIMECONDITION',                                          // -z, --time-cond <time>
         '--tls13-ciphers'             => 'CURLOPT_TLS13_CIPHERS',                                          // --tls13-ciphers <ciphersuite list>
         '--tlspassword'               => 'CURLOPT_TLSAUTH_PASSWORD',                                       // --tlspassword <string>
         '--tlsauthtype'               => 'CURLOPT_TLSAUTH_TYPE',                                           // --tlsauthtype <type>
@@ -207,157 +212,10 @@ class Options
     ];
 
     /**
-     *  Curl PHP-to-CLI options
-     * @var array
+     * Derived PHP-to-CLI options (inverse of $commandOptions), computed once and cached
+     * @var ?array
      */
-    protected static array $phpOptions = [
-        'CURLOPT_ABSTRACT_UNIX_SOCKET'       => '--abstract-unix-socket',                               // --abstract-unix-socket <path>
-        'CURLOPT_ALTSVC'                     => '--alt-svc',                                            // --alt-svc <filename>
-        'CURLOPT_APPEND'                     => '-a',
-        'CURLOPT_AWS_SIGV4'                  => '--aws-sigv4',                                          // --aws-sigv4 <provider1[:provider2[:region[:service]]]>
-        'CURLOPT_CAINFO'                     => '--cacert',                                             // --cacert <file>
-        'CURLOPT_CAPATH'                     => '--capath',                                             // --capath <dir>
-        'CURLOPT_CONNECTTIMEOUT'             => '--connect-timeout',                                    // --connect-timeout <fractional seconds>
-        'CURLOPT_CONNECT_TO'                 => '--connect-to',                                         // --connect-to <HOST1:PORT1:HOST2:PORT2>
-        'CURLOPT_COOKIE'                     => ['-b', '--cookie'],                                     // -b, --cookie <data|filename>
-        'CURLOPT_COOKIEJAR'                  => ['-c', '--cookie-jar'],                                 // -c, --cookie-jar <filename>
-        'CURLOPT_CRLF'                       => '--crlf',
-        'CURLOPT_CRLFILE'                    => '--crlfile',                                            // --crlfile <file>
-        'CURLOPT_CUSTOMREQUEST'              => ['-X', '--request'],                                    // -X, --request <method>
-        'CURLOPT_DISALLOW_USERNAME_IN_URL'   => '--disallow-username-in-url',
-        'CURLOPT_DNS_INTERFACE'              => '--dns-interface',                                      // --dns-interface <interface>
-        'CURLOPT_DNS_LOCAL_IP4'              => '--dns-ipv4-addr',                                      // --dns-ipv4-addr <address>
-        'CURLOPT_DNS_LOCAL_IP6'              => '--dns-ipv6-addr',                                      // --dns-ipv6-addr <address>
-        'CURLOPT_DNS_SERVERS'                => '--dns-servers',                                        // --dns-servers <addresses>
-        'CURLOPT_DOH_SSL_VERIFYHOST'         => ['--doh-insecure', '--no-doh-insecure'],                // Verify the DNS-over-HTTPS server's SSL certificate name fields against the host name. Available as of PHP 8.2.0 and cURL 7.76.0.
-        'CURLOPT_DOH_SSL_VERIFYPEER'         => ['--doh-insecure', '--no-doh-insecure'],                // Verify the authenticity of the DNS-over-HTTPS server's SSL certificate. Available as of PHP 8.2.0 and cURL 7.76.0.
-        'CURLOPT_DOH_SSL_VERIFYSTATUS'       => '--doh-cert-status',                                    // Tell cURL to verify the status of the DNS-over-HTTPS server certificate using the "Certificate Status Request" TLS extension (OCSP stapling). Available as of PHP 8.2.0 and cURL 7.76.0.
-        'CURLOPT_DOH_URL'                    => '--doh-url',                                            // --doh-url <url> Provides the DNS-over-HTTPS URL. Available as of PHP 8.1.0 and cURL 7.62.0.
-        'CURLOPT_EXPECT_100_TIMEOUT_MS'      => '--expect100-timeout',                                  // --expect100-timeout <seconds>
-        'CURLOPT_FTPPORT'                    => ['-P', '--ftp-port'],                                   // -P, --ftp-port <address>
-        'CURLOPT_FTP_ACCOUNT'                => '--ftp-account',                                        // --ftp-account <data>
-        'CURLOPT_FTP_ALTERNATIVE_TO_USER'    => '--ftp-alternative-to-user',                            // --ftp-alternative-to-user <command>
-        'CURLOPT_FTP_CREATE_MISSING_DIRS'    => '--ftp-create-dirs',
-        'CURLOPT_FTP_FILEMETHOD'             => '--ftp-method',                                         // --ftp-method <method>
-        'CURLOPT_FTP_SKIP_PASV_IP'           => ['--ftp-skip-pasv-ip', '--ftp-pasv'],
-        'CURLOPT_FTP_SSL_CCC'                => '--ftp-ssl-ccc',
-        'CURLOPT_FTP_USE_EPRT'               => '--disable-eprt',
-        'CURLOPT_FTP_USE_EPSV'               => '--disable-epsv',
-        'CURLOPT_FTP_USE_PRET'               => '--ftp-pret',
-        'CURLOPT_GSSAPI_DELEGATION'          => '--delegation',                                         // --delegation <level>
-        'CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS'  => '--happy-eyeballs-timeout-ms',                          // --happy-eyeballs-timeout-ms <milliseconds>
-        'CURLOPT_HAPROXYPROTOCOL'            => '--haproxy-protocol',
-        'CURLOPT_HEADER'                     => ['-i', '--include'],
-        'CURLOPT_HSTS'                       => '--hsts',                                               // --hsts <filename>
-        'CURLOPT_HTTP09_ALLOWED'             => '--http0.9',
-        'CURLOPT_HTTPHEADER'                 => ['-H', '--header'],                                     // -H, --header <header/@file>
-        'CURLOPT_HTTPPROXYTUNNEL'            => ['-p', '--proxytunnel'],
-        'CURLOPT_HTTP_VERSION'               => ['-0', '--http1.0', '--http1.1', '--http2'],
-        'CURLOPT_IGNORE_CONTENT_LENGTH'      => '--ignore-content-length',
-        'CURLOPT_INFILE'                     => ['-T', '--upload-file'],                                // -T, --upload-file <file> (Used with PUT)
-        'CURLOPT_INTERFACE'                  => '--interface',                                          // --interface <name>
-        'CURLOPT_KRBLEVEL'                   => '--krb',                                                // --krb <level>
-        'CURLOPT_LOCALPORT'                  => '--local-port',                                         // --local-port <num/range>
-        'CURLOPT_LOCALPORTRANGE'             => '--local-port',                                         // --local-port <num/range>
-        'CURLOPT_LOGIN_OPTIONS'              => '--login-options',                                      // --login-options <options>
-        'CURLOPT_LOW_SPEED_LIMIT'            => ['-Y', '--speed-limit'],                                // -Y, --speed-limit <speed>
-        'CURLOPT_LOW_SPEED_TIME'             => ['-y', '--speed-time'],                                 // -y, --speed-time <seconds>
-        'CURLOPT_MAIL_AUTH'                  => '--mail-auth',                                          // --mail-auth <address>
-        'CURLOPT_MAIL_FROM'                  => '--mail-from',                                          // --mail-from <address>
-        'CURLOPT_MAIL_RCPT'                  => '--mail-rcpt',                                          // --mail-rcpt <address>
-        'CURLOPT_MAIL_RCPT_ALLLOWFAILS'      => '--mail-rcpt-allowfails',
-        'CURLOPT_MAXFILESIZE'                => '--max-filesize',                                       // --max-filesize <bytes>
-        'CURLOPT_MAXLIFETIME_CONN'           => ['-m', '--max-time'],                                   // -m, --max-time <fractional seconds>
-        'CURLOPT_MAXREDIRS'                  => '--max-redirs',                                         // --max-redirs <num>
-        'CURLOPT_NETRC'                      => ['-n', '--netrc'],
-        'CURLOPT_NETRC_FILE'                 => '--netrc-file',                                         // --netrc-file <filename>
-        'CURLOPT_NOPROGRESS'                 => '--no-progress-meter',
-        'CURLOPT_NOPROXY'                    => '--noproxy',                                            // --noproxy <no-proxy-list>
-        'CURLOPT_PASSWORD'                   => ['-u', '--user'],                                       // -u, --user <user:password>
-        'CURLOPT_POST'                       => ['-X', '--request'],                                    // -X, --request <method>
-        'CURLOPT_POSTFIELDS'                 => ['-d', '-data'],                                        // -d, --data <data>
-        'CURLOPT_PROXY'                      => ['-x', '--proxy'],                                      // -x, --proxy [protocol://]host[:port]
-        'CURLOPT_PROXYAUTH'                  => ['--proxy-basic', '--proxy-digest'],
-        'CURLOPT_PROXYHEADER'                => '--proxy-header',                                       // --proxy-header <header/@file>
-        'CURLOPT_PROXYUSERPWD'               => ['-U', '--proxy-user'],                                 // -U, --proxy-user <user:password>
-        'CURLOPT_PROXY_CAINFO'               => '--proxy-cacert',                                       // --proxy-cacert <file>
-        'CURLOPT_PROXY_CAPATH'               => '--proxy-capath',                                       // --proxy-capath <dir>
-        'CURLOPT_PROXY_CRLFILE'              => '--proxy-crlfile',                                      // --proxy-crlfile <file>
-        'CURLOPT_PROXY_KEYPASSWD'            => '--proxy-pass',                                         // --proxy-pass <phrase>
-        'CURLOPT_PROXY_PINNEDPUBLICKEY'      => '--proxy-pinnedpubkey',                                 // --proxy-pinnedpubkey <hashes>
-        'CURLOPT_PROXY_SERVICE_NAME'         => '--proxy-service-name',                                 // --proxy-service-name <name>
-        'CURLOPT_PROXY_SSLCERT'              => '--proxy-cert',                                         // --proxy-cert <cert[:passwd]>
-        'CURLOPT_PROXY_SSLCERTTYPE'          => '--proxy-cert-type',                                    // --proxy-cert-type <type>
-        'CURLOPT_PROXY_SSLKEY'               => '--proxy-key',                                          // --proxy-key <key>
-        'CURLOPT_PROXY_SSLKEYTYPE'           => '--proxy-key-type',                                     // --proxy-key-type <type>
-        'CURLOPT_PROXY_SSL_CIPHER_LIST'      => '--proxy-ciphers',                                      // --proxy-ciphers <list>
-        'CURLOPT_PROXY_SSL_VERIFYHOST'       => '--proxy-insecure',
-        'CURLOPT_PROXY_SSL_VERIFYPEER'       => '--proxy-insecure',
-        'CURLOPT_PROXY_TLS13_CIPHERS'        => '--proxy-tls13-ciphers',                                // --proxy-tls13-ciphers <ciphersuite list>
-        'CURLOPT_PROXY_TLSAUTH_PASSWORD'     => '--proxy-tlspassword',                                  // --proxy-tlspassword <string>
-        'CURLOPT_PROXY_TLSAUTH_TYPE'         => '--proxy-tlsauthtype',                                  // --proxy-tlsauthtype <type>
-        'CURLOPT_PROXY_TLSAUTH_USERNAME'     => '--proxy-tlsuser',                                      // --proxy-tlsuser <name>
-        'CURLOPT_PUT'                        => ['-X', '--request'],                                    // -X, --request <method>
-        'CURLOPT_QUOTE'                      => ['-Q', '--quote'],                                      // -Q, --quote <command>
-        'CURLOPT_RANDOM_FILE'                => '--random-file',                                        // --random-file <file>
-        'CURLOPT_RANGE'                      => '-r --range',                                           // -r, --range <range>
-        'CURLOPT_REFERER'                    => '-e --referer',                                         // -e, --referer <url>
-        'CURLOPT_RESOLVE'                    => '--resolve',                                            // --resolve <[+]host:port:addr[,addr]...>
-        'CURLOPT_SASL_AUTHZID'               => '--sasl-authzid',                                       // --sasl-authzid <identity>
-        'CURLOPT_SASL_IR'                    => '--sasl-ir',
-        'CURLOPT_SERVICE_NAME'               => '--service-name',                                       // --service-name <name>
-        'CURLOPT_SOCKS5_AUTH'                => '--socks5-basic',
-        'CURLOPT_SOCKS5_GSSAPI_NEC'          => '--socks5-gssapi-nec',
-        'CURLOPT_SOCKS5_GSSAPI_SERVICE'      => '--socks5-gssapi-service',                              // --socks5-gssapi-service <name>
-        'CURLOPT_SSH_COMPRESSION'            => '--compressed-ssh',
-        'CURLOPT_SSH_HOST_PUBLIC_KEY_MD5'    => '--hostpubmd5',                                         // --hostpubmd5 <md5>
-        'CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256' => '--hostpubsha256',                                      // --hostpubsha256 <sha256>
-        'CURLOPT_SSH_PUBLIC_KEYFILE'         => '--pubkey',                                             // --pubkey <key>
-        'CURLOPT_SSLCERT'                    => ['-E', '--cert'],                                       // -E, --cert <certificate[:password]>
-        'CURLOPT_SSLCERTTYPE'                => '--cert-type',                                          // --cert-type <type>
-        'CURLOPT_SSLENGINE'                  => '--engine',                                             // --engine <name>
-        'CURLOPT_SSLKEY'                     => '--key',                                                // --key <key>
-        'CURLOPT_SSLKEYPASSWD'               => '--pass',                                               // --pass <phrase>
-        'CURLOPT_SSLKEYTYPE'                 => '--key-type',                                           // --key-type <type>
-        'CURLOPT_SSLVERSION'                 => ["-2", "--sslv2", "-3", "--sslv3"],
-        'CURLOPT_SSL_CIPHER_LIST'            => '--ciphers',                                            // --ciphers <list of ciphers> i.e. ECDHE-ECDSA-AES256-CCM8
-        'CURLOPT_SSL_EC_CURVES'              => '--curves',                                             // --curves <algorithm list>
-        'CURLOPT_SSL_ENABLE_ALPN'            => ['--alpn', '--no-alpn'],
-        'CURLOPT_SSL_ENABLE_NPN'             => ['--npn', '--no-npn'],
-        'CURLOPT_SSL_FALSESTART'             => '--false-start',
-        'CURLOPT_SSL_SESSIONID_CACHE'        => '--no-sessionid',
-        'CURLOPT_SSL_VERIFYHOST'             => ['-k', '--insecure'],
-        'CURLOPT_SSL_VERIFYPEER'             => ['-k', '--insecure'],
-        'CURLOPT_SSL_VERIFYSTATUS'           => '--cert-status',
-        'CURLOPT_STDERR'                     => '--stderr',                                             // --stderr <file>
-        'CURLOPT_SUPPRESS_CONNECT_HEADERS'   => '--suppress-connect-headers',
-        'CURLOPT_TCP_FASTOPEN'               => '--tcp-fastopen',
-        'CURLOPT_TCP_KEEPALIVE'              => '--keepalive-time',                                     // --keepalive-time <seconds>
-        'CURLOPT_TCP_NODELAY'                => '--tcp-nodelay',
-        'CURLOPT_TELNETOPTIONS'              => ['-t', '--telnet-option'],                              // -t, --telnet-option <opt=val>
-        'CURLOPT_TFTP_BLKSIZE'               => '--tftp-blksize',                                       // --tftp-blksize <value>
-        'CURLOPT_TFTP_NO_OPTIONS'            => '--tftp-no-options',
-        'CURLOPT_TIMECONDITION'              => '-z --time-cond',                                       // -z, --time-cond <time>
-        'CURLOPT_TIMEOUT'                    => '--connect-timeout',                                    // --connect-timeout <fractional seconds>
-        'CURLOPT_TIMEOUT_MS'                 => '--connect-timeout',                                    // --connect-timeout <fractional seconds> (MS needs to be converted to seconds),
-        'CURLOPT_TLS13_CIPHERS'              => '--tls13-ciphers',                                      // --tls13-ciphers <ciphersuite list>
-        'CURLOPT_TLSAUTH_PASSWORD'           => '--tlspassword',                                        // --tlspassword <string>
-        'CURLOPT_TLSAUTH_TYPE'               => '--tlsauthtype',                                        // --tlsauthtype <type>
-        'CURLOPT_TLSAUTH_USERNAME'           => '--tlsuser',                                            // --tlsuser <name>
-        'CURLOPT_TRANSFER_ENCODING'          => ['--tr-encoding', '--no-tr-encoding'],
-        'CURLOPT_UNIX_SOCKET_PATH'           => '--unix-socket',                                        // --unix-socket <path>
-        'CURLOPT_URL'                        => '--url',                                                // --url <url> (Used for config files, unnecessary on the CLI)
-        'CURLOPT_USERAGENT'                  => ['-A', '--user-agent'],                                 // -A, --user-agent <name>
-        'CURLOPT_USERNAME'                   => ['-u', '--user'],                                       // -u, --user <user:password>
-        'CURLOPT_USERPWD'                    => ['-u', '--user'],                                       // -u, --user <user:password>
-        'CURLOPT_USE_SSL'                    => ['--ssl', '--ssl-reqd'],                                // Attempts to force server to use secure connection',
-        'CURLOPT_VERBOSE'                    => ['-v', '--verbose'],
-        'CURLOPT_XOAUTH2_BEARER'             => '--oauth2-bearer',                                      // --oauth2-bearer <token>
-        'CURLSSLOPT_ALLOW_BEAST'             => '--ssl-allow-beast',
-        'CURLSSLOPT_AUTO_CLIENT_CERT'        => '--ssl-auto-client-cert',
-        'CURLSSLOPT_NO_REVOKE'               => '--ssl-no-revoke',
-        'CURLSSLOPT_REVOKE_BEST_EFFORT'      => '--ssl-revoke-best-effort',
-    ];
+    protected static ?array $phpOptions = null;
 
     /**
      * Curl options that require a value
@@ -423,7 +281,9 @@ class Options
         '-u'                                 => null, // -u, --user <user:password>
         '--user'                             => null, // -u, --user <user:password>
         '-d'                                 => null, // -d, --data <data>
-        '-data'                              => null, // -d, --data <data>
+        '--data'                             => null, // -d, --data <data>
+        '-F'                                 => null, // -F, --form <name=content>
+        '--form'                             => null, // -F, --form <name=content>
         '-x'                                 => null, // -x, --proxy [protocol://]host[:port]
         '--proxy'                            => null, // -x, --proxy [protocol://]host[:port]
         '--proxy-basic'                      => CURLAUTH_BASIC,  // CURL Auth constant
@@ -478,7 +338,8 @@ class Options
         '-t'                                 => null, // -t, --telnet-option <opt=val>
         '--telnet-option'                    => null, // -t, --telnet-option <opt=val>
         '--tftp-blksize'                     => null, // --tftp-blksize <value>
-        '-z --time-cond'                     => null, // -z, --time-cond <time>
+        '-z'                                 => null, // -z, --time-cond <time>
+        '--time-cond'                        => null, // -z, --time-cond <time>
         '--tls13-ciphers'                    => null, // --tls13-ciphers <ciphersuite list>
         '--tlspassword'                      => null, // --tlspassword <string>
         '--tlsauthtype'                      => null, // --tlsauthtype <type>
@@ -593,277 +454,6 @@ class Options
     ];
 
     /**
-     * Curl option PHP values
-     * @var array
-     */
-    protected static array $optionValues = [
-        'CURLOPT_ABSTRACT_UNIX_SOCKET'       => 10264,
-        'CURLOPT_ALTSVC'                     => 10287,
-        'CURLOPT_APPEND'                     => 50,
-        'CURLOPT_AWS_SIGV4'                  => 10305,
-        'CURLOPT_CAINFO'                     => 10065,
-        'CURLOPT_CAPATH'                     => 10097,
-        'CURLOPT_CONNECTTIMEOUT'             => 78,
-        'CURLOPT_CONNECT_TO'                 => 10243,
-        'CURLOPT_COOKIE'                     => 10022,
-        'CURLOPT_COOKIEJAR'                  => 10082,
-        'CURLOPT_CRLF'                       => 27,
-        'CURLOPT_CRLFILE'                    => 10169,
-        'CURLOPT_CUSTOMREQUEST'              => 10036,
-        'CURLOPT_DISALLOW_USERNAME_IN_URL'   => 278,
-        'CURLOPT_DNS_INTERFACE'              => 10221,
-        'CURLOPT_DNS_LOCAL_IP4'              => 10222,
-        'CURLOPT_DNS_LOCAL_IP6'              => 10223,
-        'CURLOPT_DNS_SERVERS'                => 10211,
-        'CURLOPT_DOH_SSL_VERIFYHOST'         => 307,
-        'CURLOPT_DOH_SSL_VERIFYPEER'         => 306,
-        'CURLOPT_DOH_SSL_VERIFYSTATUS'       => 308,
-        'CURLOPT_DOH_URL'                    => 10279,
-        'CURLOPT_EXPECT_100_TIMEOUT_MS'      => 227,
-        'CURLOPT_FTPPORT'                    => 10017,
-        'CURLOPT_FTP_ACCOUNT'                => 10134,
-        'CURLOPT_FTP_ALTERNATIVE_TO_USER'    => 10147,
-        'CURLOPT_FTP_CREATE_MISSING_DIRS'    => 110,
-        'CURLOPT_FTP_FILEMETHOD'             => 138,
-        'CURLOPT_FTP_SKIP_PASV_IP'           => 137,
-        'CURLOPT_FTP_SSL_CCC'                => 154,
-        'CURLOPT_FTP_USE_EPRT'               => 106,
-        'CURLOPT_FTP_USE_EPSV'               => 85,
-        'CURLOPT_FTP_USE_PRET'               => 188,
-        'CURLOPT_GSSAPI_DELEGATION'          => 210,
-        'CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS'  => 271,
-        'CURLOPT_HAPROXYPROTOCOL'            => 274,
-        'CURLOPT_HEADER'                     => 42,
-        'CURLOPT_HSTS'                       => 10300,
-        'CURLOPT_HTTP09_ALLOWED'             => 285,
-        'CURLOPT_HTTPHEADER'                 => 10023,
-        'CURLOPT_HTTPPROXYTUNNEL'            => 61,
-        'CURLOPT_HTTP_VERSION'               => 84,
-        'CURLOPT_IGNORE_CONTENT_LENGTH'      => 136,
-        'CURLOPT_INFILE'                     => 10009,
-        'CURLOPT_INTERFACE'                  => 10062,
-        'CURLOPT_KRBLEVEL'                   => 10063,
-        'CURLOPT_LOCALPORT'                  => 139,
-        'CURLOPT_LOCALPORTRANGE'             => 140,
-        'CURLOPT_LOGIN_OPTIONS'              => 10224,
-        'CURLOPT_LOW_SPEED_LIMIT'            => 19,
-        'CURLOPT_LOW_SPEED_TIME'             => 20,
-        'CURLOPT_MAIL_AUTH'                  => 10217,
-        'CURLOPT_MAIL_FROM'                  => 10186,
-        'CURLOPT_MAIL_RCPT'                  => 10187,
-        'CURLOPT_MAIL_RCPT_ALLLOWFAILS'      => 290,
-        'CURLOPT_MAXFILESIZE'                => 114,
-        'CURLOPT_MAXLIFETIME_CONN'           => 314,
-        'CURLOPT_MAXREDIRS'                  => 68,
-        'CURLOPT_NETRC'                      => 51,
-        'CURLOPT_NETRC_FILE'                 => 10118,
-        'CURLOPT_NOPROGRESS'                 => 43,
-        'CURLOPT_NOPROXY'                    => 10177,
-        'CURLOPT_PASSWORD'                   => 10174,
-        'CURLOPT_POST'                       => 47,
-        'CURLOPT_POSTFIELDS'                 => 10015,
-        'CURLOPT_PROXY'                      => 10004,
-        'CURLOPT_PROXYAUTH'                  => 111,
-        'CURLOPT_PROXYHEADER'                => 10228,
-        'CURLOPT_PROXYUSERPWD'               => 10006,
-        'CURLOPT_PROXY_CAINFO'               => 10246,
-        'CURLOPT_PROXY_CAPATH'               => 10247,
-        'CURLOPT_PROXY_CRLFILE'              => 10260,
-        'CURLOPT_PROXY_KEYPASSWD'            => 10258,
-        'CURLOPT_PROXY_PINNEDPUBLICKEY'      => 10263,
-        'CURLOPT_PROXY_SERVICE_NAME'         => 10235,
-        'CURLOPT_PROXY_SSLCERT'              => 10254,
-        'CURLOPT_PROXY_SSLCERTTYPE'          => 10255,
-        'CURLOPT_PROXY_SSLKEY'               => 10256,
-        'CURLOPT_PROXY_SSLKEYTYPE'           => 10257,
-        'CURLOPT_PROXY_SSL_CIPHER_LIST'      => 10259,
-        'CURLOPT_PROXY_SSL_VERIFYHOST'       => 249,
-        'CURLOPT_PROXY_SSL_VERIFYPEER'       => 248,
-        'CURLOPT_PROXY_TLS13_CIPHERS'        => 10277,
-        'CURLOPT_PROXY_TLSAUTH_PASSWORD'     => 10252,
-        'CURLOPT_PROXY_TLSAUTH_TYPE'         => 10253,
-        'CURLOPT_PROXY_TLSAUTH_USERNAME'     => 10251,
-        'CURLOPT_PUT'                        => 54,
-        'CURLOPT_QUOTE'                      => 10028,
-        'CURLOPT_RANDOM_FILE'                => 10076,
-        'CURLOPT_RANGE'                      => 10007,
-        'CURLOPT_REFERER'                    => 10016,
-        'CURLOPT_RESOLVE'                    => 10203,
-        'CURLOPT_SASL_AUTHZID'               => 10289,
-        'CURLOPT_SASL_IR'                    => 218,
-        'CURLOPT_SERVICE_NAME'               => 10236,
-        'CURLOPT_SOCKS5_AUTH'                => 267,
-        'CURLOPT_SOCKS5_GSSAPI_NEC'          => 180,
-        'CURLOPT_SOCKS5_GSSAPI_SERVICE'      => 10179,
-        'CURLOPT_SSH_COMPRESSION'            => 268,
-        'CURLOPT_SSH_HOST_PUBLIC_KEY_MD5'    => 10162,
-        'CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256' => 10311,
-        'CURLOPT_SSH_PUBLIC_KEYFILE'         => 10152,
-        'CURLOPT_SSLCERT'                    => 10025,
-        'CURLOPT_SSLCERTTYPE'                => 10086,
-        'CURLOPT_SSLENGINE'                  => 10089,
-        'CURLOPT_SSLKEY'                     => 10087,
-        'CURLOPT_SSLKEYPASSWD'               => 10026,
-        'CURLOPT_SSLKEYTYPE'                 => 10088,
-        'CURLOPT_SSLVERSION'                 => 32,
-        'CURLOPT_SSL_CIPHER_LIST'            => 10083,
-        'CURLOPT_SSL_EC_CURVES'              => 10298,
-        'CURLOPT_SSL_ENABLE_ALPN'            => 226,
-        'CURLOPT_SSL_ENABLE_NPN'             => 225,
-        'CURLOPT_SSL_FALSESTART'             => 233,
-        'CURLOPT_SSL_SESSIONID_CACHE'        => 150,
-        'CURLOPT_SSL_VERIFYHOST'             => 81,
-        'CURLOPT_SSL_VERIFYPEER'             => 64,
-        'CURLOPT_SSL_VERIFYSTATUS'           => 232,
-        'CURLOPT_STDERR'                     => 10037,
-        'CURLOPT_SUPPRESS_CONNECT_HEADERS'   => 265,
-        'CURLOPT_TCP_FASTOPEN'               => 244,
-        'CURLOPT_TCP_KEEPALIVE'              => 213,
-        'CURLOPT_TCP_NODELAY'                => 121,
-        'CURLOPT_TELNETOPTIONS'              => 10070,
-        'CURLOPT_TFTP_BLKSIZE'               => 178,
-        'CURLOPT_TFTP_NO_OPTIONS'            => 242,
-        'CURLOPT_TIMECONDITION'              => 33,
-        'CURLOPT_TIMEOUT'                    => 13,
-        'CURLOPT_TIMEOUT_MS'                 => 155,
-        'CURLOPT_TLS13_CIPHERS'              => 10276,
-        'CURLOPT_TLSAUTH_PASSWORD'           => 10205,
-        'CURLOPT_TLSAUTH_TYPE'               => 10206,
-        'CURLOPT_TLSAUTH_USERNAME'           => 10204,
-        'CURLOPT_TRANSFER_ENCODING'          => 207,
-        'CURLOPT_UNIX_SOCKET_PATH'           => 10231,
-        'CURLOPT_URL'                        => 10002,
-        'CURLOPT_USERAGENT'                  => 10018,
-        'CURLOPT_USERNAME'                   => 10173,
-        'CURLOPT_USERPWD'                    => 10005,
-        'CURLOPT_USE_SSL'                    => 119,
-        'CURLOPT_VERBOSE'                    => 41,
-        'CURLOPT_XOAUTH2_BEARER'             => 10220,
-        'CURLSSLOPT_ALLOW_BEAST'             => 1,
-        'CURLSSLOPT_AUTO_CLIENT_CERT'        => 32,
-        'CURLSSLOPT_NO_REVOKE'               => 2,
-        'CURLSSLOPT_REVOKE_BEST_EFFORT'      => 8,
-        'CURLOPT_ACCEPTTIMEOUT_MS'           => 212,
-        'CURLOPT_ACCEPT_ENCODING'            => 10102,
-        'CURLOPT_ADDRESS_SCOPE'              => 171,
-        'CURLOPT_ALTSVC_CTRL'                => 286,
-        'CURLOPT_AUTOREFERER'                => 58,
-        'CURLOPT_BINARYTRANSFER'             => 19914,
-        'CURLOPT_BUFFERSIZE'                 => 98,
-        'CURLOPT_CAINFO_BLOB'                => 40309,
-        'CURLOPT_CERTINFO'                   => 172,
-        'CURLOPT_CONNECTTIMEOUT_MS'          => 156,
-        'CURLOPT_CONNECT_ONLY'               => 141,
-        'CURLOPT_COOKIEFILE'                 => 10031,
-        'CURLOPT_COOKIELIST'                 => 10135,
-        'CURLOPT_COOKIESESSION'              => 96,
-        'CURLOPT_DEFAULT_PROTOCOL'           => 10238,
-        'CURLOPT_DIRLISTONLY'                => 48,
-        'CURLOPT_DNS_CACHE_TIMEOUT'          => 92,
-        'CURLOPT_DNS_SHUFFLE_ADDRESSES'      => 275,
-        'CURLOPT_DNS_USE_GLOBAL_CACHE'       => 91,
-        'CURLOPT_EGDSOCKET'                  => 10077,
-        'CURLOPT_ENCODING'                   => 10102,
-        'CURLOPT_FAILONERROR'                => 45,
-        'CURLOPT_FILE'                       => 10001,
-        'CURLOPT_FILETIME'                   => 69,
-        'CURLOPT_FNMATCH_FUNCTION'           => 20200,
-        'CURLOPT_FOLLOWLOCATION'             => 52,
-        'CURLOPT_FORBID_REUSE'               => 75,
-        'CURLOPT_FRESH_CONNECT'              => 74,
-        'CURLOPT_FTPAPPEND'                  => 50,
-        'CURLOPT_FTPLISTONLY'                => 48,
-        'CURLOPT_FTPSSLAUTH'                 => 129,
-        'CURLOPT_FTP_RESPONSE_TIMEOUT'       => 112,
-        'CURLOPT_FTP_SSL'                    => 119,
-        'CURLOPT_HEADERFUNCTION'             => 20079,
-        'CURLOPT_HEADEROPT'                  => 229,
-        'CURLOPT_HSTS_CTRL'                  => 299,
-        'CURLOPT_HTTP200ALIASES'             => 10104,
-        'CURLOPT_HTTPAUTH'                   => 107,
-        'CURLOPT_HTTPGET'                    => 80,
-        'CURLOPT_HTTP_CONTENT_DECODING'      => 158,
-        'CURLOPT_HTTP_TRANSFER_DECODING'     => 157,
-        'CURLOPT_INFILESIZE'                 => 14,
-        'CURLOPT_IPRESOLVE'                  => 113,
-        'CURLOPT_ISSUERCERT'                 => 10170,
-        'CURLOPT_ISSUERCERT_BLOB'            => 40295,
-        'CURLOPT_KEEP_SENDING_ON_ERROR'      => 245,
-        'CURLOPT_KEYPASSWD'                  => 10026,
-        'CURLOPT_KRB4LEVEL'                  => 10063,
-        'CURLOPT_MAXAGE_CONN'                => 288,
-        'CURLOPT_MAXCONNECTS'                => 71,
-        'CURLOPT_MAXFILESIZE_LARGE'          => 30117,
-        'CURLOPT_MAX_RECV_SPEED_LARGE'       => 30146,
-        'CURLOPT_MAX_SEND_SPEED_LARGE'       => 30145,
-        'CURLOPT_NEW_DIRECTORY_PERMS'        => 160,
-        'CURLOPT_NEW_FILE_PERMS'             => 159,
-        'CURLOPT_NOBODY'                     => 44,
-        'CURLOPT_NOSIGNAL'                   => 99,
-        'CURLOPT_PATH_AS_IS'                 => 234,
-        'CURLOPT_PINNEDPUBLICKEY'            => 10230,
-        'CURLOPT_PIPEWAIT'                   => 237,
-        'CURLOPT_PORT'                       => 3,
-        'CURLOPT_POSTQUOTE'                  => 10039,
-        'CURLOPT_POSTREDIR'                  => 161,
-        'CURLOPT_PREQUOTE'                   => 10093,
-        'CURLOPT_PRE_PROXY'                  => 10262,
-        'CURLOPT_PRIVATE'                    => 10103,
-        'CURLOPT_PROGRESSFUNCTION'           => 20056,
-        'CURLOPT_PROTOCOLS'                  => 181,
-        'CURLOPT_PROXYPASSWORD'              => 10176,
-        'CURLOPT_PROXYPORT'                  => 59,
-        'CURLOPT_PROXYTYPE'                  => 101,
-        'CURLOPT_PROXYUSERNAME'              => 10175,
-        'CURLOPT_PROXY_SSLVERSION'           => 250,
-        'CURLOPT_PROXY_CAINFO_BLOB'          => 40310,
-        'CURLOPT_PROXY_ISSUERCERT'           => 10296,
-        'CURLOPT_PROXY_ISSUERCERT_BLOB'      => 40297,
-        'CURLOPT_PROXY_SSLCERT_BLOB'         => 40293,
-        'CURLOPT_PROXY_SSLKEY_BLOB'          => 40294,
-        'CURLOPT_PROXY_SSL_OPTIONS'          => 261,
-        'CURLOPT_PROXY_TRANSFER_MODE'        => 166,
-        'CURLOPT_READDATA'                   => 10009,
-        'CURLOPT_READFUNCTION'               => 20012,
-        'CURLOPT_REDIR_PROTOCOLS'            => 182,
-        'CURLOPT_REQUEST_TARGET'             => 10266,
-        'CURLOPT_RESUME_FROM'                => 21,
-        'CURLOPT_RETURNTRANSFER'             => 19913,
-        'CURLOPT_RTSP_CLIENT_CSEQ'           => 193,
-        'CURLOPT_RTSP_REQUEST'               => 189,
-        'CURLOPT_RTSP_SERVER_CSEQ'           => 194,
-        'CURLOPT_RTSP_SESSION_ID'            => 10190,
-        'CURLOPT_RTSP_STREAM_URI'            => 10191,
-        'CURLOPT_RTSP_TRANSPORT'             => 10192,
-        'CURLOPT_SAFE_UPLOAD'                => -1,
-        'CURLOPT_SHARE'                      => 10100,
-        'CURLOPT_SSH_AUTH_TYPES'             => 151,
-        'CURLOPT_SSH_KNOWNHOSTS'             => 10183,
-        'CURLOPT_SSH_PRIVATE_KEYFILE'        => 10153,
-        'CURLOPT_SSLCERTPASSWD'              => 10026,
-        'CURLOPT_SSLCERT_BLOB'               => 40291,
-        'CURLOPT_SSLENGINE_DEFAULT'          => 90,
-        'CURLOPT_SSLKEY_BLOB'                => 40292,
-        'CURLOPT_SSL_OPTIONS'                => 216,
-        'CURLOPT_STREAM_WEIGHT'              => 239,
-        'CURLOPT_TCP_KEEPIDLE'               => 214,
-        'CURLOPT_TCP_KEEPINTVL'              => 215,
-        'CURLOPT_TIMEVALUE'                  => 34,
-        'CURLOPT_TIMEVALUE_LARGE'            => 30270,
-        'CURLOPT_TRANSFERTEXT'               => 53,
-        'CURLOPT_UNRESTRICTED_AUTH'          => 105,
-        'CURLOPT_UPKEEP_INTERVAL_MS'         => 281,
-        'CURLOPT_UPLOAD'                     => 46,
-        'CURLOPT_UPLOAD_BUFFERSIZE'          => 280,
-        'CURLOPT_WILDCARDMATCH'              => 197,
-        'CURLOPT_WRITEFUNCTION'              => 20011,
-        'CURLOPT_WRITEHEADER'                => 10029,
-        'CURLOPT_XFERINFOFUNCTION'           => 20219,
-        'CURLSSLOPT_NATIVE_CA'               => 16,
-        'CURLSSLOPT_NO_PARTIALCHAIN'         => 4,
-    ];
-
-    /**
      * Options to omit from conversion, as they are addressed elsewhere in the conversion
      *
      * @var array
@@ -907,7 +497,6 @@ class Options
         'CURLOPT_FILE',
         'CURLOPT_FILETIME',
         'CURLOPT_FNMATCH_FUNCTION',
-        'CURLOPT_FOLLOWLOCATION', // This constant is not available when open_basedir is enabled.
         'CURLOPT_FORBID_REUSE',
         'CURLOPT_FRESH_CONNECT',
         'CURLOPT_FTPAPPEND',
@@ -1010,7 +599,7 @@ class Options
      */
     public static function isValidOption(string $option): bool
     {
-        return (array_key_exists($option, self::$commandOptions) || array_key_exists($option, self::$phpOptions));
+        return (array_key_exists($option, self::$commandOptions) || array_key_exists($option, self::getPhpOptions()));
     }
 
     /**
@@ -1032,7 +621,7 @@ class Options
      */
     public static function isPhpOption(string $option): bool
     {
-        return array_key_exists($option, self::$phpOptions);
+        return array_key_exists($option, self::getPhpOptions());
     }
 
     /**
@@ -1078,23 +667,39 @@ class Options
     }
 
     /**
-     * Get the PHP options
+     * Get the PHP options, derived from $commandOptions so the two tables can never drift apart
      *
      * @return array
      */
     public static function getPhpOptions(): array
     {
+        if (self::$phpOptions === null) {
+            self::$phpOptions = [];
+            foreach (self::$commandOptions as $flag => $constants) {
+                $flag = (string)$flag; // Ensure flag is a string (numeric string keys auto-cast to int)
+                foreach ((array)$constants as $constant) {
+                    if (!isset(self::$phpOptions[$constant])) {
+                        self::$phpOptions[$constant] = $flag;
+                    } else if (is_array(self::$phpOptions[$constant])) {
+                        self::$phpOptions[$constant][] = $flag;
+                    } else if (self::$phpOptions[$constant] !== $flag) {
+                        self::$phpOptions[$constant] = [self::$phpOptions[$constant], $flag];
+                    }
+                }
+            }
+        }
+
         return self::$phpOptions;
     }
 
     /**
-     * Get Php option
+     * Get PHP option
      *
      * @return string|array|null
      */
     public static function getPhpOption(string $option): string|array|null
     {
-        return self::$phpOptions[$option] ?? null;
+        return self::getPhpOptions()[$option] ?? null;
     }
 
     /**
@@ -1118,13 +723,21 @@ class Options
     }
 
     /**
-     * Get the option value by name
+     * Cached value-to-name reverse lookup, built once from the actual defined
+     * curl constants rather than a hand-maintained table.
+     * @var ?array
+     */
+    protected static ?array $optionNamesByValue = null;
+
+    /**
+     * Get the option value by name, using the real PHP constant directly
+     * instead of a hand-maintained table that could silently drift.
      *
      * @return int|null
      */
     public static function getOptionValueByName(string $curlOption): int|null
     {
-        return self::$optionValues[$curlOption] ?? null;
+        return defined($curlOption) ? constant($curlOption) : null;
     }
 
     /**
@@ -1134,7 +747,46 @@ class Options
      */
     public static function getOptionNameByValue(int $curlValue): string|null
     {
-        return array_search($curlValue, self::$optionValues) ?? null;
+        if (self::$optionNamesByValue === null) {
+            self::$optionNamesByValue = [];
+
+            // First pass: constants with a known CLI-flag mapping (i.e. present in
+            // $phpOptions/$commandOptions) win any value collision. get_defined_constants()
+            // iteration order is not guaranteed, and several CURLOPT_*/CURLSSLOPT_* names
+            // alias the same integer value (e.g. CURLOPT_SSLVERSION and
+            // CURLSSLOPT_AUTO_CLIENT_CERT both equal 32) - only one of those is an actual
+            // settable curl option with a CLI equivalent, so that's the one toCurlCommand()
+            // needs back, not whichever alias happens to be iterated first.
+            foreach (self::getPhpOptions() as $name => $flag) {
+                if (defined($name) && !isset(self::$optionNamesByValue[constant($name)])) {
+                    self::$optionNamesByValue[constant($name)] = $name;
+                }
+            }
+
+            // Second pass: fill in the remaining curl constants (those with no CLI-flag
+            // mapping) for any value not already claimed by the first pass. Sorted
+            // alphabetically by name before assignment (rather than relying on
+            // get_defined_constants()'s registration-order iteration, which is
+            // unspecified and does not match alphabetical order) so that any residual
+            // collision between two equally-unmapped aliases resolves the same way the
+            // old hand-typed table did, since that table was itself declared
+            // alphabetically and array_search() picked its first (alphabetically
+            // earliest) match.
+            $remainingConstants = [];
+            foreach (get_defined_constants() as $name => $value) {
+                if (str_starts_with($name, 'CURLOPT_') || str_starts_with($name, 'CURLSSLOPT_')) {
+                    $remainingConstants[$name] = $value;
+                }
+            }
+            ksort($remainingConstants);
+            foreach ($remainingConstants as $name => $value) {
+                if (!isset(self::$optionNamesByValue[$value])) {
+                    self::$optionNamesByValue[$value] = $name;
+                }
+            }
+        }
+
+        return self::$optionNamesByValue[$curlValue] ?? null;
     }
 
     /**
@@ -1144,7 +796,7 @@ class Options
      */
     public static function hasOptionValueByName(string $curlOption): bool
     {
-        return isset(self::$optionValues[$curlOption]);
+        return self::getOptionValueByName($curlOption) !== null;
     }
 
     /**
@@ -1154,7 +806,7 @@ class Options
      */
     public static function hasOptionNameByValue(int $curlValue): bool
     {
-        return in_array($curlValue, self::$optionValues);
+        return self::getOptionNameByValue($curlValue) !== null;
     }
 
     /**

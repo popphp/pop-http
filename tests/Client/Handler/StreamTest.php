@@ -129,7 +129,9 @@ class StreamTest extends TestCase
         $request->setData(['foo' => 'bar']);
         $client  = new Client($request, $stream);
         $client->getHandler()->prepare($client->getRequest());
-        $this->assertTrue(str_contains($stream->getContextOption('http')['content'], "Content-Disposition: form-data; name=foo\r\n\r\nbar\r\n"));
+        // Multipart content is now built by Pop\Http\Body\Multipart, which quotes
+        // the field name per RFC 7578, rather than the old Message::createForm() output.
+        $this->assertTrue(str_contains($stream->getContextOption('http')['content'], "Content-Disposition: form-data; name=\"foo\"\r\n\r\nbar\r\n"));
     }
 
     public function testPrepareWithPostFormData()
@@ -191,6 +193,123 @@ class StreamTest extends TestCase
         ], ['foo' => 'bar']);
         $stream->disconnect();
         $this->assertNull($stream->stream());
+    }
+
+    public function testMultipartContentIsRenderedString()
+    {
+        $file = sys_get_temp_dir() . '/pop-http-stream-test-' . uniqid() . '.txt';
+        file_put_contents($file, 'streamed content');
+
+        $request = new \Pop\Http\Client\Request('http://localhost/', 'POST');
+        $request->setData(['upload' => ['filename' => $file, 'contentType' => 'text/plain']])
+            ->createAsMultipart();
+
+        $stream = new Stream();
+        $stream->prepare($request);
+
+        $content = $stream->getContextOptions()['http']['content'];
+        $this->assertIsString($content);
+        $this->assertStringContainsString('Content-Disposition: form-data; name="upload"', $content);
+        $this->assertStringContainsString('streamed content', $content);
+
+        unlink($file);
+    }
+
+    public function testMultipartContentTypeBoundaryMatchesRenderedContent()
+    {
+        $file = sys_get_temp_dir() . '/pop-http-stream-test-' . uniqid() . '.txt';
+        file_put_contents($file, 'streamed content');
+
+        // Note: createAsMultipart() is called before setData() here (matching the documented
+        // usage order in README.md), unlike the setData()->createAsMultipart() order used in
+        // testMultipartContentIsRenderedString() above. That reversed order exposes a separate,
+        // pre-existing bug (Data::setData() eagerly prepares the request at construction time,
+        // before createAsMultipart() has updated the request type, and the prepared flag it sets
+        // then blocks the necessary re-preparation later) which is out of scope for this task and
+        // not specific to the Stream handler - see the task-15 report for details.
+        $request = new \Pop\Http\Client\Request('http://localhost/', 'POST');
+        $request->createAsMultipart()
+            ->setData(['upload' => ['filename' => $file, 'contentType' => 'text/plain']]);
+
+        $stream = new Stream();
+        $stream->prepare($request);
+
+        $contentType = $request->getHeaderValueAsString('Content-Type');
+        $this->assertNotNull($contentType);
+        preg_match('/boundary=(\S+)/', $contentType, $matches);
+        $this->assertNotEmpty($matches);
+        $boundary = $matches[1];
+
+        $content = $stream->getContextOptions()['http']['content'];
+        $this->assertStringContainsString('--' . $boundary, $content);
+
+        unlink($file);
+    }
+
+    public function testMultipartContentIsRenderedExactlyOnceAndIsBoundaryMatched()
+    {
+        // Task 15 regression guard, re-asserted after multipart preparation was made lazy:
+        // Data::prepareMultipart() no longer renders anything, so Stream::prepare() is the
+        // one and only place the multipart string gets built.
+        $file = sys_get_temp_dir() . '/pop-http-stream-lazy-' . uniqid() . '.txt';
+        file_put_contents($file, 'streamed content');
+
+        $request = new \Pop\Http\Client\Request('http://localhost/', 'POST');
+        $request->createAsMultipart()
+            ->setData(['username' => 'admin', 'upload' => ['filename' => $file, 'contentType' => 'text/plain']]);
+
+        // Data never rendered the body itself
+        $this->assertEmpty($request->getData()->getDataContent());
+
+        $stream = new Stream();
+        $stream->prepare($request);
+
+        $contentType = $request->getHeaderValueAsString('Content-Type');
+        preg_match('/boundary=(\S+)/', $contentType, $matches);
+        $boundary = $matches[1];
+
+        $content = $stream->getContextOptions()['http']['content'];
+        $this->assertIsString($content);
+        $this->assertStringStartsWith('--' . $boundary . "\r\n", $content);
+        $this->assertStringEndsWith('--' . $boundary . "--\r\n", $content);
+        $this->assertStringContainsString('name="username"', $content);
+        $this->assertStringContainsString('streamed content', $content);
+        // Exactly one rendering: 2 part delimiters + 1 closing delimiter, no duplicated parts
+        $this->assertEquals(3, substr_count($content, '--' . $boundary));
+        $this->assertEquals(1, substr_count($content, 'streamed content'));
+
+        // PHP's http:// stream wrapper derives Content-Length from 'content' itself
+        $this->assertFalse($request->hasHeader('Content-Length'));
+
+        unlink($file);
+    }
+
+    public function testReusedHandlerClearsStaleContent()
+    {
+        // Regression test: a stale 'content' left over from a prior prepare() would be sent
+        // as the body of a subsequent body-less request.
+        $stream = new Stream();
+
+        $stream->prepare(new Request('http://localhost/', 'POST', ['foo' => 'bar']));
+        $this->assertEquals('foo=bar', $stream->getContextOptions()['http']['content']);
+
+        $stream->prepare(new Request('http://localhost/other', 'GET'));
+
+        $this->assertArrayNotHasKey('content', $stream->getContextOptions()['http']);
+        $this->assertEquals('GET', $stream->getContextOptions()['http']['method']);
+    }
+
+    public function testPrepareWithClearFalsePreservesPreDefinedContent()
+    {
+        // Regression test: the stale-body clearing must respect $clear the same way the header
+        // handling does - with $clear = false a body pre-defined on the handler itself (as
+        // Parser::parseResponseFromUri() allows via its $options argument) has to survive.
+        $stream = new Stream();
+        $stream->setContextOptions(['http' => ['method' => 'POST', 'content' => 'pre-defined body']]);
+
+        $stream->prepare(new Request('http://localhost/', 'POST'), null, false);
+
+        $this->assertEquals('pre-defined body', $stream->getContextOptions()['http']['content']);
     }
 
 }

@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -13,7 +13,6 @@
  */
 namespace Pop\Http;
 
-use Pop\Mime\Message;
 use Pop\Mime\Part\Header;
 
 /**
@@ -22,9 +21,9 @@ use Pop\Mime\Part\Header;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Parser
 {
@@ -83,64 +82,136 @@ class Parser
     }
 
     /**
+     * Parse a Content-Type header value into its structured parts
+     *
+     * @param  string $contentType
+     * @return array
+     */
+    public static function parseMediaType(string $contentType): array
+    {
+        $parts    = explode(';', $contentType);
+        $fullType = strtolower(trim(array_shift($parts)));
+        $params   = [];
+
+        foreach ($parts as $part) {
+            if (str_contains($part, '=')) {
+                [$key, $value] = array_map('trim', explode('=', $part, 2));
+                $params[strtolower($key)] = trim($value, '"');
+            }
+        }
+
+        [$type, $subtypeAndSuffix] = array_pad(explode('/', $fullType, 2), 2, '');
+        $suffix   = null;
+        $subtype  = $subtypeAndSuffix;
+
+        if (str_contains($subtypeAndSuffix, '+')) {
+            [$subtype, $suffix] = explode('+', $subtypeAndSuffix, 2);
+        }
+
+        return [
+            'type'    => $type,
+            'subtype' => $subtype,
+            'suffix'  => $suffix,
+            'params'  => $params,
+        ];
+    }
+
+    /**
      * Parse request or response data based on content type
      *
      * @param  string  $rawData
      * @param  ?string $contentType
      * @param  ?string $encoding
      * @param  bool    $chunked
+     * @throws Exception
      * @return mixed
      */
     public static function parseDataByContentType(
         string $rawData, ?string $contentType = null, ?string $encoding = null, bool $chunked = false
     ): mixed
     {
-        $parsedResult = false;
-
-        if ($contentType !== null) {
-            $contentType = strtolower($contentType);
-        }
         if ($encoding !== null) {
             $encoding = strtoupper($encoding);
         }
 
-        // JSON data
-        if (($contentType !== null) && (str_contains($contentType, 'json'))) {
-            $parsedResult = json_decode(self::decodeData($rawData, $encoding, $chunked), true);
-        // XML data
-        } else if (($contentType !== null) && (str_contains($contentType, 'xml') && !self::isOfficeDocument($contentType))) {
-            $rawData = self::decodeData($rawData, $encoding, $chunked);
-            $matches = [];
-            preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
-
-            foreach ($matches[0] as $match) {
-                $strip = str_replace(
-                    ['<![CDATA[', ']]>', '<', '>'],
-                    ['', '', '&lt;', '&gt;'],
-                    $match
-                );
-                $rawData = str_replace($match, $strip, $rawData);
-            }
-
-            $parsedResult = json_decode(json_encode((array)simplexml_load_string($rawData)), true);
-        // URL-encoded form data
-        } else if (($contentType !== null) && (str_contains($contentType, 'application/x-www-form-urlencoded'))) {
-            $parsedResult = [];
-            parse_str(self::decodeData($rawData, $encoding, $chunked), $parsedResult);
-        // Multipart form data
-        } else if (($contentType !== null) && (str_contains($contentType, 'multipart/form-data'))) {
-            $formContent = (!str_contains($rawData, 'Content-Type:')) ?
-                'Content-Type: ' . $contentType . "\r\n\r\n" . $rawData : $rawData;
-            $parsedResult = Message::parseForm($formContent);
-        // If only encoded, decode
-        } else if ($encoding !== null) {
-            $parsedResult = self::decodeData($rawData, $encoding, $chunked);
-        // Else, raw data, e.g. HTML text or plain text
-        } else {
-            $parsedResult = $rawData;
+        if ($contentType === null) {
+            return self::decodeData($rawData, $encoding, $chunked);
         }
 
-        return $parsedResult;
+        $media   = self::parseMediaType($contentType);
+        $rawData = self::decodeData($rawData, $encoding, $chunked);
+
+        if (isset($media['params']['charset']) && (strtoupper($media['params']['charset']) !== 'UTF-8')) {
+            $converted = @mb_convert_encoding($rawData, 'UTF-8', $media['params']['charset']);
+            if ($converted !== false) {
+                $rawData = $converted;
+            }
+        }
+
+        // JSON: application/json, or a structured +json suffix (e.g. application/vnd.api+json)
+        if (($media['subtype'] === 'json') || ($media['suffix'] === 'json')) {
+            return json_decode($rawData, true);
+        }
+
+        // Generic XML only: application/xml or text/xml specifically - NOT a
+        // +xml structured suffix (e.g. application/xhtml+xml, application/rdf+xml),
+        // and not an office document that merely contains "xml" in its name.
+        if ((($media['subtype'] === 'xml') && ($media['suffix'] === null)) &&
+            !self::isOfficeDocument($contentType)) {
+            return self::parseXml($rawData);
+        }
+
+        if (($media['type'] === 'application') && ($media['subtype'] === 'x-www-form-urlencoded')) {
+            $parsedResult = [];
+            parse_str($rawData, $parsedResult);
+            return $parsedResult;
+        }
+
+        if (($media['type'] === 'multipart') && ($media['subtype'] === 'form-data')) {
+            $boundary = $media['params']['boundary'] ?? null;
+            if ($boundary === null) {
+                throw new Exception('Error: The multipart/form-data content type is missing its boundary parameter.');
+            }
+            return \Pop\Http\Body\Multipart::parse($rawData, $boundary);
+        }
+
+        return $rawData;
+    }
+
+    /**
+     * Parse an XML string into an array, throwing on malformed input instead
+     * of silently returning a nonsense value.
+     *
+     * @param  string $rawData
+     * @throws Exception
+     * @return array
+     */
+    protected static function parseXml(string $rawData): array
+    {
+        $matches = [];
+        preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
+
+        foreach ($matches[0] as $match) {
+            $strip = str_replace(
+                ['<![CDATA[', ']]>', '<', '>'],
+                ['', '', '&lt;', '&gt;'],
+                $match
+            );
+            $rawData = str_replace($match, $strip, $rawData);
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        $xml = simplexml_load_string($rawData);
+        $errors = libxml_get_errors();
+        libxml_use_internal_errors($previous);
+
+        if ($xml === false) {
+            $message = !empty($errors) ? trim($errors[0]->message) : 'unknown XML parse error';
+            throw new Exception('Error: Unable to parse XML content - ' . $message);
+        }
+
+        return json_decode(json_encode((array)$xml), true);
     }
 
     /**
@@ -164,7 +235,7 @@ class Parser
 
         return new Server\Response([
             'code'    => $response->getCode(),
-            'headers' => $response->getHeaders(),
+            'headers' => $response->getHeaderObjects(),
             'body'    => $response->getBody(),
             'message' => $response->getMessage(),
             'version' => $response->getVersion()
@@ -262,7 +333,7 @@ class Parser
                 $data = rawurldecode($data);
                 break;
             case self::GZIP:
-                $data = gzinflate(substr($data, 10));
+                $data = gzdecode($data);
                 break;
             case self::DEFLATE:
                 $zLib = unpack('n', substr($data, 0, 2));

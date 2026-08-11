@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -23,9 +23,9 @@ use Pop\Http\Client\Response;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 interface HandlerInterface
 {
@@ -62,6 +62,15 @@ interface HandlerInterface
      * @return HandlerInterface
      */
     public function reset(): HandlerInterface;
+
+    /**
+     * Prepare the handler with the given request (and optional auth) before sending
+     *
+     * @param  \Pop\Http\AbstractRequest $request
+     * @param  ?\Pop\Http\Auth           $auth
+     * @return HandlerInterface
+     */
+    public function prepare(\Pop\Http\AbstractRequest $request, ?\Pop\Http\Auth $auth = null): HandlerInterface;
 
     /**
      * Close the handler connection

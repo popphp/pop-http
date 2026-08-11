@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -24,9 +24,9 @@ use Pop\Http\Uri;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 abstract class AbstractHandler implements HandlerInterface
 {
@@ -48,6 +48,13 @@ abstract class AbstractHandler implements HandlerInterface
      * @var mixed
      */
     protected mixed $resource = null;
+
+    /**
+     * The request currently being (or last) prepared, carried so a thrown
+     * Client\Handler\Exception can implement NetworkExceptionInterface::getRequest()
+     * @var ?Request
+     */
+    protected ?Request $request = null;
 
     /**
      * Determine whether or not resource is available
@@ -137,5 +144,67 @@ abstract class AbstractHandler implements HandlerInterface
      * @return void
      */
     abstract public function disconnect(): void;
+
+    /**
+     * Collect the flat list of header strings for a request, shared by every handler
+     *
+     * @param  \Pop\Http\Client\Request $request
+     * @return array
+     */
+    protected function collectRequestHeaders(\Pop\Http\Client\Request $request): array
+    {
+        $headers = [];
+
+        if (!$request->hasHeaders()) {
+            return $headers;
+        }
+
+        foreach ($request->getHeaderObjects() as $header => $value) {
+            if (($header === 'Content-Length') && ($request->isNoContentLength() || ($request->getMethod() === 'GET'))) {
+                continue;
+            }
+            foreach (is_array($value) ? $value : [$value] as $val) {
+                $headers[] = (string)$val;
+            }
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Resolve what a request's outbound body should be, shared by every handler.
+     * Multipart requests resolve to the curl-native array shape (scalars + CURLFile),
+     * which Curl can pass directly to CURLOPT_POSTFIELDS for zero-copy file streaming;
+     * handlers without that capability (Stream) fall back to Body\Multipart::build().
+     *
+     * @param  \Pop\Http\Client\Request $request
+     * @return array
+     */
+    protected function resolveRequestBody(\Pop\Http\Client\Request $request): array
+    {
+        $queryString = null;
+        $body        = null;
+
+        if ($request->hasQuery()) {
+            $queryString = '?' . $request->getQuery()->prepare()->getDataContent();
+        }
+
+        if ($request->hasData()) {
+            if ($request->isMultipart()) {
+                $body = \Pop\Http\Body\Multipart::toArray($request->getData()->getData());
+            } else if ($request->hasDataContent()) {
+                if (($queryString === null) && $request->isGet() && (!$request->hasRequestType() || $request->isUrlEncoded())) {
+                    $queryString = '?' . $request->getDataContent();
+                } else {
+                    $body = $request->useRawData() ? $request->getData()->getData() : $request->getDataContent();
+                }
+            }
+        } else if ($request->hasBodyContent()) {
+            $request->addHeader('Content-Length', $request->getBodyContentLength());
+            $body = $request->getBodyContent();
+        }
+
+        return ['queryString' => $queryString, 'body' => $body];
+    }
 
 }

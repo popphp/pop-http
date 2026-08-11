@@ -71,11 +71,11 @@ class RequestTest extends TestCase
         $this->assertEquals('/home', $request->getBasePath());
         $this->assertEquals('123', $request->getQuery('var'));
         $this->assertEquals('bar', $request->getQuery('foo'));
+        // A GET request carries its data in the query string, so that IS its raw data
+        // (php://input is empty for GET, so QUERY_STRING is the fallback).
         $this->assertEquals('var=123&foo=bar', $request->getRawData());
         $this->assertEquals(2, count($request->getParsedData()));
         $this->assertEquals('bar', $request->getParsedData('foo'));
-        $this->assertEquals('bar', $request->getQueryData('foo'));
-        $this->assertEquals(2, count($request->getQueryData()));
         $this->assertEquals(2, count($request->getQuery()));
         $this->assertEquals(1, count($request->getSegments()));
         $this->assertEquals('page', $request->getSegment(0));
@@ -93,9 +93,53 @@ class RequestTest extends TestCase
         $this->assertFalse($request->isPatch());
         $this->assertFalse($request->isSecure());
         $this->assertFalse($request->hasFiles());
-        $this->assertTrue($request->hasQueryData());
+        // queryData is no longer independently populated from $_SERVER['QUERY_STRING']
+        // now that the redundant re-parse-and-reconcile pass is removed; getQuery()
+        // (asserted above) is the source of truth for GET data.
+        $this->assertFalse($request->hasQueryData());
         $this->assertTrue($request->hasParsedData());
         $this->assertTrue($request->hasData());
+    }
+
+    public function testGetRawDataReturnsQueryStringForGetRequest()
+    {
+        // Regression test: a GET request's raw data is its query string. php://input is empty
+        // for GET, so QUERY_STRING is the documented fallback (README.md).
+        $_SERVER['HTTP_HOST']      = 'localhost:8000';
+        $_SERVER['SERVER_NAME']    = 'localhost';
+        $_SERVER['SERVER_PORT']    = 8000;
+        $_SERVER['DOCUMENT_ROOT']  = getcwd();
+        $_SERVER['REQUEST_URI']    = '/page';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['QUERY_STRING']   = 'alpha=1&beta=two';
+        unset($_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_GET = ['alpha' => '1', 'beta' => 'two'];
+
+        $request = new Request();
+
+        $this->assertEquals('alpha=1&beta=two', $request->getRawData());
+        $this->assertTrue($request->hasRawData());
+    }
+
+    public function testGetRawDataDoesNotClobberRawDataOverrideForGetRequest()
+    {
+        // The X_POP_HTTP_RAW_DATA test override (and any other already-captured raw body)
+        // must win over the QUERY_STRING fallback.
+        $_SERVER['HTTP_HOST']            = 'localhost:8000';
+        $_SERVER['SERVER_NAME']          = 'localhost';
+        $_SERVER['SERVER_PORT']          = 8000;
+        $_SERVER['DOCUMENT_ROOT']        = getcwd();
+        $_SERVER['REQUEST_URI']          = '/page';
+        $_SERVER['REQUEST_METHOD']       = 'GET';
+        $_SERVER['QUERY_STRING']         = 'alpha=1';
+        $_SERVER['X_POP_HTTP_RAW_DATA']  = 'already-captured';
+        $_GET = ['alpha' => '1'];
+
+        $request = new Request();
+
+        $this->assertEquals('already-captured', $request->getRawData());
+
+        unset($_SERVER['X_POP_HTTP_RAW_DATA']);
     }
 
     public function testGetHostFromServerName()
@@ -308,7 +352,7 @@ class RequestTest extends TestCase
     {
         $request = new Request();
         $this->assertTrue(is_array($request->getHeaders()));
-        $this->assertNull($request->getHeader('Content-Type'));
+        $this->assertNull($request->getHeaderObject('Content-Type'));
     }
 
     public function testGetHeadersAsArray()
@@ -372,8 +416,11 @@ class RequestTest extends TestCase
 
     public function testUrlFormParsedDataPut()
     {
+        // Note: $_SERVER['HTTP_CONTENT_TYPE'] (not 'CONTENT_TYPE') is what Request's header
+        // collection picks up in this environment - see neighboring tests (testParseJsonData
+        // et al.) for the same convention.
         $_SERVER['HTTP_HOST']           = 'localhost';
-        $_SERVER['CONTENT_TYPE']        = 'application/x-www-form-urlencoded';
+        $_SERVER['HTTP_CONTENT_TYPE']   = 'application/x-www-form-urlencoded';
         $_SERVER['SERVER_PORT']         = 8000;
         $_SERVER['REQUEST_METHOD']      = 'PUT';
         $_SERVER['X_POP_HTTP_RAW_DATA'] = http_build_query(['foo' => 'bar']);
@@ -384,15 +431,22 @@ class RequestTest extends TestCase
 
     public function testMultipartFormParsedDataPut()
     {
-        $formContents = Message::createForm(['foo' => 'bar']);
-        $header       = $formContents->getHeader('Content-Type');
-        $formContents->removeHeader('Content-Type');
+        // Built by hand (rather than via Pop\Mime\Message::createForm()) as an RFC-7578-correct
+        // multipart/form-data body: quoted Content-Disposition "name" and CRLF line endings, both
+        // required by Pop\Http\Body\Multipart::parse(). Message::createForm() is a mail-multipart
+        // (RFC 2046) builder retrofit for HTTP form-data and emits unquoted names / LF endings that
+        // the RFC-7578-strict parser used here does not accept.
+        $boundary = '1234567890';
+        $rawBody  = "--{$boundary}\r\nContent-Disposition: form-data; name=\"foo\"\r\n\r\nbar\r\n--{$boundary}--\r\n";
 
+        // Note: $_SERVER['HTTP_CONTENT_TYPE'] (not 'CONTENT_TYPE') is what Request's header
+        // collection picks up in this environment - see neighboring tests (testParseJsonData
+        // et al.) for the same convention.
         $_SERVER['HTTP_HOST']           = 'localhost';
-        $_SERVER['CONTENT_TYPE']        = 'multipart/form-data; boundary=' . $header->getValue(0)->getParameter('boundary');
+        $_SERVER['HTTP_CONTENT_TYPE']   = 'multipart/form-data; boundary=' . $boundary;
         $_SERVER['SERVER_PORT']         = 8000;
         $_SERVER['REQUEST_METHOD']      = 'PUT';
-        $_SERVER['X_POP_HTTP_RAW_DATA'] = $formContents->render(false);
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = $rawBody;
 
         $request = new Request();
         $this->assertEquals('bar', $request->getPut('foo'));
@@ -550,8 +604,37 @@ class RequestTest extends TestCase
         $this->assertEquals('Hello', $data->filter('<b>Hello</b>'));
     }
 
+    public function testMultipartFormDataUsesNativePostAndFiles()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['CONTENT_TYPE']   = 'multipart/form-data; boundary=TESTBOUNDARY';
+        $_POST  = ['username' => 'admin'];
+        $_FILES = ['upload' => ['name' => 'test.txt', 'type' => 'text/plain', 'tmp_name' => '/tmp/x', 'error' => 0, 'size' => 10]];
+        // Simulate PHP's own behavior: php://input is empty for multipart requests.
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '';
+
+        $request = new \Pop\Http\Server\Request();
+
+        $this->assertEquals('admin', $request->getPost('username'));
+        $this->assertEquals('test.txt', $request->getFiles('upload')['name']);
+
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA'], $_POST, $_FILES);
+    }
+
     public function testGetMagicMethod()
     {
+        // This test only cares that each magic-getter property has the right type/shape, not
+        // about any particular request payload - so give it its own deterministic REQUEST_METHOD
+        // and raw data rather than depending on whatever state prior tests in this file happened
+        // to leave behind (this file's tests share $_SERVER/$_POST/etc. and don't all clean up
+        // after themselves).
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            unset($_SERVER['CONTENT_TYPE']);
+        }
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['HTTP_CONTENT_TYPE']   = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo" : "bar"}';
+
         $request = new Request();
         $this->assertTrue(is_array($request->get));
         $this->assertTrue(is_array($request->post));
@@ -566,6 +649,196 @@ class RequestTest extends TestCase
         $this->assertTrue(is_array($request->parsed));
         $this->assertNotEmpty($request->raw);
         $this->assertNull($request->bad);
+    }
+
+    public function testPopulateFromGlobalsFalseProducesBareInstance()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false, ['REQUEST_METHOD' => 'POST']);
+
+        $this->assertEquals(['REQUEST_METHOD' => 'POST'], $request->getServer());
+        $this->assertEquals([], $request->getCookie());
+        $this->assertEquals([], $request->getEnv());
+        $this->assertFalse($request->hasHeaders());
+        $this->assertEquals([], $request->getQuery());
+        $this->assertEquals([], $request->getPost());
+        $this->assertEquals([], $request->getFiles());
+    }
+
+    public function testPopulateFromGlobalsTrueIsUnaffected()
+    {
+        $request = new \Pop\Http\Server\Request();
+        $this->assertIsArray($request->getServer());
+    }
+
+    public function testGetMethodDefaultsToGetWhenUnset()
+    {
+        // When REQUEST_METHOD is not set in server array, getMethod() should return 'GET'
+        $request = new \Pop\Http\Server\Request(null, null, null, false, []);
+        $this->assertEquals('GET', $request->getMethod());
+    }
+
+    public function testGetMethodReturnsRequestMethodWhenSet()
+    {
+        // When REQUEST_METHOD is set in server array, getMethod() should return it
+        $request = new \Pop\Http\Server\Request(null, null, null, false, ['REQUEST_METHOD' => 'POST']);
+        $this->assertEquals('POST', $request->getMethod());
+    }
+
+    public function testIsXxxMethodsRespectMethodOverrideAfterWithMethod()
+    {
+        // Finding 7: isGet()/isPost()/etc. must agree with getMethod() (and therefore
+        // $methodOverride), not read $server['REQUEST_METHOD'] directly.
+        $original = new \Pop\Http\Server\Request(null, null, null, false, ['REQUEST_METHOD' => 'GET']);
+        $this->assertTrue($original->isGet());
+        $this->assertFalse($original->isPost());
+
+        $clone = $original->withMethod('POST');
+        $this->assertTrue($clone->isPost());
+        $this->assertFalse($clone->isGet());
+        $this->assertEquals($clone->getMethod(), 'POST');
+
+        // Original is unaffected
+        $this->assertTrue($original->isGet());
+        $this->assertFalse($original->isPost());
+    }
+
+    public function testAllIsXxxMethodsRespectMethodOverride()
+    {
+        $methods = [
+            'GET'     => 'isGet',
+            'HEAD'    => 'isHead',
+            'POST'    => 'isPost',
+            'PUT'     => 'isPut',
+            'DELETE'  => 'isDelete',
+            'TRACE'   => 'isTrace',
+            'OPTIONS' => 'isOptions',
+            'CONNECT' => 'isConnect',
+            'PATCH'   => 'isPatch',
+        ];
+
+        $request = new \Pop\Http\Server\Request(null, null, null, false, ['REQUEST_METHOD' => 'GET']);
+
+        foreach ($methods as $method => $isMethod) {
+            $clone = $request->withMethod($method);
+            $this->assertTrue($clone->{$isMethod}(), "{$isMethod}() should be true after withMethod('{$method}')");
+
+            foreach ($methods as $otherMethod => $otherIsMethod) {
+                if ($otherMethod !== $method) {
+                    $this->assertFalse($clone->{$otherIsMethod}(), "{$otherIsMethod}() should be false after withMethod('{$method}')");
+                }
+            }
+        }
+    }
+
+    public function testWithMethodReturnsCloneWithOverride()
+    {
+        // withMethod() should return a clone with the method override
+        $original = new \Pop\Http\Server\Request(null, null, null, false, ['REQUEST_METHOD' => 'GET']);
+        $clone = $original->withMethod('POST');
+
+        // Clone should have the new method
+        $this->assertEquals('POST', $clone->getMethod());
+
+        // Original should be unaffected
+        $this->assertEquals('GET', $original->getMethod());
+    }
+
+    public function testWithMethodDoesNotMutateServerArray()
+    {
+        // withMethod() should not modify the server array
+        $original = new \Pop\Http\Server\Request(null, null, null, false, ['REQUEST_METHOD' => 'GET']);
+        $clone = $original->withMethod('POST');
+
+        // Clone's server array should still have the original REQUEST_METHOD
+        $this->assertEquals('GET', $clone->getServer('REQUEST_METHOD'));
+
+        // Original's server array should be unchanged
+        $this->assertEquals('GET', $original->getServer('REQUEST_METHOD'));
+    }
+
+    public function testImplementsServerRequestInterface()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false);
+        $this->assertInstanceOf('Psr\Http\Message\ServerRequestInterface', $request);
+    }
+
+    public function testGetMethodDefaultsToGetAndWithMethodOverrides()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false, []);
+        $this->assertEquals('GET', $request->getMethod());
+
+        $clone = $request->withMethod('POST');
+        $this->assertNotSame($request, $clone);
+        $this->assertEquals('GET', $request->getMethod());
+        $this->assertEquals('POST', $clone->getMethod());
+    }
+
+    public function testGetServerParams()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false, ['FOO' => 'bar']);
+        $this->assertEquals(['FOO' => 'bar'], $request->getServerParams());
+    }
+
+    public function testCookieParamsGetAndWith()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false);
+        $this->assertEquals([], $request->getCookieParams());
+
+        $clone = $request->withCookieParams(['session' => 'abc']);
+        $this->assertNotSame($request, $clone);
+        $this->assertEquals([], $request->getCookieParams());
+        $this->assertEquals(['session' => 'abc'], $clone->getCookieParams());
+    }
+
+    public function testQueryParamsGetAndWith()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false);
+        $this->assertEquals([], $request->getQueryParams());
+
+        $clone = $request->withQueryParams(['foo' => 'bar']);
+        $this->assertNotSame($request, $clone);
+        $this->assertEquals(['foo' => 'bar'], $clone->getQueryParams());
+    }
+
+    public function testParsedBodyGetAndWith()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false);
+        $this->assertNull($request->getParsedBody());
+
+        $clone = $request->withParsedBody(['foo' => 'bar']);
+        $this->assertNotSame($request, $clone);
+        $this->assertNull($request->getParsedBody());
+        $this->assertEquals(['foo' => 'bar'], $clone->getParsedBody());
+    }
+
+    public function testAttributesGetSetAndRemove()
+    {
+        $request = new \Pop\Http\Server\Request(null, null, null, false);
+        $this->assertEquals([], $request->getAttributes());
+        $this->assertEquals('default', $request->getAttribute('missing', 'default'));
+
+        $withAttr = $request->withAttribute('routeName', 'home');
+        $this->assertNotSame($request, $withAttr);
+        $this->assertEquals('home', $withAttr->getAttribute('routeName'));
+        $this->assertEquals([], $request->getAttributes());
+
+        $withoutAttr = $withAttr->withoutAttribute('routeName');
+        $this->assertNotSame($withAttr, $withoutAttr);
+        $this->assertNull($withoutAttr->getAttribute('routeName'));
+    }
+
+    public function testUploadedFilesGetAndWith()
+    {
+        // NOTE: the non-override path of getUploadedFiles() calls
+        // UploadedFile::createFromFilesArray(), which doesn't exist yet
+        // (Task 10). Only the override path is exercised here; the
+        // non-override assertion is deferred to Task 10's follow-up pass.
+        $request = new \Pop\Http\Server\Request(null, null, null, false);
+
+        $stub  = $this->createStub(\Psr\Http\Message\UploadedFileInterface::class);
+        $clone = $request->withUploadedFiles(['avatar' => $stub]);
+        $this->assertNotSame($request, $clone);
+        $this->assertSame(['avatar' => $stub], $clone->getUploadedFiles());
     }
 
 }

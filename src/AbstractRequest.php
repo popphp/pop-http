@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -13,17 +13,20 @@
  */
 namespace Pop\Http;
 
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\UriInterface;
+
 /**
  * Abstract HTTP request class
  *
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
-abstract class AbstractRequest extends AbstractRequestResponse
+abstract class AbstractRequest extends AbstractRequestResponse implements RequestInterface
 {
 
     /**
@@ -31,6 +34,18 @@ abstract class AbstractRequest extends AbstractRequestResponse
      * @var ?Uri
      */
     protected ?Uri $uri = null;
+
+    /**
+     * HTTP protocol version, per PSR-7
+     * @var string
+     */
+    protected string $protocolVersion = '1.1';
+
+    /**
+     * Explicit request-target override, per PSR-7 (null = derive from the URI)
+     * @var ?string
+     */
+    protected ?string $requestTargetOverride = null;
 
     /**
      * Constructor
@@ -61,13 +76,14 @@ abstract class AbstractRequest extends AbstractRequestResponse
     }
 
     /**
-     * Get URI
+     * Get URI, per PSR-7 (a transient, never-stored empty Uri when none is set,
+     * so hasUri() remains unaffected by calling this)
      *
      * @return Uri
      */
     public function getUri(): Uri
     {
-        return $this->uri;
+        return $this->uri ?? new Uri();
     }
 
     /**
@@ -99,6 +115,107 @@ abstract class AbstractRequest extends AbstractRequestResponse
     {
         $this->uri = null;
         return $this;
+    }
+
+    /**
+     * Get the HTTP protocol version, per PSR-7
+     *
+     * @return string
+     */
+    public function getProtocolVersion(): string
+    {
+        return $this->protocolVersion;
+    }
+
+    /**
+     * Return an instance with the specified HTTP protocol version, per PSR-7
+     *
+     * @param  string $version
+     * @return static
+     */
+    public function withProtocolVersion(string $version): static
+    {
+        $clone                  = clone $this;
+        $clone->protocolVersion = $version;
+        return $clone;
+    }
+
+    /**
+     * Get the request target, per PSR-7 (path + query, or '/' with no URI, unless overridden)
+     *
+     * @return string
+     */
+    public function getRequestTarget(): string
+    {
+        if ($this->requestTargetOverride !== null) {
+            return $this->requestTargetOverride;
+        }
+
+        if (!$this->hasUri()) {
+            return '/';
+        }
+
+        $target = $this->uri->getPath();
+        if ($target === '') {
+            $target = '/';
+        }
+
+        if ($this->uri->hasQuery()) {
+            $target .= '?' . $this->uri->getQuery();
+        }
+
+        return $target;
+    }
+
+    /**
+     * Return an instance with the specified request target, per PSR-7
+     *
+     * @param  string $requestTarget
+     * @return static
+     */
+    public function withRequestTarget(string $requestTarget): static
+    {
+        $clone                        = clone $this;
+        $clone->requestTargetOverride = $requestTarget;
+        return $clone;
+    }
+
+    /**
+     * Deep-clone the URI so a with*() clone never shares a mutable Uri
+     * instance with the instance it was cloned from
+     *
+     * @return void
+     */
+    public function __clone(): void
+    {
+        parent::__clone();
+
+        if ($this->uri !== null) {
+            $this->uri = clone $this->uri;
+        }
+    }
+
+    /**
+     * Return an instance with the specified URI, per PSR-7
+     *
+     * @param  UriInterface $uri
+     * @param  bool         $preserveHost
+     * @return static
+     */
+    public function withUri(UriInterface $uri, bool $preserveHost = false): static
+    {
+        $clone      = clone $this;
+        $clone->uri = ($uri instanceof Uri) ? $uri : new Uri((string)$uri);
+
+        if ((!$preserveHost || !$clone->hasHeader('Host')) && $clone->uri->hasHost()) {
+            $host = $clone->uri->getHost();
+            if ($clone->uri->hasPort()) {
+                $host .= ':' . $clone->uri->getPort();
+            }
+            $clone = $clone->withHeader('Host', $host);
+        }
+
+        return $clone;
     }
 
 }

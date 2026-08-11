@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -13,17 +13,19 @@
  */
 namespace Pop\Http;
 
+use Psr\Http\Message\UriInterface;
+
 /**
  * HTTP URI class
  *
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
-class Uri
+class Uri implements UriInterface
 {
 
     /**
@@ -164,7 +166,7 @@ class Uri
      */
     public function getScheme(): string
     {
-        return $this->scheme;
+        return $this->scheme ?? '';
     }
 
     /**
@@ -174,7 +176,7 @@ class Uri
      */
     public function getHost(): string
     {
-        return $this->host;
+        return $this->host ?? '';
     }
 
     /**
@@ -213,13 +215,80 @@ class Uri
     }
 
     /**
+     * Get the URI authority (userinfo@host:port)
+     *
+     * @return string
+     */
+    public function getAuthority(): string
+    {
+        if (!$this->hasHost()) {
+            return '';
+        }
+
+        $authority = $this->getHost();
+        $userInfo  = $this->getUserInfo();
+
+        if ($userInfo !== '') {
+            $authority = $userInfo . '@' . $authority;
+        }
+
+        $port = $this->getPort();
+        if ($port !== null) {
+            $authority .= ':' . $port;
+        }
+
+        return $authority;
+    }
+
+    /**
+     * Get the URI user info (user[:password])
+     *
+     * @return string
+     */
+    public function getUserInfo(): string
+    {
+        if (!$this->hasUsername()) {
+            return '';
+        }
+
+        $userInfo = $this->username;
+
+        if ($this->hasPassword()) {
+            $userInfo .= ':' . $this->password;
+        }
+
+        return $userInfo;
+    }
+
+    /**
+     * Get the URI path
+     *
+     * @return string
+     */
+    public function getPath(): string
+    {
+        return $this->uri ?? '';
+    }
+
+    /**
      * Get the port
      *
-     * @return string|int|null
+     * @return ?int
      */
-    public function getPort(): string|int|null
+    public function getPort(): ?int
     {
-        return $this->port;
+        if ($this->port === null) {
+            return null;
+        }
+
+        $port          = (int)$this->port;
+        $standardPorts = ['http' => 80, 'https' => 443];
+
+        if (isset($standardPorts[$this->scheme]) && ($port === $standardPorts[$this->scheme])) {
+            return null;
+        }
+
+        return $port;
     }
 
     /**
@@ -229,7 +298,7 @@ class Uri
      */
     public function getQuery(): string
     {
-        return $this->query;
+        return $this->query ?? '';
     }
 
     /**
@@ -255,7 +324,7 @@ class Uri
      */
     public function getFragment(): string
     {
-        return $this->fragment;
+        return $this->fragment ?? '';
     }
 
     /**
@@ -339,7 +408,7 @@ class Uri
      */
     public function hasUsername(): bool
     {
-        return ($this->query !== null);
+        return ($this->username !== null);
     }
 
     /**
@@ -349,7 +418,7 @@ class Uri
      */
     public function hasPassword(): bool
     {
-        return ($this->fragment !== null);
+        return ($this->password !== null);
     }
 
     /**
@@ -509,6 +578,99 @@ class Uri
     {
         $this->fragment = $fragment;
         return $this;
+    }
+
+    /**
+     * Return an instance with the specified scheme
+     *
+     * @param  string $scheme
+     * @return static
+     */
+    public function withScheme(string $scheme): static
+    {
+        $clone         = clone $this;
+        $clone->scheme = ($scheme !== '') ? $scheme : null;
+        return $clone;
+    }
+
+    /**
+     * Return an instance with the specified user info
+     *
+     * @param  string  $user
+     * @param  ?string $password
+     * @return static
+     */
+    public function withUserInfo(string $user, ?string $password = null): static
+    {
+        $clone           = clone $this;
+        $clone->username = ($user !== '') ? $user : null;
+        $clone->password = $password;
+        return $clone;
+    }
+
+    /**
+     * Return an instance with the specified host
+     *
+     * @param  string $host
+     * @return static
+     */
+    public function withHost(string $host): static
+    {
+        $clone       = clone $this;
+        $clone->host = ($host !== '') ? $host : null;
+        return $clone;
+    }
+
+    /**
+     * Return an instance with the specified port
+     *
+     * @param  ?int $port
+     * @return static
+     */
+    public function withPort(?int $port): static
+    {
+        $clone       = clone $this;
+        $clone->port = $port;
+        return $clone;
+    }
+
+    /**
+     * Return an instance with the specified path
+     *
+     * @param  string $path
+     * @return static
+     */
+    public function withPath(string $path): static
+    {
+        $clone      = clone $this;
+        $clone->uri = $path;
+        return $clone;
+    }
+
+    /**
+     * Return an instance with the specified query string
+     *
+     * @param  string $query
+     * @return static
+     */
+    public function withQuery(string $query): static
+    {
+        $clone        = clone $this;
+        $clone->query = ($query !== '') ? $query : null;
+        return $clone;
+    }
+
+    /**
+     * Return an instance with the specified fragment
+     *
+     * @param  string $fragment
+     * @return static
+     */
+    public function withFragment(string $fragment): static
+    {
+        $clone           = clone $this;
+        $clone->fragment = ($fragment !== '') ? $fragment : null;
+        return $clone;
     }
 
     /**

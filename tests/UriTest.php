@@ -88,4 +88,119 @@ class UriTest extends TestCase
         $this->assertEquals('/foo/bar', $uri->getFullUri());
     }
 
+    public function testImplementsUriInterface()
+    {
+        $uri = new Uri('http://localhost/');
+        $this->assertInstanceOf('Psr\Http\Message\UriInterface', $uri);
+    }
+
+    public function testGetPortReturnsNullForStandardPort()
+    {
+        $uri = new Uri('http://localhost:80/');
+        $this->assertNull($uri->getPort());
+
+        $uri = new Uri('https://localhost:443/');
+        $this->assertNull($uri->getPort());
+    }
+
+    public function testGetPortReturnsIntForNonStandardPort()
+    {
+        $uri = new Uri('http://localhost:8000/');
+        $this->assertSame(8000, $uri->getPort());
+    }
+
+    public function testGetPortReturnsNullWhenAbsent()
+    {
+        $uri = new Uri('http://localhost/');
+        $this->assertNull($uri->getPort());
+    }
+
+    public function testGetAuthority()
+    {
+        $uri = new Uri('https://user:pass@www.domain.com:8000/foo');
+        $this->assertEquals('user:pass@www.domain.com:8000', $uri->getAuthority());
+    }
+
+    public function testGetAuthorityIsEmptyWithoutHost()
+    {
+        $uri = new Uri();
+        $this->assertEquals('', $uri->getAuthority());
+    }
+
+    public function testGetUserInfo()
+    {
+        $uri = new Uri('https://user:pass@www.domain.com/foo');
+        $this->assertEquals('user:pass', $uri->getUserInfo());
+
+        $uri = new Uri('https://www.domain.com/foo');
+        $this->assertEquals('', $uri->getUserInfo());
+    }
+
+    public function testGetPath()
+    {
+        $uri = new Uri('https://www.domain.com/foo/bar?query=123');
+        $this->assertEquals('/foo/bar', $uri->getPath());
+    }
+
+    public function testEmptyComponentsReturnEmptyStringNotNull()
+    {
+        $uri = new Uri();
+        $this->assertSame('', $uri->getScheme());
+        $this->assertSame('', $uri->getHost());
+        $this->assertSame('', $uri->getQuery());
+        $this->assertSame('', $uri->getFragment());
+        $this->assertSame('', $uri->getUserInfo());
+    }
+
+    public function testWithMethodsReturnDistinctImmutableClones()
+    {
+        $uri     = new Uri('https://www.domain.com/foo?query=1#frag');
+        $withNew = $uri->withScheme('http')
+            ->withHost('other.com')
+            ->withPort(9000)
+            ->withPath('/bar')
+            ->withQuery('a=1')
+            ->withFragment('top')
+            ->withUserInfo('bob', 'secret');
+
+        $this->assertNotSame($uri, $withNew);
+        $this->assertEquals('https', $uri->getScheme());
+        $this->assertEquals('www.domain.com', $uri->getHost());
+        $this->assertEquals('/foo', $uri->getPath());
+        $this->assertEquals('query=1', $uri->getQuery());
+        $this->assertEquals('frag', $uri->getFragment());
+
+        $this->assertEquals('http', $withNew->getScheme());
+        $this->assertEquals('other.com', $withNew->getHost());
+        $this->assertEquals(9000, $withNew->getPort());
+        $this->assertEquals('/bar', $withNew->getPath());
+        $this->assertEquals('a=1', $withNew->getQuery());
+        $this->assertEquals('top', $withNew->getFragment());
+        $this->assertEquals('bob:secret', $withNew->getUserInfo());
+    }
+
+    public function testWithSchemeEmptyStringRemovesScheme()
+    {
+        $uri = new Uri('https://www.domain.com/foo');
+        $this->assertTrue($uri->hasScheme());
+        $this->assertEquals('https', $uri->getScheme());
+
+        $withoutScheme = $uri->withScheme('');
+        $this->assertFalse($withoutScheme->hasScheme());
+        $this->assertSame('', $withoutScheme->getScheme());
+        $this->assertNotSame($uri, $withoutScheme);
+    }
+
+    public function testWithHostEmptyStringRemovesHost()
+    {
+        $uri = new Uri('https://www.domain.com:8000/foo');
+        $this->assertTrue($uri->hasHost());
+        $this->assertEquals('www.domain.com', $uri->getHost());
+
+        $withoutHost = $uri->withHost('');
+        $this->assertFalse($withoutHost->hasHost());
+        $this->assertSame('', $withoutHost->getHost());
+        $this->assertNotSame($uri, $withoutHost);
+    }
+
 }

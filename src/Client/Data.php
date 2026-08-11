@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -14,8 +14,6 @@
 namespace Pop\Http\Client;
 
 use Pop\Http\HttpFilterableTrait;
-use Pop\Mime\Message;
-use Pop\Mime\Part;
 
 /**
  * Client request data class
@@ -23,9 +21,9 @@ use Pop\Mime\Part;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Data
 {
@@ -416,43 +414,24 @@ class Data
         if ($this->hasRawData()) {
             $jsonContent = $this->getRawData();
         } else {
-            $jsonData    = $this->data;
-            $jsonContent = [];
-
-            // Check for JSON files
-            foreach ($jsonData as $jsonDatum) {
-                if (isset($jsonDatum['filename']) && isset($jsonDatum['contentType']) &&
-                    str_contains(strtolower($jsonDatum['contentType']), 'json') && file_exists($jsonDatum['filename'])) {
-                    $jsonContent = array_merge($jsonContent, json_decode(file_get_contents($jsonDatum['filename']), true));
-                }
-            }
-
-            // Else, use JSON data
-            if (empty($jsonContent)) {
-                $jsonContent = $jsonData;
-            }
+            $jsonContent = $this->data;
         }
 
         if ($this->hasRequest()) {
-            if ($this->request->hasHeader('Content-Type') && !str_contains(strtolower((string)$this->request->getHeader('Content-Type')), 'json')) {
+            if ($this->request->hasHeader('Content-Type') && !str_contains(strtolower((string)$this->request->getHeaderObject('Content-Type')), 'json')) {
                 $this->request->removeHeader('Content-Type');
             }
             if (!$this->request->hasHeader('Content-Type')) {
                 $type = $this->request?->getRequestType();
-                if (!empty($type) && (strrpos($type, 'json') !== false)) {
-                    $this->request->addHeader('Content-Type', $type);
-                } else {
-                    $this->request->addHeader('Content-Type', Request::JSON);
-                }
+                $this->request->addHeader('Content-Type', (!empty($type) && (strrpos($type, 'json') !== false)) ? $type : Request::JSON);
             }
         }
 
-        // Only encode if the data isn't already encoded
-        if (!((is_string($jsonContent) && (json_decode($jsonContent) !== false)) && (json_last_error() == JSON_ERROR_NONE))) {
-            $this->dataContent = json_encode($jsonContent, JSON_PRETTY_PRINT);
-        } else {
-            $this->dataContent = $jsonContent;
-        }
+        // useRawData() is the explicit, documented way to send pre-built content
+        // as-is; anything else is always encoded, regardless of its shape.
+        $this->dataContent = ($this->hasRequest() && $this->request->useRawData() && is_string($jsonContent))
+            ? $jsonContent
+            : json_encode($jsonContent, JSON_PRETTY_PRINT);
 
         return $this;
     }
@@ -467,19 +446,16 @@ class Data
         if ($this->hasRawData()) {
             $xmlContent = $this->getRawData();
         } else {
-            $xmlData    = $this->data;
-            $xmlContent = '';
-
-            // Check for XML files
-            foreach ($xmlData as $xmlDatum) {
-                $xmlContent .= (isset($xmlDatum['filename']) && isset($xmlDatum['contentType']) &&
-                    str_contains(strtolower($xmlDatum['contentType']), 'xml') && file_exists($xmlDatum['filename'])) ?
-                    file_get_contents($xmlDatum['filename']) : $xmlDatum;
-            }
+            // Only scalar values are meaningful as XML content to concatenate -
+            // non-scalar (e.g. array-shaped) entries are filtered out rather than
+            // string-cast, to avoid an "Array to string conversion" warning. No
+            // filename/contentType-shaped file detection here - this is not a
+            // reintroduction of the removed heuristic, just a defensive type guard.
+            $xmlContent = implode('', array_filter($this->data, 'is_scalar'));
         }
 
         if ($this->hasRequest()) {
-            if ($this->request->hasHeader('Content-Type') && !str_contains(strtolower((string)$this->request->getHeader('Content-Type')), 'xml')) {
+            if ($this->request->hasHeader('Content-Type') && !str_contains(strtolower((string)$this->request->getHeaderObject('Content-Type')), 'xml')) {
                 $this->request->removeHeader('Content-Type');
             }
             if (!$this->request->hasHeader('Content-Type')) {
@@ -500,18 +476,41 @@ class Data
     /**
      * Method to prepare multi-part data content
      *
+     * Multipart preparation is deliberately lazy/zero-copy: it only mints the boundary and
+     * declares it on the Content-Type header. The body itself is NEVER rendered here, because
+     * nothing consumes $dataContent for a multipart request - Curl gets the curl-native array
+     * shape (scalars + CURLFile) from AbstractHandler::resolveRequestBody() and streams files
+     * straight off disk, and Stream renders the string exactly once itself in Stream::prepare(),
+     * reusing the boundary declared below. Rendering here would buffer every uploaded file into
+     * memory only to throw the result away (and, for Stream, render the whole body twice).
+     *
+     * Leaving $dataContent empty also (correctly) skips the generic Content-Length block in
+     * prepare(): curl computes its own Content-Length for an array CURLOPT_POSTFIELDS since it
+     * builds the multipart framing itself, and PHP's http:// stream wrapper computes one from
+     * the 'content' it is given. Both verified empirically; neither needs an explicit header.
+     *
      * @return Data
      */
     public function prepareMultipart(): Data
     {
-        $formMessage       = Message::createForm($this->data);
-        $this->dataContent = $formMessage->renderRaw();
+        $boundary = \Pop\Http\Body\Multipart::generateBoundary();
+
+        // Explicitly empty - a prior prepareXxx() on this same Data may have left a rendered
+        // string (and its Content-Length) behind, and neither is valid for a multipart body.
+        $this->dataContent = null;
 
         if ($this->hasRequest()) {
             if ($this->request->hasHeader('Content-Type')) {
                 $this->request->removeHeader('Content-Type');
             }
-            $this->request->addHeader($formMessage->getHeader('Content-Type'));
+            $this->request->addHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary);
+
+            // The transport computes the multipart Content-Length (curl builds the framing itself
+            // for an array POSTFIELDS; PHP's stream wrapper derives it from 'content'), so any
+            // Content-Length left over from an earlier preparation can only be wrong here.
+            if ($this->request->hasHeader('Content-Length')) {
+                $this->request->removeHeader('Content-Length');
+            }
         }
 
         return $this;

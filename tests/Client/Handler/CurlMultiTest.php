@@ -189,4 +189,17 @@ class CurlMultiTest extends TestCase
         $this->assertInstanceOf('Pop\Http\Promise', $promise);
         $this->assertCount(2, $var);
     }
+
+    public function testImplementsHandlerInterface()
+    {
+        $multi = new CurlMulti();
+        $this->assertInstanceOf('Pop\Http\Client\Handler\HandlerInterface', $multi);
+    }
+
+    public function testIsBatchSuccessAliasedFromIsSuccess()
+    {
+        $multi = new CurlMulti();
+        // isSuccess() must still work (deprecated alias) and agree with isBatchSuccess()
+        $this->assertEquals($multi->isBatchSuccess(), $multi->isSuccess());
+    }
 }

@@ -3,7 +3,6 @@
 namespace Pop\Http\Test\Server;
 
 use Pop\Http\Parser;
-use Pop\Mime\Message;
 use PHPUnit\Framework\TestCase;
 
 class ParserTest extends TestCase
@@ -74,12 +73,66 @@ XML;
             'colors'   => ['Red', 'Green']
         ];
 
-        $formMessage = Message::createForm($formData);
-        $content     = Parser::parseDataByContentType($formMessage, 'multipart/form-data');
+        $boundary = 'PARSERTESTBOUNDARY';
+        $body     = \Pop\Http\Body\Multipart::build($formData, $boundary);
+        $content  = Parser::parseDataByContentType(
+            $body->getContent(), 'multipart/form-data; boundary=' . $boundary
+        );
         $this->assertEquals('admin', $content['username']);
         $this->assertEquals('123456', $content['password']);
         $this->assertEquals('Red', $content['colors'][0]);
         $this->assertEquals('Green', $content['colors'][1]);
+    }
+
+    public function testParseMediaType()
+    {
+        $result = Parser::parseMediaType('application/vnd.api+json; charset=utf-8');
+        $this->assertEquals('application', $result['type']);
+        $this->assertEquals('vnd.api', $result['subtype']);
+        $this->assertEquals('json', $result['suffix']);
+        $this->assertEquals('utf-8', $result['params']['charset']);
+    }
+
+    public function testParseMediaTypeWithNoSuffix()
+    {
+        $result = Parser::parseMediaType('text/plain');
+        $this->assertEquals('text', $result['type']);
+        $this->assertEquals('plain', $result['subtype']);
+        $this->assertNull($result['suffix']);
+    }
+
+    public function testXhtmlXmlDoesNotRouteThroughXmlParser()
+    {
+        // application/xhtml+xml is XHTML, not generic XML, and should not be
+        // silently routed through the generic <root><foo>bar</foo></root>-style
+        // SimpleXML parse path the way application/xml is.
+        $content = '<!DOCTYPE html><html><body>Not parseable as the generic XML shape</body></html>';
+        $result  = Parser::parseDataByContentType($content, 'application/xhtml+xml');
+        $this->assertEquals($content, $result);
+    }
+
+    public function testMalformedXmlThrowsException()
+    {
+        $this->expectException(\Pop\Http\Exception::class);
+        Parser::parseDataByContentType('<not><valid</xml>', 'application/xml');
+    }
+
+    public function testParseJsonWithNonUtf8Charset()
+    {
+        $json = json_encode(['foo' => 'bar']);
+        $iso  = mb_convert_encoding($json, 'ISO-8859-1', 'UTF-8');
+
+        $result = Parser::parseDataByContentType($iso, 'application/json; charset=iso-8859-1');
+        $this->assertEquals('bar', $result['foo']);
+    }
+
+    public function testParseMultipartDelegatesToBodyMultipart()
+    {
+        $body = \Pop\Http\Body\Multipart::build(['username' => 'admin'], 'DELEGATEBOUNDARY');
+        $result = Parser::parseDataByContentType(
+            $body->getContent(), 'multipart/form-data; boundary=DELEGATEBOUNDARY'
+        );
+        $this->assertEquals('admin', $result['username']);
     }
 
     public function testParseResponseFromUri()
@@ -152,6 +205,29 @@ e\r\n
 \r\n
 BODY;
         $this->assertStringContainsString('Wik', Parser::decodeData($body, null, true));
+    }
+
+    public function testDecodeGzipWithExtraHeaderFields()
+    {
+        // gzencode() with a non-empty $filename argument produces a gzip header
+        // with the FNAME flag set, adding bytes beyond the fixed 10-byte minimum
+        // header. The old gzinflate(substr($data, 10)) implementation assumed
+        // exactly 10 bytes and would corrupt this.
+        $original   = 'Hello World, this is gzip test content.';
+        $compressed = gzencode($original, 9, FORCE_GZIP);
+        // Re-encode with a filename to force extra header bytes:
+        $gzHeaderWithName = "\x1f\x8b\x08\x08" . pack('V', time()) . "\x00\x03" . "myfile.txt\x00" .
+            substr($compressed, 10);
+
+        $this->assertEquals($original, Parser::decodeData($gzHeaderWithName, 'GZIP'));
+    }
+
+    public function testDecodeStandardGzip()
+    {
+        $original   = 'Standard gzip content';
+        $compressed = gzencode($original);
+
+        $this->assertEquals($original, Parser::decodeData($compressed, 'GZIP'));
     }
 
 }

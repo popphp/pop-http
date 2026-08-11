@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -13,15 +13,20 @@
  */
 namespace Pop\Http;
 
-use Pop\Http\Client\Data;
 use Pop\Http\Client\Handler\Stream;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
 use Pop\Http\Client\Handler\Curl;
 use Pop\Http\Client\Handler\CurlMulti;
 use Pop\Http\Client\Handler\HandlerInterface;
-use Pop\Mime\Part\Body;
+use Pop\Http\Client\Middleware\CallableMiddleware;
+use Pop\Http\Client\Middleware\MiddlewareInterface;
+use Pop\Http\Client\Middleware\Pipeline;
+use Pop\Http\Body;
 use Pop\Mime\Part\Header;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * HTTP client class
@@ -29,11 +34,11 @@ use Pop\Mime\Part\Header;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
-class Client extends AbstractHttp
+class Client extends AbstractHttp implements ClientInterface
 {
 
     /**
@@ -59,6 +64,12 @@ class Client extends AbstractHttp
      * @var ?Auth
      */
     protected ?Auth $auth = null;
+
+    /**
+     * Registered middleware, in registration order (first-registered = outermost)
+     * @var array
+     */
+    protected array $middleware = [];
 
     /**
      * Instantiate the client object
@@ -108,6 +119,17 @@ class Client extends AbstractHttp
                 $this->setHandler($handler);
             }
         }
+
+        if ((!$this->hasRequest()) && (isset($this->options['base_uri']) || $this->hasOption('method') ||
+            $this->hasOption('data') || $this->hasOption('query') || $this->hasOption('headers') ||
+            $this->hasOption('type') || $this->hasOption('files'))) {
+            $this->request = new Request(
+                isset($this->options['base_uri']) ? new Uri($this->options['base_uri']) : null,
+                $this->options['method'] ?? 'GET'
+            );
+        }
+
+        $this->syncRequestFromOptions();
     }
 
     /**
@@ -139,6 +161,25 @@ class Client extends AbstractHttp
     public static function fromCurlCommand(string $command): Client
     {
         return Curl\Command::commandToClient($command);
+    }
+
+    /**
+     * Set the request object
+     *
+     * Overrides AbstractHttp::setRequest() so that any options already set on this client
+     * (via the constructor or setOptions()/addOption()) get synced onto a request that arrives
+     * via a direct setRequest() call - not just one materialized internally by prepare(). Without
+     * this, options set before an explicit setRequest() call were silently dropped, since
+     * syncRequestFromOptions() is a no-op until a request exists.
+     *
+     * @param  AbstractRequest $request
+     * @return Client
+     */
+    public function setRequest(AbstractRequest $request): Client
+    {
+        parent::setRequest($request);
+        $this->syncRequestFromOptions();
+        return $this;
     }
 
     /**
@@ -208,11 +249,7 @@ class Client extends AbstractHttp
     public function setOptions(array $options): Client
     {
         $this->options = $options;
-
-        if (isset($this->options['type']) && ($this->hasRequest()) &&
-            ($this->request instanceof Client\Request) && (!$this->request->hasRequestType())) {
-            $this->request->setRequestType($this->options['type']);
-        }
+        $this->syncRequestFromOptions();
 
         return $this;
     }
@@ -241,13 +278,65 @@ class Client extends AbstractHttp
     public function addOption(string $name, mixed $value): Client
     {
         $this->options[$name] = $value;
-
-        if (isset($this->options['type']) && ($this->hasRequest()) &&
-            ($this->request instanceof Client\Request) && (!$this->request->hasRequestType())) {
-            $this->request->setRequestType($this->options['type']);
-        }
+        $this->syncRequestFromOptions();
 
         return $this;
+    }
+
+    /**
+     * Push request-shaped options ('type', 'headers', 'query', 'data', 'files') onto the
+     * client's request, if one exists. Options are configuration that seeds the request the
+     * moment both are available - they are not a second, parallel data store - so this is the
+     * one place that seeding happens, called any time the request or the options change.
+     *
+     * 'query' and 'data' are merged onto the request key-by-key (addQuery()/addData()), not
+     * replaced wholesale (setQuery()/setData()) - this method can run again later (e.g. from a
+     * later addOption() call for an unrelated key), and a wholesale replace would silently wipe
+     * out any data/query values added directly in between via addData()/addQuery() or a prior
+     * sync. 'headers' and 'files' are naturally merge-safe already (addHeaders()/addData() key
+     * on name), and 'type' is guarded to apply only once (first request type wins).
+     *
+     * @return void
+     */
+    protected function syncRequestFromOptions(): void
+    {
+        if (!$this->hasRequest()) {
+            return;
+        }
+
+        if ($this->hasOption('method')) {
+            $this->request->setMethod($this->options['method']);
+        }
+
+        if ($this->hasOption('type') && !$this->request->hasRequestType()) {
+            $this->setType($this->options['type']);
+        }
+
+        if ($this->hasOption('headers') && is_array($this->options['headers'])) {
+            $this->addHeaders($this->options['headers']);
+        }
+
+        if ($this->hasOption('query') && is_array($this->options['query'])) {
+            foreach ($this->options['query'] as $name => $value) {
+                $this->addQuery($name, $value);
+            }
+        }
+
+        if ($this->hasOption('data') && is_array($this->options['data'])) {
+            foreach ($this->options['data'] as $name => $value) {
+                $this->addData($name, $value);
+            }
+        }
+
+        if ($this->hasOption('files')) {
+            foreach ($this->options['files'] as $i => $file) {
+                $name = is_numeric($i) ? 'file' . ($i + 1) : $i;
+                $this->addData($name, [
+                    'filename'    => $file,
+                    'contentType' => Client\Data::getMimeTypeFromFilename($file)
+                ]);
+            }
+        }
     }
 
     /**
@@ -349,6 +438,42 @@ class Client extends AbstractHttp
     }
 
     /**
+     * Add a middleware to the pipeline. A plain callable is wrapped in
+     * CallableMiddleware automatically. Registration order is wrap order: the
+     * first-registered middleware is outermost.
+     *
+     * @param  MiddlewareInterface|callable $middleware
+     * @return Client
+     */
+    public function addMiddleware(MiddlewareInterface|callable $middleware): Client
+    {
+        $this->middleware[] = ($middleware instanceof MiddlewareInterface)
+            ? $middleware : new CallableMiddleware($middleware);
+
+        return $this;
+    }
+
+    /**
+     * Get the registered middleware, in registration order
+     *
+     * @return array
+     */
+    public function getMiddleware(): array
+    {
+        return $this->middleware;
+    }
+
+    /**
+     * Has any middleware registered
+     *
+     * @return bool
+     */
+    public function hasMiddleware(): bool
+    {
+        return !empty($this->middleware);
+    }
+
+    /**
      * Set multi-handler
      *
      * @param  CurlMulti $multiHandler
@@ -426,11 +551,7 @@ class Client extends AbstractHttp
      */
     public function setHeaders(array $headers): Client
     {
-        if ($this->hasRequest()) {
-            $this->request->setHeaders($headers);
-        } else {
-            $this->options['headers'] = $headers;
-        }
+        $this->request()->setHeaders($headers);
         return $this;
     }
 
@@ -442,11 +563,7 @@ class Client extends AbstractHttp
      */
     public function addHeaders(array $headers): Client
     {
-        if ($this->hasRequest()) {
-            $this->request->addHeaders($headers);
-        } else {
-            $this->options['headers'] = $headers;
-        }
+        $this->request()->addHeaders($headers);
         return $this;
     }
 
@@ -459,19 +576,7 @@ class Client extends AbstractHttp
      */
     public function addHeader(Header|string|int $header, mixed $value = null): Client
     {
-        if ($this->hasRequest()) {
-            $this->request->addHeader($header, $value);
-        } else {
-            if (!isset($this->options['headers'])) {
-                $this->options['headers'] = [];
-            }
-            if ($header instanceof Header) {
-                $this->options['headers'][$header->getName()] = $header;
-            } else {
-                $this->options['headers'][$header] = $value;
-            }
-        }
-
+        $this->request()->addHeader($header, $value);
         return $this;
     }
 
@@ -482,11 +587,7 @@ class Client extends AbstractHttp
      */
     public function getHeaders(): mixed
     {
-        if (($this->hasRequest()) && ($this->request->hasHeaders())) {
-            return $this->request->getHeaders();
-        } else {
-            return $this->options['headers'] ?? null;
-        }
+        return ($this->hasRequest() && $this->request->hasHeaders()) ? $this->request->getHeaderObjects() : null;
     }
 
     /**
@@ -497,11 +598,7 @@ class Client extends AbstractHttp
      */
     public function getHeader(string $name): mixed
     {
-        if (($this->hasRequest()) && ($this->request->hasHeader($name))) {
-            return $this->request->getHeader($name);
-        } else {
-            return (isset($this->options['headers'][$name])) ? $this->options['headers'][$name] : null;
-        }
+        return ($this->hasRequest() && $this->request->hasHeader($name)) ? $this->request->getHeaderObject($name) : null;
     }
 
     /**
@@ -511,11 +608,7 @@ class Client extends AbstractHttp
      */
     public function hasHeaders(): bool
     {
-        if (($this->hasRequest()) && ($this->request->hasHeaders())) {
-            return true;
-        } else {
-            return !empty($this->options['headers']);
-        }
+        return $this->hasRequest() && $this->request->hasHeaders();
     }
 
     /**
@@ -526,11 +619,7 @@ class Client extends AbstractHttp
      */
     public function hasHeader(string $name): bool
     {
-        if (($this->hasRequest()) && ($this->request->hasHeader($name))) {
-            return true;
-        } else {
-            return isset($this->options['headers'][$name]);
-        }
+        return $this->hasRequest() && $this->request->hasHeader($name);
     }
 
     /**
@@ -541,13 +630,9 @@ class Client extends AbstractHttp
      */
     public function removeHeader(string $name): Client
     {
-        if (($this->hasRequest()) && ($this->request->hasHeader($name))) {
+        if ($this->hasHeader($name)) {
             $this->request->removeHeader($name);
         }
-        if (isset($this->options['headers'][$name])) {
-            unset($this->options['headers'][$name]);
-        }
-
         return $this;
     }
 
@@ -558,14 +643,26 @@ class Client extends AbstractHttp
      */
     public function removeAllHeaders(): Client
     {
-        if (($this->hasRequest()) && ($this->request->hasHeaders())) {
+        if ($this->hasHeaders()) {
             $this->request->removeHeaders();
         }
-        if (isset($this->options['headers'])) {
-            unset($this->options['headers']);
-        }
-
         return $this;
+    }
+
+    /**
+     * Get the client's request, materializing an empty one if none exists yet -
+     * every data-touching setter goes through this, so there is exactly one
+     * place a Client\Request gets created on demand instead of the old
+     * options-array-vs-request dual bookkeeping.
+     *
+     * @return Client\Request
+     */
+    protected function request(): Client\Request
+    {
+        if (!$this->hasRequest()) {
+            $this->request = new Request();
+        }
+        return $this->request;
     }
 
     /**
@@ -576,12 +673,7 @@ class Client extends AbstractHttp
      */
     public function setData(array $data): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $this->request->setData($data);
-        } else {
-            $this->options['data'] = $data;
-        }
-
+        $this->request()->setData($data);
         return $this;
     }
 
@@ -594,15 +686,7 @@ class Client extends AbstractHttp
      */
     public function addData(string $name, mixed $value): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $this->request->addData($name, $value);
-        } else {
-            if (!isset($this->options['data'])) {
-                $this->options['data'] = [];
-            }
-            $this->options['data'][$name] = $value;
-        }
-
+        $this->request()->addData($name, $value);
         return $this;
     }
 
@@ -614,22 +698,7 @@ class Client extends AbstractHttp
      */
     public function getData(?string $key = null): mixed
     {
-        $data = null;
-
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $data = $this->request->getData()->getData($key);
-        }
-
-        if (($data === null) && isset($this->options['data'])) {
-            if ($key !== null) {
-                $data = (isset($this->options['data'][$key])) ?
-                    $this->options['data'][$key] : null;
-            } else {
-                $data = $this->options['data'] ?? null;
-            }
-        }
-
-        return $data;
+        return $this->hasRequest() ? $this->request->getData()?->getData($key) : null;
     }
 
     /**
@@ -640,12 +709,7 @@ class Client extends AbstractHttp
      */
     public function hasData(?string $key = null): bool
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
-            ($this->request->hasData()) && ($this->request->getData()->hasData($key))) {
-            return true;
-        } else {
-            return ($key !== null) ? isset($this->options['data'][$key]) : isset($this->options['data']);
-        }
+        return $this->hasRequest() && $this->request->hasData() && $this->request->getData()->hasData($key);
     }
 
     /**
@@ -656,14 +720,9 @@ class Client extends AbstractHttp
      */
     public function removeData(string $key): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
-            ($this->request->hasData()) && ($this->request->getData()->hasData($key))) {
+        if ($this->hasData($key)) {
             $this->request->removeData($key);
         }
-        if (isset($this->options['data'][$key])) {
-            unset($this->options['data'][$key]);
-        }
-
         return $this;
     }
 
@@ -674,13 +733,9 @@ class Client extends AbstractHttp
      */
     public function removeAllData(): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request) && ($this->request->hasData())) {
+        if ($this->hasRequest() && $this->request->hasData()) {
             $this->request->removeAllData();
         }
-        if (isset($this->options['data'])) {
-            unset($this->options['data']);
-        }
-
         return $this;
     }
 
@@ -692,12 +747,7 @@ class Client extends AbstractHttp
      */
     public function setQuery(array $query): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $this->request->setQuery(new Data($query));
-        } else {
-            $this->options['query'] = $query;
-        }
-
+        $this->request()->setQuery($query);
         return $this;
     }
 
@@ -710,15 +760,7 @@ class Client extends AbstractHttp
      */
     public function addQuery(string $name, mixed $value): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $this->request->addQuery($name, $value);
-        } else {
-            if (!isset($this->options['query'])) {
-                $this->options['query'] = [];
-            }
-            $this->options['query'][$name] = $value;
-        }
-
+        $this->request()->addQuery($name, $value);
         return $this;
     }
 
@@ -730,22 +772,7 @@ class Client extends AbstractHttp
      */
     public function getQuery(?string $key = null): mixed
     {
-        $query = null;
-
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $query = $this->request->getQuery()->getData($key);
-        }
-
-        if (($query === null) && isset($this->options['query'])) {
-            if ($key !== null) {
-                $query = (isset($this->options['query'][$key])) ?
-                    $this->options['query'][$key] : null;
-            } else {
-                $query = $this->options['query'] ?? null;
-            }
-        }
-
-        return $query;
+        return $this->hasRequest() ? $this->request->getQuery()?->getData($key) : null;
     }
 
     /**
@@ -756,12 +783,7 @@ class Client extends AbstractHttp
      */
     public function hasQuery(?string $key = null): bool
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
-            ($this->request->hasQuery()) && ($this->request->getQuery()->hasData($key))) {
-            return true;
-        } else {
-            return ($key !== null) ? isset($this->options['query'][$key]) : isset($this->options['query']);
-        }
+        return $this->hasRequest() && $this->request->hasQuery() && $this->request->getQuery()->hasData($key);
     }
 
     /**
@@ -772,14 +794,9 @@ class Client extends AbstractHttp
      */
     public function removeQuery(string $key): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request) &&
-            ($this->request->hasQuery()) && ($this->request->getQuery()->hasData($key))) {
+        if ($this->hasQuery($key)) {
             $this->request->removeQuery($key);
         }
-        if (isset($this->options['query'][$key])) {
-            unset($this->options['query'][$key]);
-        }
-
         return $this;
     }
 
@@ -790,13 +807,9 @@ class Client extends AbstractHttp
      */
     public function removeAllQuery(): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request) && ($this->request->hasQuery())) {
+        if ($this->hasRequest() && $this->request->hasQuery()) {
             $this->request->removeAllQuery();
         }
-        if (isset($this->options['query'])) {
-            unset($this->options['query']);
-        }
-
         return $this;
     }
 
@@ -809,12 +822,7 @@ class Client extends AbstractHttp
      */
     public function setType(string $type, bool $addHeader = true): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            $this->request->setRequestType($type, $addHeader);
-        } else {
-            $this->options['type'] = $type;
-        }
-
+        $this->request()->setRequestType($type, $addHeader);
         return $this;
     }
 
@@ -825,11 +833,7 @@ class Client extends AbstractHttp
      */
     public function getType(): mixed
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
-            return $this->request->getRequestType();
-        } else {
-            return $this->options['type'] ?? null;
-        }
+        return $this->hasRequest() ? $this->request->getRequestType() : null;
     }
 
     /**
@@ -839,8 +843,7 @@ class Client extends AbstractHttp
      */
     public function hasType(): bool
     {
-        return ((($this->hasRequest()) && ($this->request instanceof Client\Request))) ?
-            $this->request->hasRequestType() : isset($this->options['type']);
+        return $this->hasRequest() && $this->request->hasRequestType();
     }
 
     /**
@@ -850,13 +853,9 @@ class Client extends AbstractHttp
      */
     public function removeType(): Client
     {
-        if (($this->hasRequest()) && ($this->request instanceof Client\Request)) {
+        if ($this->hasType()) {
             $this->request->removeRequestType();
         }
-        if (isset($this->options['type'])) {
-            unset($this->options['type']);
-        }
-
         return $this;
     }
 
@@ -874,22 +873,18 @@ class Client extends AbstractHttp
             $files = [$files];
         }
 
-        $filenames = [];
+        // Replace semantics, consistent with setData()/setHeaders()/setQuery() - a set*() call
+        // supersedes what was there before; add*() is the accumulating counterpart.
+        $this->removeFiles();
 
         foreach ($files as $i => $file) {
-            if (!file_exists($file)) {
-                throw new Exception("Error: The file '" . $file . "' does not exist.");
-            }
-
-            $name = (is_numeric($i)) ? 'file' . ($i + 1) : $i;
-            $filenames[$name] = $file;
+            $this->addFile($file, is_numeric($i) ? null : $i);
         }
-
-        $this->options['files'] = $filenames;
 
         if ($multipart) {
-            $this->options['type'] = Request::MULTIPART;
+            $this->setType(Client\Request::MULTIPART);
         }
+
         return $this;
     }
 
@@ -907,20 +902,16 @@ class Client extends AbstractHttp
             throw new Exception("Error: The file '" . $file . "' does not exist.");
         }
 
-        if (!isset($this->options['files'])) {
-            $this->options['files'] = [];
-        }
-
         if ($name === null) {
             $i = 1;
-            $name = 'file' . $i;
-            while (isset($this->options['files'][$name])) {
-                $i++;
+            do {
                 $name = 'file' . $i;
-            }
+                $i++;
+            } while ($this->hasFile($name));
         }
 
-        $this->options['files'][$name] = $file;
+        $this->addData($name, ['filename' => $file, 'contentType' => Client\Data::getMimeTypeFromFilename($file)]);
+
         return $this;
     }
 
@@ -931,7 +922,18 @@ class Client extends AbstractHttp
      */
     public function getFiles(): array|null
     {
-        return $this->options['files'] ?? null;
+        if (!$this->hasRequest() || !$this->request->hasData()) {
+            return null;
+        }
+
+        $files = [];
+        foreach ($this->request->getData()->getData() as $name => $value) {
+            if (is_array($value) && isset($value['filename'])) {
+                $files[$name] = $value['filename'];
+            }
+        }
+
+        return !empty($files) ? $files : null;
     }
 
     /**
@@ -942,8 +944,7 @@ class Client extends AbstractHttp
      */
     public function getFile(string $key): ?string
     {
-        return (isset($this->options['files'][$key])) ?
-                $this->options['files'][$key] : null;
+        return $this->getFiles()[$key] ?? null;
     }
 
     /**
@@ -953,7 +954,7 @@ class Client extends AbstractHttp
      */
     public function hasFiles(): bool
     {
-        return isset($this->options['files']);
+        return !empty($this->getFiles());
     }
 
     /**
@@ -964,7 +965,7 @@ class Client extends AbstractHttp
      */
     public function hasFile(string $key): bool
     {
-        return (isset($this->options['files'][$key]));
+        return array_key_exists($key, $this->getFiles() ?? []);
     }
 
     /**
@@ -975,10 +976,9 @@ class Client extends AbstractHttp
      */
     public function removeFile(string $key): Client
     {
-        if (isset($this->options['files'][$key])) {
-            unset($this->options['files'][$key]);
+        if ($this->hasFile($key)) {
+            $this->removeData($key);
         }
-
         return $this;
     }
 
@@ -989,10 +989,9 @@ class Client extends AbstractHttp
      */
     public function removeFiles(): Client
     {
-        if (isset($this->options['files'])) {
-            unset($this->options['files']);
+        foreach (array_keys($this->getFiles() ?? []) as $key) {
+            $this->removeData($key);
         }
-
         return $this;
     }
 
@@ -1132,16 +1131,25 @@ class Client extends AbstractHttp
                 $uri = $this->options['base_uri'] . $uri;
             }
             $this->setRequest(new Request(new Uri($uri), ($method ?? 'GET')));
+
+            // A request has just been materialized for the first time, so seed it from any
+            // request-shaped options. syncRequestFromOptions() is a no-op without a request, so
+            // options set on a client that had no request yet (e.g. `new Client(new Curl())` then
+            // `addOption('data', [...])`) would otherwise be silently dropped. This deliberately
+            // does NOT run when a request already existed: addOption()/setOptions() sync
+            // themselves at call time in that case, and re-running the sync here would merge
+            // stale option data back over any explicit setData()/removeData() made since.
+            $this->syncRequestFromOptions();
+        }
+
+        // An explicit method argument to prepare() outranks a 'method' option the sync just applied
+        if ($method !== null) {
+            $this->request->setMethod($method);
         }
 
         // Set request type
         if ($this->hasOption('type')) {
             $this->request->setRequestType($this->options['type']);
-        }
-
-        // Add headers
-        if (($this->hasOption('headers')) && is_array($this->options['headers'])) {
-            $this->request->addHeaders($this->options['headers']);
         }
 
         // Set no Content-Length header flag
@@ -1152,37 +1160,6 @@ class Client extends AbstractHttp
         // Set raw data flag
         if ($this->hasOption('raw_data')) {
             $this->request->setRawData($this->options['raw_data']);
-        }
-
-        // Add query
-        if ($this->hasOption('query')) {
-            $this->request->setQuery($this->options['query']);
-        }
-
-        // Add data
-        $data = [];
-        if ($this->hasOption('data')) {
-            $data = $this->options['data'];
-        }
-
-        // Add files
-        if ($this->hasOption('files')) {
-            $files = $this->options['files'];
-            foreach ($files as $file => $value) {
-                $file = (is_numeric($file)) ? 'file' . ($file + 1) : $file;
-                $data[$file] = [
-                    'filename'    => $value,
-                    'contentType' => Client\Data::getMimeTypeFromFilename($value)
-                ];
-            }
-        }
-
-        if (!empty($data)) {
-            if ($this->request->hasData()) {
-                $this->request->getData()->addData($data);
-            } else {
-                $this->request->setData($data);
-            }
         }
 
         // Set (or reset) handler
@@ -1227,14 +1204,161 @@ class Client extends AbstractHttp
         if (isset($this->options['async']) && ($this->options['async'] === true)) {
             return $this->sendAsync();
         } else {
-            $this->prepare($uri, $method);
-            $this->response = (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) ?
-                $this->handler->prepare($this->request, $this->auth, (bool)$this->options['force_custom_method'])->send() :
-                $this->handler->prepare($this->request, $this->auth)->send();
-
-            return (($this->hasOption('auto')) && ($this->options['auto']) && ($this->response instanceof Response)) ?
-                $this->response->getParsedResponse() : $this->response;
+            return $this->dispatch($uri, $method);
         }
+    }
+
+    /**
+     * Perform the actual synchronous dispatch, always - unlike send(), this does
+     * NOT redirect to sendAsync() when the 'async' option is set. Promise::wait()/
+     * resolve() call this (not send()) to perform the real request: since a Promise
+     * wraps a Client whose 'async' option is still true for the lifetime of that
+     * Client, calling send() from inside wait()/resolve() would re-enter the async
+     * branch above and return a brand-new Promise instead of ever dispatching.
+     *
+     * @param  ?string $uri
+     * @param  ?string $method
+     * @throws Exception|Client\Exception|Client\Handler\Exception
+     * @return Response|array|string
+     */
+    public function dispatch(?string $uri = null, ?string $method = null): Response|array|string
+    {
+        $this->prepare($uri, $method);
+        $this->response = $this->processMiddleware($this->request);
+
+        return (($this->hasOption('auto')) && ($this->options['auto']) && ($this->response instanceof Response)) ?
+            $this->response->getParsedResponse() : $this->response;
+    }
+
+    /**
+     * Perform the actual handler dispatch for the given request - the terminal
+     * handler at the center of the middleware pipeline. If $request is a
+     * Client\Request, it's re-pointed as $this->request first, so any
+     * middleware-applied modifications (e.g. an injected header) are reflected
+     * in what's actually sent. A foreign (non-Client\Request) PSR-7 request is
+     * converted first, reusing the same conversion sendRequest() uses.
+     *
+     * Note: this is public (so a terminal callable passed into Pipeline::process()
+     * can reach it), but it assumes prepare() has already run - it does not create
+     * a handler itself, and depends on $this->handler already being set.
+     *
+     * @param  RequestInterface $request
+     * @throws Exception|Client\Exception|Client\Handler\Exception
+     * @return Response
+     */
+    public function dispatchRequest(RequestInterface $request): Response
+    {
+        if (!($request instanceof Request)) {
+            $request = $this->convertToClientRequest($request);
+        }
+
+        if ($request !== $this->request) {
+            parent::setRequest($request);
+        }
+
+        $this->response = (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) ?
+            $this->handler->prepare($this->request, $this->auth, (bool)$this->options['force_custom_method'])->send() :
+            $this->handler->prepare($this->request, $this->auth)->send();
+
+        return $this->response;
+    }
+
+    /**
+     * Run the request through the middleware pipeline (if any), terminating in
+     * dispatchRequest(). Shared by dispatch() and sendRequest() so middleware
+     * behaves identically regardless of entry point.
+     *
+     * MiddlewareInterface::process() is typed to the broader PSR-7 ResponseInterface
+     * (see that interface's docblock), but this method's return type is narrowed to
+     * Client\Response, since that's the concrete type Client's internals require. If
+     * a middleware short-circuits with some other ResponseInterface implementation,
+     * that mismatch is caught below and re-thrown as a clear Client\Exception rather
+     * than surfacing as a raw TypeError.
+     *
+     * @param  RequestInterface $request
+     * @throws Exception|Client\Exception|Client\Handler\Exception
+     * @return Response
+     */
+    protected function processMiddleware(RequestInterface $request): Response
+    {
+        if (!$this->hasMiddleware()) {
+            return $this->dispatchRequest($request);
+        }
+
+        $pipeline = new Pipeline($this->middleware);
+        $response = $pipeline->process($request, fn(RequestInterface $req) => $this->dispatchRequest($req));
+
+        if (!($response instanceof Response)) {
+            throw new Client\Exception(
+                'Error: A middleware returned a ' . get_class($response) .
+                ', but Pop\Http\Client requires middleware to return a Pop\Http\Client\Response ' .
+                '(see Pop\Http\Client\Middleware\MiddlewareInterface::process()).'
+            );
+        }
+
+        return $response;
+    }
+
+    /**
+     * Send a PSR-7 request and return a PSR-7 response, per PSR-18
+     *
+     * @param  RequestInterface $request
+     * @throws Exception|Client\Exception|Client\RequestException|Client\Handler\Exception
+     * @return ResponseInterface
+     */
+    public function sendRequest(RequestInterface $request): ResponseInterface
+    {
+        $clientRequest = $this->convertToClientRequest($request);
+
+        if (!$clientRequest->hasUri()) {
+            throw new Client\RequestException('Error: There is no request URI to send.', $clientRequest);
+        }
+
+        $this->setRequest($clientRequest);
+        $this->prepare();
+
+        $this->response = $this->processMiddleware($this->request);
+
+        return $this->response;
+    }
+
+    /**
+     * Convert a foreign (non-Client\Request) PSR-7 RequestInterface into a
+     * Client\Request. A Client\Request passed in is returned as-is. Shared by
+     * sendRequest() (the PSR-18 entry point) and dispatchRequest() (so a
+     * middleware that substitutes a foreign PSR-7 request is honored rather
+     * than silently dropped).
+     *
+     * @param  RequestInterface $request
+     * @throws Client\Exception
+     * @return Request
+     */
+    protected function convertToClientRequest(RequestInterface $request): Request
+    {
+        if ($request instanceof Request) {
+            return $request;
+        }
+
+        try {
+            $clientRequest = new Request((string)$request->getUri(), $request->getMethod());
+            foreach ($request->getHeaders() as $name => $values) {
+                $clientRequest->addHeader($name, array_shift($values));
+                foreach ($values as $value) {
+                    $clientRequest->getHeaderObject($name)->addValue($value);
+                }
+            }
+            $body = (string)$request->getBody();
+            if ($body !== '') {
+                $clientRequest->setBody($body);
+            }
+        } catch (\Throwable $e) {
+            throw new Client\Exception(
+                'Error: Unable to convert the given ' . get_class($request) .
+                ' PSR-7 request into a Pop\Http\Client\Request: ' . $e->getMessage(), 0, $e
+            );
+        }
+
+        return $clientRequest;
     }
 
     /**
@@ -1273,6 +1397,20 @@ class Client extends AbstractHttp
 
         if ($this->request->hasDataContent()) {
             $request .= $this->request->getDataContent();
+        // Multipart data is prepared lazily - prepareData() only mints the boundary and declares
+        // the Content-Type header, leaving the body to the handler's own (streaming) path - so
+        // there is no buffered data content to display here. render() is a one-shot debug/
+        // inspection method rather than part of the send path, so building the rendered body on
+        // demand here is fine, and reusing the already-declared boundary keeps the header and
+        // the displayed body in agreement.
+        } else if (($this->request->hasData()) && ($this->request->isMultipart())) {
+            $boundary    = null;
+            $contentType = $this->request->getHeaderValueAsString('Content-Type');
+            if ($contentType !== null) {
+                $boundary = Parser::parseMediaType($contentType)['params']['boundary'] ?? null;
+            }
+
+            $request .= Body\Multipart::build($this->request->getData()->getData(), $boundary)->getContent();
         }
         return $request;
     }

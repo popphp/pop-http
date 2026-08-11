@@ -189,7 +189,11 @@ class CurlTest extends TestCase
         $request->setData(['foo' => 'bar']);
         $client  = new Client($request, $curl);
         $client->getHandler()->prepare($client->getRequest());
-        $this->assertTrue(str_contains($curl->getOption(CURLOPT_POSTFIELDS), "Content-Disposition: form-data; name=foo\r\n\r\nbar\r\n"));
+        // Multipart bodies are now resolved to the curl-native array shape (scalars + CURLFile)
+        // via Pop\Http\Body\Multipart::toArray(), letting curl stream file uploads directly from
+        // disk instead of pop-http fully buffering the multipart body as a string.
+        $this->assertIsArray($curl->getOption(CURLOPT_POSTFIELDS));
+        $this->assertEquals(['foo' => 'bar'], $curl->getOption(CURLOPT_POSTFIELDS));
     }
 
     public function testPrepareWithPostFormData()
@@ -217,6 +221,254 @@ class CurlTest extends TestCase
         $this->expectException('Pop\Http\Client\Handler\Exception');
         $curl = new Curl([CURLOPT_URL => '$%#%$^#$%$$#']);
         $curl->send();
+    }
+
+    public function testMultipartPostFieldsIsArrayNotString()
+    {
+        $file = sys_get_temp_dir() . '/pop-http-curl-test-' . uniqid() . '.txt';
+        file_put_contents($file, 'streamed content');
+
+        $request = new \Pop\Http\Client\Request('http://localhost/', 'POST');
+        $request->setData(['upload' => ['filename' => $file, 'contentType' => 'text/plain']])
+            ->createAsMultipart();
+
+        $curl = new Curl();
+        $curl->prepare($request);
+
+        $this->assertIsArray($curl->getOption(CURLOPT_POSTFIELDS));
+        $this->assertInstanceOf('CURLFile', $curl->getOption(CURLOPT_POSTFIELDS)['upload']);
+
+        unlink($file);
+    }
+
+    public function testCurlErrorExceptionExposesErrno()
+    {
+        $curl = new Curl();
+        $curl->setOption(CURLOPT_URL, 'http://this-domain-should-not-resolve.invalid/');
+        $curl->setOption(CURLOPT_CONNECTTIMEOUT, 1);
+
+        try {
+            $curl->send();
+            $this->fail('Expected an exception to be thrown');
+        } catch (\Pop\Http\Client\Handler\Exception $e) {
+            $this->assertGreaterThan(0, $e->getCurlErrno());
+        }
+    }
+
+    public function testMultipartPostFieldsHasNoContentTypeHeader()
+    {
+        $file = sys_get_temp_dir() . '/pop-http-curl-test-' . uniqid() . '.txt';
+        file_put_contents($file, 'streamed content');
+
+        $request = new \Pop\Http\Client\Request('http://localhost/', 'POST');
+        $request->setData(['upload' => ['filename' => $file, 'contentType' => 'text/plain']])
+            ->createAsMultipart();
+
+        $curl = new Curl();
+        $curl->prepare($request);
+
+        $headers            = $curl->getOption(CURLOPT_HTTPHEADER);
+        $contentTypeHeaders = array_filter($headers, fn($header) => str_starts_with($header, 'Content-Type:'));
+
+        $this->assertCount(0, $contentTypeHeaders);
+
+        unlink($file);
+    }
+
+    public function testMultipartStripsLowercaseContentTypeHeader()
+    {
+        // Regression test: HTTP header names are case-insensitive, so a user-supplied
+        // 'content-type: ...' must be stripped too - otherwise it would be sent alongside
+        // curl's own auto-generated multipart Content-Type, giving two conflicting headers.
+        $request = new \Pop\Http\Client\Request('http://localhost/', 'POST');
+        $request->createAsMultipart()
+            ->setData(['foo' => 'bar']);
+        $request->addHeader('content-type', 'text/plain');
+
+        // Sanity check: the lowercase header really is on the request and really is rendered
+        $this->assertTrue($request->hasHeader('content-type'));
+
+        $curl = new Curl();
+        $curl->prepare($request);
+
+        $headers = $curl->getOption(CURLOPT_HTTPHEADER);
+        $this->assertIsArray($headers);
+        $contentTypeHeaders = array_filter($headers, fn($header) => stripos($header, 'content-type:') === 0);
+        $this->assertCount(0, $contentTypeHeaders, 'Sent headers: ' . implode(' | ', $headers));
+    }
+
+    public function testMultipartPostFieldsIsZeroCopyAndCarriesTheBoundaryOnTheRequest()
+    {
+        // Task 14 regression guard, re-asserted after multipart preparation was made lazy:
+        // curl still gets the native array shape and the request still carries a boundary.
+        $file = sys_get_temp_dir() . '/pop-http-curl-lazy-' . uniqid() . '.txt';
+        file_put_contents($file, 'streamed content');
+
+        $request = new \Pop\Http\Client\Request('http://localhost/', 'POST');
+        $request->createAsMultipart()
+            ->setData(['username' => 'admin', 'upload' => ['filename' => $file, 'contentType' => 'text/plain']]);
+
+        $curl = new Curl();
+        $curl->prepare($request);
+
+        $postFields = $curl->getOption(CURLOPT_POSTFIELDS);
+        $this->assertIsArray($postFields);
+        $this->assertEquals('admin', $postFields['username']);
+        $this->assertInstanceOf('CURLFile', $postFields['upload']);
+        $this->assertEquals($file, $postFields['upload']->getFilename());
+
+        $this->assertStringStartsWith('multipart/form-data; boundary=', $request->getHeaderValueAsString('Content-Type'));
+
+        // Nothing rendered the body into a string, so there is no pop-http Content-Length -
+        // curl computes its own, since it builds the multipart framing itself.
+        $this->assertEmpty($request->getData()->getDataContent());
+        $this->assertFalse($request->hasHeader('Content-Length'));
+
+        unlink($file);
+    }
+
+    public function testReusedHandlerClearsStalePostFields()
+    {
+        // Regression test: curl switches the method to POST whenever CURLOPT_POSTFIELDS is set,
+        // so a stale body left over from a prior prepare() would silently turn a subsequent
+        // body-less GET into a POST.
+        $curl = new Curl();
+
+        $curl->prepare(new Request('http://localhost/', 'POST', ['foo' => 'bar']));
+        $this->assertEquals('foo=bar', $curl->getOption(CURLOPT_POSTFIELDS));
+
+        $curl->prepare(new Request('http://localhost/other', 'GET'));
+
+        $this->assertFalse($curl->hasOption(CURLOPT_POSTFIELDS));
+        $this->assertNull($curl->getOption(CURLOPT_POSTFIELDS));
+        $this->assertFalse($curl->hasOption(CURLOPT_POST));
+        $this->assertFalse($curl->hasOption(CURLOPT_CUSTOMREQUEST));
+        // libcurl keeps a handle in POST mode until GET is asserted explicitly, so unsetting
+        // CURLOPT_POST/CURLOPT_POSTFIELDS alone is not enough to make this a real GET.
+        $this->assertTrue($curl->hasOption(CURLOPT_HTTPGET));
+        $this->assertTrue($curl->getOption(CURLOPT_HTTPGET));
+    }
+
+    public function testPrepareWithClearFalsePreservesPreDefinedPostFields()
+    {
+        // Regression test: the stale-body clearing must respect $clear the same way the header
+        // handling does - with $clear = false a body pre-defined directly on the handler has to
+        // survive rather than being wiped by a body-less request.
+        $curl = new Curl();
+        $curl->setOption(CURLOPT_POSTFIELDS, 'pre-defined=body');
+
+        $curl->prepare(new Request('http://localhost/', 'POST'), null, false, false);
+
+        $this->assertEquals('pre-defined=body', $curl->getOption(CURLOPT_POSTFIELDS));
+    }
+
+    /**
+     * Drive a prepared Curl handler against an in-process loopback listener and return the
+     * raw request bytes it actually put on the wire. Uses an ephemeral port and no external
+     * process, so it stays deterministic.
+     */
+    private function captureRequestOnTheWire(Curl $curl, string $method): string
+    {
+        $server = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
+        $this->assertIsResource($server, 'Could not bind a loopback listener: ' . $errstr);
+
+        $name = stream_socket_get_name($server, false);
+        $port = (int)substr($name, strrpos($name, ':') + 1);
+        stream_set_blocking($server, false);
+
+        $curl->prepare(new Request('http://127.0.0.1:' . $port . '/', $method, ($method === 'POST') ? ['foo' => 'bar'] : null));
+        $curl->setOption(CURLOPT_TIMEOUT, 5);
+
+        $multi = curl_multi_init();
+        curl_multi_add_handle($multi, $curl->resource());
+
+        $captured = '';
+        $conn     = null;
+        $start    = microtime(true);
+
+        do {
+            curl_multi_exec($multi, $running);
+
+            if ($conn === null) {
+                $conn = @stream_socket_accept($server, 0);
+                if (is_resource($conn)) {
+                    stream_set_blocking($conn, false);
+                } else {
+                    $conn = null;
+                }
+            }
+
+            if (is_resource($conn)) {
+                $chunk = fread($conn, 8192);
+                if (is_string($chunk)) {
+                    $captured .= $chunk;
+                }
+                if (str_contains($captured, "\r\n\r\n")) {
+                    fwrite($conn, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok");
+                    fclose($conn);
+                    $conn = false;
+                }
+            }
+
+            usleep(1000);
+        } while ($running && ((microtime(true) - $start) < 5));
+
+        curl_multi_remove_handle($multi, $curl->resource());
+        curl_multi_close($multi);
+        fclose($server);
+
+        return $captured;
+    }
+
+    public function testReusedHandlerSendsARealGetOnTheWireAfterAPost()
+    {
+        // The option-level assertions above are necessary but not sufficient: clearing
+        // CURLOPT_POSTFIELDS is itself a curl_setopt(..., null) call that puts the handle right
+        // back into POST mode, and that is completely invisible in the tracked options array.
+        // Only the bytes on the wire prove the method.
+        $curl = new Curl();
+
+        $post = $this->captureRequestOnTheWire($curl, 'POST');
+        $this->assertStringStartsWith('POST / HTTP/1.1', $post);
+        $this->assertStringContainsString('foo=bar', $post);
+
+        $get = $this->captureRequestOnTheWire($curl, 'GET');
+        $this->assertStringStartsWith('GET / HTTP/1.1', $get);
+        $this->assertStringNotContainsString('foo=bar', $get);
+        $this->assertStringNotContainsString('Content-Type: application/x-www-form-urlencoded', $get);
+    }
+
+    public function testHttpGetIsClearedWhenAReusedHandlerSwitchesBackToPost()
+    {
+        $curl = new Curl();
+
+        $curl->prepare(new Request('http://localhost/', 'GET'));
+        $this->assertTrue($curl->hasOption(CURLOPT_HTTPGET));
+
+        $curl->prepare(new Request('http://localhost/', 'POST', ['foo' => 'bar']));
+        $this->assertFalse($curl->hasOption(CURLOPT_HTTPGET));
+        $this->assertTrue($curl->hasOption(CURLOPT_POST));
+        $this->assertEquals('foo=bar', $curl->getOption(CURLOPT_POSTFIELDS));
+
+        $curl->prepare(new Request('http://localhost/', 'PUT'));
+        $this->assertFalse($curl->hasOption(CURLOPT_HTTPGET));
+        $this->assertEquals('PUT', $curl->getOption(CURLOPT_CUSTOMREQUEST));
+    }
+
+    public function testSendFailureExceptionCarriesTheRequest()
+    {
+        $request = new \Pop\Http\Client\Request('http://invalid.invalid/');
+        $handler = new \Pop\Http\Client\Handler\Curl();
+        $handler->prepare($request);
+        $handler->setOption(CURLOPT_TIMEOUT_MS, 200);
+        $handler->setOption(CURLOPT_CONNECTTIMEOUT_MS, 200);
+
+        try {
+            $handler->send();
+            $this->fail('Expected a Client\Handler\Exception to be thrown.');
+        } catch (\Pop\Http\Client\Handler\Exception $exception) {
+            $this->assertSame($request, $exception->getRequest());
+        }
     }
 
 }

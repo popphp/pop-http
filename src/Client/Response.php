@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -23,9 +23,9 @@ use Pop\Utils\Collection;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
 class Response extends AbstractResponse
 {
@@ -46,15 +46,15 @@ class Response extends AbstractResponse
         if ($this->hasBody()) {
             $rawResponse = $this->getBody()->getContent();
             foreach ($contentEncodingHeaders as $contentEncodingHeader) {
-                if ($this->hasHeader($contentEncodingHeader) && (count($this->getHeader($contentEncodingHeader)->getValues()) == 1)) {
-                    $contentEncoding = (string)$this->getHeader($contentEncodingHeader)->getValue(0);
+                if ($this->hasHeader($contentEncodingHeader) && (count($this->getHeaderObject($contentEncodingHeader)->getValues()) == 1)) {
+                    $contentEncoding = (string)$this->getHeaderObject($contentEncodingHeader)->getValue(0);
                     break;
                 }
             }
 
             foreach ($contentTypeHeaders as $contentTypeHeader) {
-                if ($this->hasHeader($contentTypeHeader) && (count($this->getHeader($contentTypeHeader)->getValues()) == 1)) {
-                    $contentType    = (string)$this->getHeader($contentTypeHeader)->getValue(0);
+                if ($this->hasHeader($contentTypeHeader) && (count($this->getHeaderObject($contentTypeHeader)->getValues()) == 1)) {
+                    $contentType    = (string)$this->getHeaderObject($contentTypeHeader)->getValue(0);
                     $parsedResponse = Parser::parseDataByContentType($rawResponse, $contentType, $contentEncoding);
                     if ($parsedResponse != $rawResponse) {
                         break;

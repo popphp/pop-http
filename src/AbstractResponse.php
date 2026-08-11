@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -14,7 +14,8 @@
 namespace Pop\Http;
 
 use Pop\Mime\Part\Header;
-use Pop\Mime\Part\Body;
+use Pop\Http\Body;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Abstract HTTP response class
@@ -22,11 +23,11 @@ use Pop\Mime\Part\Body;
  * @category   Pop
  * @package    Pop\Http
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    5.3.8
+ * @version    6.0.0
  */
-abstract class AbstractResponse extends AbstractRequestResponse
+abstract class AbstractResponse extends AbstractRequestResponse implements ResponseInterface
 {
 
     /**
@@ -270,6 +271,66 @@ abstract class AbstractResponse extends AbstractRequestResponse
     public function hasMessage(): bool
     {
         return ($this->message !== null);
+    }
+
+    /**
+     * Get the HTTP protocol version, per PSR-7 (alias of getVersion())
+     *
+     * @return string
+     */
+    public function getProtocolVersion(): string
+    {
+        return $this->version;
+    }
+
+    /**
+     * Return an instance with the specified HTTP protocol version, per PSR-7
+     *
+     * @param  string $version
+     * @return static
+     */
+    public function withProtocolVersion(string $version): static
+    {
+        $clone = clone $this;
+        $clone->setVersion($version);
+        return $clone;
+    }
+
+    /**
+     * Get the response status code, per PSR-7 (alias of getCode())
+     *
+     * @return int
+     */
+    public function getStatusCode(): int
+    {
+        return $this->code;
+    }
+
+    /**
+     * Get the response reason phrase, per PSR-7 (alias of getMessage())
+     *
+     * @return string
+     */
+    public function getReasonPhrase(): string
+    {
+        return $this->message ?? '';
+    }
+
+    /**
+     * Return an instance with the specified status code and reason phrase, per PSR-7
+     *
+     * @param  int    $code
+     * @param  string $reasonPhrase
+     * @return static
+     */
+    public function withStatus(int $code, string $reasonPhrase = ''): static
+    {
+        $clone = clone $this;
+        $clone->setCode($code);
+        if ($reasonPhrase !== '') {
+            $clone->setMessage($reasonPhrase);
+        }
+        return $clone;
     }
 
     /**
