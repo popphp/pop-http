@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -124,9 +125,9 @@ class Request extends AbstractRequest implements ServerRequestInterface
         parent::__construct($uri);
 
         if ($populateFromGlobals) {
-            $this->cookie = (isset($_COOKIE)) ? $_COOKIE : [];
-            $this->server = (isset($_SERVER)) ? $_SERVER : [];
-            $this->env    = (isset($_ENV))    ? $_ENV    : [];
+            $this->cookie = array_key_exists('_COOKIE', $GLOBALS) ? $_COOKIE : [];
+            $this->server = array_key_exists('_SERVER', $GLOBALS) ? $_SERVER : [];
+            $this->env    = array_key_exists('_ENV', $GLOBALS)    ? $_ENV    : [];
 
             // Get any possible request headers
             if (function_exists('getallheaders')) {
@@ -154,8 +155,13 @@ class Request extends AbstractRequest implements ServerRequestInterface
             $this->server = $serverParams;
         }
 
+        $contentType     = $this->getHeaderValue('Content-Type');
+        $contentEncoding = $this->getHeaderValue('Content-Encoding');
+
         $this->data = new Data(
-            $this->getHeaderValue('Content-Type'), $this->getHeaderValue('Content-Encoding'), $filters, $streamToFile, $populateFromGlobals
+            ($contentType !== null) ? (string)$contentType : null,
+            ($contentEncoding !== null) ? (string)$contentEncoding : null,
+            $filters, $streamToFile, $populateFromGlobals
         );
 
         if ($this->data->hasRawData()) {
@@ -362,7 +368,7 @@ class Request extends AbstractRequest implements ServerRequestInterface
      */
     public function getPort(): string|null
     {
-        return $this->server['SERVER_PORT'] ?? null;
+        return isset($this->server['SERVER_PORT']) ? (string)$this->server['SERVER_PORT'] : null;
     }
 
     /**
@@ -702,7 +708,7 @@ class Request extends AbstractRequest implements ServerRequestInterface
     /**
      * Get data
      *
-     * @return Uri
+     * @return Data
      */
     public function getData(): Data
     {

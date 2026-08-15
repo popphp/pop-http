@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -19,6 +20,7 @@ use Pop\Http\Client\Response;
 use Pop\Http\Client\Handler\Curl;
 use Pop\Http\Client\Handler\CurlMulti;
 use Pop\Http\Client\Handler\HandlerInterface;
+use Pop\Http\Client\Handler\Mock;
 use Pop\Http\Client\Middleware\CallableMiddleware;
 use Pop\Http\Client\Middleware\MiddlewareInterface;
 use Pop\Http\Client\Middleware\Pipeline;
@@ -191,7 +193,7 @@ class Client extends AbstractHttp implements ClientInterface
     public function setMethod(string $method): Client
     {
         if ($this->hasRequest()) {
-            $this->request->setMethod($method);
+            $this->request()->setMethod($method);
         } else {
             $this->options['method'] = $method;
         }
@@ -207,7 +209,7 @@ class Client extends AbstractHttp implements ClientInterface
     public function getMethod(): ?string
     {
         if ($this->hasRequest()) {
-            return $this->request->getMethod();
+            return $this->request()->getMethod();
         } else {
             return $this->options['method'] ?? null;
         }
@@ -220,7 +222,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function hasMethod(): bool
     {
-        return ((($this->hasRequest()) && !empty($this->request->getMethod())) || isset($this->options['method']));
+        return ((($this->hasRequest()) && !empty($this->request()->getMethod())) || isset($this->options['method']));
     }
 
     /**
@@ -305,10 +307,10 @@ class Client extends AbstractHttp implements ClientInterface
         }
 
         if ($this->hasOption('method')) {
-            $this->request->setMethod($this->options['method']);
+            $this->request()->setMethod($this->options['method']);
         }
 
-        if ($this->hasOption('type') && !$this->request->hasRequestType()) {
+        if ($this->hasOption('type') && !$this->request()->hasRequestType()) {
             $this->setType($this->options['type']);
         }
 
@@ -587,7 +589,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getHeaders(): mixed
     {
-        return ($this->hasRequest() && $this->request->hasHeaders()) ? $this->request->getHeaderObjects() : null;
+        return ($this->hasRequest() && $this->request()->hasHeaders()) ? $this->request()->getHeaderObjects() : null;
     }
 
     /**
@@ -598,7 +600,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getHeader(string $name): mixed
     {
-        return ($this->hasRequest() && $this->request->hasHeader($name)) ? $this->request->getHeaderObject($name) : null;
+        return ($this->hasRequest() && $this->request()->hasHeader($name)) ? $this->request()->getHeaderObject($name) : null;
     }
 
     /**
@@ -608,7 +610,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function hasHeaders(): bool
     {
-        return $this->hasRequest() && $this->request->hasHeaders();
+        return $this->hasRequest() && $this->request()->hasHeaders();
     }
 
     /**
@@ -619,7 +621,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function hasHeader(string $name): bool
     {
-        return $this->hasRequest() && $this->request->hasHeader($name);
+        return $this->hasRequest() && $this->request()->hasHeader($name);
     }
 
     /**
@@ -631,7 +633,7 @@ class Client extends AbstractHttp implements ClientInterface
     public function removeHeader(string $name): Client
     {
         if ($this->hasHeader($name)) {
-            $this->request->removeHeader($name);
+            $this->request()->removeHeader($name);
         }
         return $this;
     }
@@ -644,7 +646,7 @@ class Client extends AbstractHttp implements ClientInterface
     public function removeAllHeaders(): Client
     {
         if ($this->hasHeaders()) {
-            $this->request->removeHeaders();
+            $this->request()->removeHeaders();
         }
         return $this;
     }
@@ -659,10 +661,38 @@ class Client extends AbstractHttp implements ClientInterface
      */
     protected function request(): Client\Request
     {
-        if (!$this->hasRequest()) {
+        if (!($this->request instanceof Request)) {
             $this->request = new Request();
         }
         return $this->request;
+    }
+
+    /**
+     * Get the request
+     *
+     * @throws Exception
+     * @return Request
+     */
+    public function getRequest(): Request
+    {
+        if (!($this->request instanceof Request)) {
+            throw new Exception('Error: The request object has not been created.');
+        }
+        return $this->request;
+    }
+
+    /**
+     * Get the response
+     *
+     * @throws Exception
+     * @return Response
+     */
+    public function getResponse(): Response
+    {
+        if (!($this->response instanceof Response)) {
+            throw new Exception('Error: The response object has not been created.');
+        }
+        return $this->response;
     }
 
     /**
@@ -698,7 +728,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getData(?string $key = null): mixed
     {
-        return $this->hasRequest() ? $this->request->getData()?->getData($key) : null;
+        return $this->hasRequest() ? $this->request()->getData()?->getData($key) : null;
     }
 
     /**
@@ -709,7 +739,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function hasData(?string $key = null): bool
     {
-        return $this->hasRequest() && $this->request->hasData() && $this->request->getData()->hasData($key);
+        return $this->hasRequest() && $this->request()->hasData() && $this->request()->getData()->hasData($key);
     }
 
     /**
@@ -721,7 +751,7 @@ class Client extends AbstractHttp implements ClientInterface
     public function removeData(string $key): Client
     {
         if ($this->hasData($key)) {
-            $this->request->removeData($key);
+            $this->request()->removeData($key);
         }
         return $this;
     }
@@ -733,8 +763,8 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function removeAllData(): Client
     {
-        if ($this->hasRequest() && $this->request->hasData()) {
-            $this->request->removeAllData();
+        if ($this->hasRequest() && $this->request()->hasData()) {
+            $this->request()->removeAllData();
         }
         return $this;
     }
@@ -772,7 +802,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getQuery(?string $key = null): mixed
     {
-        return $this->hasRequest() ? $this->request->getQuery()?->getData($key) : null;
+        return $this->hasRequest() ? $this->request()->getQuery()?->getData($key) : null;
     }
 
     /**
@@ -783,7 +813,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function hasQuery(?string $key = null): bool
     {
-        return $this->hasRequest() && $this->request->hasQuery() && $this->request->getQuery()->hasData($key);
+        return $this->hasRequest() && $this->request()->hasQuery() && $this->request()->getQuery()->hasData($key);
     }
 
     /**
@@ -795,7 +825,7 @@ class Client extends AbstractHttp implements ClientInterface
     public function removeQuery(string $key): Client
     {
         if ($this->hasQuery($key)) {
-            $this->request->removeQuery($key);
+            $this->request()->removeQuery($key);
         }
         return $this;
     }
@@ -807,8 +837,8 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function removeAllQuery(): Client
     {
-        if ($this->hasRequest() && $this->request->hasQuery()) {
-            $this->request->removeAllQuery();
+        if ($this->hasRequest() && $this->request()->hasQuery()) {
+            $this->request()->removeAllQuery();
         }
         return $this;
     }
@@ -833,7 +863,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getType(): mixed
     {
-        return $this->hasRequest() ? $this->request->getRequestType() : null;
+        return $this->hasRequest() ? $this->request()->getRequestType() : null;
     }
 
     /**
@@ -843,7 +873,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function hasType(): bool
     {
-        return $this->hasRequest() && $this->request->hasRequestType();
+        return $this->hasRequest() && $this->request()->hasRequestType();
     }
 
     /**
@@ -854,7 +884,7 @@ class Client extends AbstractHttp implements ClientInterface
     public function removeType(): Client
     {
         if ($this->hasType()) {
-            $this->request->removeRequestType();
+            $this->request()->removeRequestType();
         }
         return $this;
     }
@@ -922,12 +952,12 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getFiles(): array|null
     {
-        if (!$this->hasRequest() || !$this->request->hasData()) {
+        if (!$this->hasRequest() || !$this->request()->hasData()) {
             return null;
         }
 
         $files = [];
-        foreach ($this->request->getData()->getData() as $name => $value) {
+        foreach ($this->request()->getData()->getData() as $name => $value) {
             if (is_array($value) && isset($value['filename'])) {
                 $files[$name] = $value['filename'];
             }
@@ -1008,7 +1038,7 @@ class Client extends AbstractHttp implements ClientInterface
             throw new Exception('Error: The request object has not been created.');
         }
 
-        $this->request->setBody($body);
+        $this->request()->setBody($body);
 
         return $this;
     }
@@ -1029,7 +1059,7 @@ class Client extends AbstractHttp implements ClientInterface
             throw new Exception("Error: The file '" . $file . "' does not exist.");
         }
 
-        $this->request->setBody(file_get_contents($file));
+        $this->request()->setBody(file_get_contents($file));
 
         return $this;
     }
@@ -1041,7 +1071,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function hasBody(): bool
     {
-        return (($this->request !== null) && ($this->request->hasBody()));
+        return (($this->request !== null) && ($this->request()->hasBody()));
     }
 
     /**
@@ -1051,7 +1081,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getBody(): ?Body
     {
-        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBody() : null;
+        return (($this->request !== null) && ($this->request()->hasBody())) ? $this->request()->getBody() : null;
     }
 
     /**
@@ -1061,7 +1091,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getBodyContent(): ?string
     {
-        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBodyContent() : null;
+        return (($this->request !== null) && ($this->request()->hasBody())) ? $this->request()->getBodyContent() : null;
     }
 
     /**
@@ -1072,7 +1102,7 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function getBodyContentLength(bool $mb = false): int
     {
-        return (($this->request !== null) && ($this->request->hasBody())) ? $this->request->getBodyContentLength($mb) : 0;
+        return (($this->request !== null) && ($this->request()->hasBody())) ? $this->request()->getBodyContentLength($mb) : 0;
     }
 
     /**
@@ -1082,8 +1112,8 @@ class Client extends AbstractHttp implements ClientInterface
      */
     public function removeBody(): Client
     {
-        if (($this->request !== null) && ($this->request->hasBody())) {
-            $this->request->removeBody();
+        if (($this->request !== null) && ($this->request()->hasBody())) {
+            $this->request()->removeBody();
         }
         return $this;
     }
@@ -1113,15 +1143,15 @@ class Client extends AbstractHttp implements ClientInterface
                 if (isset($this->options['base_uri']) && !str_starts_with($uri, $this->options['base_uri'])) {
                     $uri = $this->options['base_uri'] . $uri;
                 }
-                $this->request->setUri(new Uri($uri));
+                $this->request()->setUri(new Uri($uri));
             // Else, check and adjust for base_uri
-            } else if (isset($this->options['base_uri']) && !str_starts_with($this->request->getUriAsString(), $this->options['base_uri'])) {
-                $this->request->setUri($this->options['base_uri'] . $this->request->getUriAsString());
+            } else if (isset($this->options['base_uri']) && !str_starts_with($this->request()->getUriAsString(), $this->options['base_uri'])) {
+                $this->request()->setUri($this->options['base_uri'] . $this->request()->getUriAsString());
             }
 
             // Set method
             if ($method !== null) {
-                $this->request->setMethod($method);
+                $this->request()->setMethod($method);
             }
         // Create new request object
         } else {
@@ -1144,22 +1174,22 @@ class Client extends AbstractHttp implements ClientInterface
 
         // An explicit method argument to prepare() outranks a 'method' option the sync just applied
         if ($method !== null) {
-            $this->request->setMethod($method);
+            $this->request()->setMethod($method);
         }
 
         // Set request type
         if ($this->hasOption('type')) {
-            $this->request->setRequestType($this->options['type']);
+            $this->request()->setRequestType($this->options['type']);
         }
 
         // Set no Content-Length header flag
         if ($this->hasOption('no_content_length')) {
-            $this->request->setNoContentLength($this->options['no_content_length']);
+            $this->request()->setNoContentLength($this->options['no_content_length']);
         }
 
         // Set raw data flag
         if ($this->hasOption('raw_data')) {
-            $this->request->setRawData($this->options['raw_data']);
+            $this->request()->setRawData($this->options['raw_data']);
         }
 
         // Set (or reset) handler
@@ -1179,7 +1209,7 @@ class Client extends AbstractHttp implements ClientInterface
         }
 
         // Handle SSL options
-        if (!($this->handler instanceof CurlMulti)) {
+        if (($this->handler instanceof Curl) || ($this->handler instanceof Stream) || ($this->handler instanceof Mock)) {
             if ($this->hasOption('verify_peer')) {
                 $this->handler->setVerifyPeer((bool)$this->options['verify_peer']);
             }
@@ -1226,7 +1256,7 @@ class Client extends AbstractHttp implements ClientInterface
         $this->prepare($uri, $method);
         $this->response = $this->processMiddleware($this->request);
 
-        return (($this->hasOption('auto')) && ($this->options['auto']) && ($this->response instanceof Response)) ?
+        return (($this->hasOption('auto')) && ($this->options['auto'])) ?
             $this->response->getParsedResponse() : $this->response;
     }
 
@@ -1256,9 +1286,15 @@ class Client extends AbstractHttp implements ClientInterface
             parent::setRequest($request);
         }
 
-        $this->response = (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) ?
-            $this->handler->prepare($this->request, $this->auth, (bool)$this->options['force_custom_method'])->send() :
-            $this->handler->prepare($this->request, $this->auth)->send();
+        $response = (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) ?
+            $this->handler->prepare($request, $this->auth, (bool)$this->options['force_custom_method'])->send() :
+            $this->handler->prepare($request, $this->auth)->send();
+
+        if (!($response instanceof Response)) {
+            throw new Client\Exception('Error: The handler did not return a valid response.');
+        }
+
+        $this->response = $response;
 
         return $this->response;
     }
@@ -1381,9 +1417,9 @@ class Client extends AbstractHttp implements ClientInterface
         $this->prepare();
 
         if (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) {
-            $this->handler->prepare($this->request, $this->auth, (bool)$this->options['force_custom_method']);
+            $this->handler->prepare($this->request(), $this->auth, (bool)$this->options['force_custom_method']);
         } else {
-            $this->handler->prepare($this->request, $this->auth);
+            $this->handler->prepare($this->request(), $this->auth);
         }
 
         $uri       = $this->handler->getUriObject();
@@ -1392,25 +1428,25 @@ class Client extends AbstractHttp implements ClientInterface
             $uriString .= '?' . $uri->getQuery();
         }
 
-        $request = $this->request->getMethod() . ' ' . $uriString . ' HTTP/' . $this->handler->getHttpVersion() . "\r\n" .
-            'Host: ' . $uri->getFullHost() . "\r\n" . $this->request->getHeadersAsString() . "\r\n";
+        $request = $this->request()->getMethod() . ' ' . $uriString . ' HTTP/' . $this->handler->getHttpVersion() . "\r\n" .
+            'Host: ' . $uri->getFullHost() . "\r\n" . $this->request()->getHeadersAsString() . "\r\n";
 
-        if ($this->request->hasDataContent()) {
-            $request .= $this->request->getDataContent();
+        if ($this->request()->hasDataContent()) {
+            $request .= $this->request()->getDataContent();
         // Multipart data is prepared lazily - prepareData() only mints the boundary and declares
         // the Content-Type header, leaving the body to the handler's own (streaming) path - so
         // there is no buffered data content to display here. render() is a one-shot debug/
         // inspection method rather than part of the send path, so building the rendered body on
         // demand here is fine, and reusing the already-declared boundary keeps the header and
         // the displayed body in agreement.
-        } else if (($this->request->hasData()) && ($this->request->isMultipart())) {
+        } else if (($this->request()->hasData()) && ($this->request()->isMultipart())) {
             $boundary    = null;
-            $contentType = $this->request->getHeaderValueAsString('Content-Type');
+            $contentType = $this->request()->getHeaderValueAsString('Content-Type');
             if ($contentType !== null) {
                 $boundary = Parser::parseMediaType($contentType)['params']['boundary'] ?? null;
             }
 
-            $request .= Body\Multipart::build($this->request->getData()->getData(), $boundary)->getContent();
+            $request .= Body\Multipart::build($this->request()->getData()->getData(), $boundary)->getContent();
         }
         return $request;
     }
@@ -1446,11 +1482,11 @@ class Client extends AbstractHttp implements ClientInterface
                     unset($this->options['files']);
                 }
                 if ($this->request !== null) {
-                    if ($this->request->hasQuery()) {
-                        $this->request->removeAllQuery();
+                    if ($this->request()->hasQuery()) {
+                        $this->request()->removeAllQuery();
                     }
-                    if ($this->request->hasData()) {
-                        $this->request->removeAllData();
+                    if ($this->request()->hasData()) {
+                        $this->request()->removeAllData();
                     }
                 }
             }
@@ -1462,8 +1498,8 @@ class Client extends AbstractHttp implements ClientInterface
                     unset($this->options['user_agent']);
                 }
                 if ($this->request !== null) {
-                    if ($this->request->hasHeaders()) {
-                        $this->request->removeHeaders();
+                    if ($this->request()->hasHeaders()) {
+                        $this->request()->removeHeaders();
                     }
                 }
             }

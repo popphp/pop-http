@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -13,7 +14,6 @@
  */
 namespace Pop\Http\Client\Handler;
 
-use Pop\Http\AbstractRequest;
 use Pop\Http\Auth;
 use Pop\Http\Parser;
 use Pop\Http\Client\Request;
@@ -353,17 +353,15 @@ class Stream extends AbstractHandler
     /**
      * Method to prepare the handler
      *
-     * @param  Request|AbstractRequest $request
-     * @param  ?Auth                   $auth
-     * @param  bool                    $clear
+     * @param  Request $request
+     * @param  ?Auth    $auth
+     * @param  bool     $clear
      * @throws \Pop\Http\Exception
      * @return Stream
      */
-    public function prepare(Request|AbstractRequest $request, ?Auth $auth = null, bool $clear = true): Stream
+    public function prepare(Request $request, ?Auth $auth = null, bool $clear = true): Stream
     {
-        if ($request instanceof Request) {
-            $this->request = $request;
-        }
+        $this->request = $request;
 
         $this->setMethod($request->getMethod());
 
@@ -476,7 +474,7 @@ class Stream extends AbstractHandler
             $response->setVersion($parsedHeaders['version']);
         }
         if (!empty($parsedHeaders['code'])) {
-            $response->setCode($parsedHeaders['code']);
+            $response->setCode((int)$parsedHeaders['code']);
         }
         if (!empty($parsedHeaders['message'])) {
             $response->setMessage($parsedHeaders['message']);

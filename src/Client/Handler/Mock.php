@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -13,7 +14,6 @@
  */
 namespace Pop\Http\Client\Handler;
 
-use Pop\Http\AbstractRequest;
 use Pop\Http\Auth;
 use Pop\Http\Client\Request;
 use Pop\Http\Client\Response;
@@ -136,15 +136,13 @@ class Mock extends AbstractHandler
      * actual bytes. It does add the auth header and prepare request data, same as
      * Curl/Stream, so a recorded request in history/matching is semantically complete.
      *
-     * @param  Request|AbstractRequest $request
-     * @param  ?Auth                   $auth
+     * @param  Request $request
+     * @param  ?Auth    $auth
      * @return Mock
      */
-    public function prepare(Request|AbstractRequest $request, ?Auth $auth = null): Mock
+    public function prepare(Request $request, ?Auth $auth = null): Mock
     {
-        if ($request instanceof Request) {
-            $this->request = $request;
-        }
+        $this->request = $request;
 
         if ($auth !== null) {
             $request->addHeader($auth->createAuthHeader());

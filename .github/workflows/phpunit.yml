@@ -15,7 +15,6 @@ jobs:
     strategy:
       matrix:
         php-versions: [ '8.4', '8.5' ]
-        phpunit-versions: ['12.5.0']
 
     services:
       httpd:
@@ -30,7 +29,6 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
-          tools: phpunit:${{ matrix.phpunit-versions }}
           extensions: json, simplexml, zlib, mbstring
 
       #- name: Validate composer.json and composer.lock
@@ -47,3 +45,6 @@ jobs:
 
       - name: Run test suite
         run: composer run-script test
+
+      - name: Run analyse suite
+        run: composer run-script analyse

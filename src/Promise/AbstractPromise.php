@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -80,7 +81,7 @@ abstract class AbstractPromise implements PromiseInterface
      * Method to set client promiser
      *
      * @param  Client|CurlMulti $promiser
-     * @return PromiseInterface
+     * @return AbstractPromise
      */
     public function setPromiser(Client|CurlMulti $promiser): AbstractPromise
     {
@@ -120,7 +121,7 @@ abstract class AbstractPromise implements PromiseInterface
         if (!($success instanceof CallableObject) && !is_callable($success)) {
             throw new Exception('Error: The success callback must be an instance of CallableObject or a callable');
         }
-        if (!($success instanceof CallableObject) && is_callable($success)) {
+        if (!($success instanceof CallableObject)) {
             $success = new CallableObject($success);
         }
 
@@ -169,7 +170,7 @@ abstract class AbstractPromise implements PromiseInterface
         if (!($failure instanceof CallableObject) && !is_callable($failure)) {
             throw new Exception('Error: The failure callback must be an instance of CallableObject or a callable');
         }
-        if (!($failure instanceof CallableObject) && is_callable($failure)) {
+        if (!($failure instanceof CallableObject)) {
             $failure = new CallableObject($failure);
         }
 
@@ -208,7 +209,7 @@ abstract class AbstractPromise implements PromiseInterface
         if (!($cancel instanceof CallableObject) && !is_callable($cancel)) {
             throw new Exception('Error: The cancel callback must be an instance of CallableObject or a callable');
         }
-        if (!($cancel instanceof CallableObject) && is_callable($cancel)) {
+        if (!($cancel instanceof CallableObject)) {
             $cancel = new CallableObject($cancel);
         }
 
@@ -240,14 +241,14 @@ abstract class AbstractPromise implements PromiseInterface
      * Method to set finally callable
      *
      * @param  mixed $finally
-     * @return PromiseInterface
+     * @return AbstractPromise
      */
     public function setFinally(mixed $finally): AbstractPromise
     {
         if (!($finally instanceof CallableObject) && !is_callable($finally)) {
             throw new Exception('Error: The cancel callback must be an instance of CallableObject or a callable');
         }
-        if (!($finally instanceof CallableObject) && is_callable($finally)) {
+        if (!($finally instanceof CallableObject)) {
             $finally = new CallableObject($finally);
         }
 
@@ -308,7 +309,7 @@ abstract class AbstractPromise implements PromiseInterface
      */
     public function hasState(): bool
     {
-        return ($this->state !== null);
+        return ($this->state !== '');
     }
 
     /**
@@ -409,9 +410,9 @@ abstract class AbstractPromise implements PromiseInterface
      *
      * @param  PromiseInterface $nextPromise
      * @param  int              $i
-     * @return AbstractPromise
+     * @return PromiseInterface
      */
-    public function forward(PromiseInterface $nextPromise, int $i = 0): AbstractPromise
+    public function forward(PromiseInterface $nextPromise, int $i = 0): PromiseInterface
     {
         for ($j = $i; $j < count($this->success); $j++) {
             $nextPromise->then($this->success[$j]);
@@ -430,9 +431,9 @@ abstract class AbstractPromise implements PromiseInterface
      * Wait method
      *
      * @param  bool $unwrap
-     * @return Response|array|null
+     * @return Response|string|array|null
      */
-    abstract public function wait(bool $unwrap = true): Response|array|null;
+    abstract public function wait(bool $unwrap = true): Response|string|array|null;
 
     /**
      * Resolve method

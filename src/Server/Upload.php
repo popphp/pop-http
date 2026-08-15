@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -405,8 +406,7 @@ class Upload
     public function isAllowed(string $ext): bool
     {
         $disallowed = ((count($this->disallowedTypes) > 0) && (in_array(strtolower($ext), $this->disallowedTypes)));
-        $allowed    = ((count($this->allowedTypes) == 0) ||
-            ((count($this->allowedTypes) > 0) && (in_array(strtolower($ext), $this->allowedTypes))));
+        $allowed    = ((count($this->allowedTypes) == 0) || (in_array(strtolower($ext), $this->allowedTypes)));
 
         return ((!$disallowed) && ($allowed));
     }
@@ -420,8 +420,7 @@ class Upload
     public function isNotAllowed(string $ext): bool
     {
         $disallowed = ((count($this->disallowedTypes) > 0) && (in_array(strtolower($ext), $this->disallowedTypes)));
-        $allowed    = ((count($this->allowedTypes) == 0) ||
-            ((count($this->allowedTypes) > 0) && (in_array(strtolower($ext), $this->allowedTypes))));
+        $allowed    = ((count($this->allowedTypes) == 0) || (in_array(strtolower($ext), $this->allowedTypes)));
 
         return (($disallowed) && (!$allowed));
     }
@@ -538,11 +537,8 @@ class Upload
                     } else if (($ext !== null) && (!$this->isAllowed($ext))) {
                         $this->error = self::UPLOAD_ERR_NOT_ALLOWED;
                         return false;
-                    } else if ($this->error == 0) {
-                        return true;
                     } else {
-                        $this->error = self::UPLOAD_ERR_UNEXPECTED;
-                        return false;
+                        return true;
                     }
                 }
             }

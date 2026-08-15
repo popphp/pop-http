@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -252,7 +253,7 @@ class Digest
             $digest->setQop(static::QOP_AUTH);
         }
         if ($stale) {
-            $digest->setStale($stale);
+            $digest->setStale(strtolower((string)$stale) === 'true');
         }
 
         return $digest;
@@ -429,11 +430,11 @@ class Digest
     /**
      * Get the WWW auth header
      *
-     * @return Header
+     * @return string
      */
     public function getWwwAuth(): string
     {
-        return $this->wwwAuth;
+        return (string)$this->wwwAuth;
     }
 
     /**
@@ -643,7 +644,7 @@ class Digest
      */
     public function hasMethod(): bool
     {
-        return ($this->method !== null);
+        return ($this->method !== '');
     }
 
     /**
@@ -653,7 +654,7 @@ class Digest
      */
     public function hasAlgorithm(): bool
     {
-        return ($this->algorithm !== null);
+        return ($this->algorithm !== '');
     }
 
     /**

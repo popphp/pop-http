@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -54,13 +55,15 @@ class Command
             throw new Exception('Error: The client object must use a Curl handler.');
         }
 
+        $request = $client->getRequest();
+
         // Set return header
         if ($client->getHandler()->isReturnHeader()) {
             $command .= ' -i';
         }
 
         // Set method
-        $method   = $client->getRequest()->getMethod();
+        $method   = $request->getMethod();
         $command .= ' -X ' . $method;
 
         // Handle insecure settings
@@ -74,14 +77,14 @@ class Command
         // Handle basic auth
         if (($client->hasAuth()) && ($client->getAuth()->isBasic())) {
             $command .= ' --basic -u "' . $client->getAuth()->getUsername() . ':' .  $client->getAuth()->getPassword() . '"';
-            if ($client->getRequest()->hasHeader('Authorization')) {
-                $client->getRequest()->removeHeader('Authorization');
+            if ($request->hasHeader('Authorization')) {
+                $request->removeHeader('Authorization');
             }
         }
 
         // Handle headers
-        if ($client->getRequest()->hasHeaders()) {
-            foreach ($client->getRequest()->getHeaderObjects() as $header) {
+        if ($request->hasHeaders()) {
+            foreach ($request->getHeaderObjects() as $header) {
                 if ((!str_contains($header->getValueAsString(), 'multipart/form-data')) &&
                     (!str_contains($header->getValueAsString(), 'x-www-form-urlencoded')) && ($header->getName() != 'Content-Length')) {
                     $command .= ' --header "' . $header  . '"';
@@ -90,18 +93,18 @@ class Command
         }
 
         // Handle data
-        if ($client->getRequest()->hasData()) {
+        if ($request->hasData()) {
             // Multipart form data
-            if ($client->getRequest()->isMultipart()) {
-                $data = $client->getRequest()->getData()->toArray();
+            if ($request->isMultipart()) {
+                $data = $request->getData()->toArray();
                 foreach ($data as $key => $value) {
                     $command .= (isset($value['filename']) && file_exists($value['filename'])) ?
                         ' -F "' . $key . '=@' . $value['filename'] . '"' :
                         ' -F "' . http_build_query([$key => $value]) . '"';
                 }
             // JSON data
-            } else if ($client->getRequest()->isJson()) {
-                $data = $client->getRequest()->getData()->toArray();
+            } else if ($request->isJson()) {
+                $data = $request->getData()->toArray();
                 foreach ($data as $key => $datum) {
                     if (isset($datum['filename']) && file_exists($datum['filename'])) {
                         $command .= ' --data @' . $datum['filename'];
@@ -116,8 +119,8 @@ class Command
                     $command .= " --data '" . $json . "'";
                 }
             // XML data
-            } else if ($client->getRequest()->isXml()) {
-                $data = $client->getRequest()->getData()->toArray();
+            } else if ($request->isXml()) {
+                $data = $request->getData()->toArray();
                 foreach ($data as $key => $datum) {
                     if (isset($datum['filename']) && file_exists($datum['filename'])) {
                         $command .= ' --data @' . $datum['filename'];
@@ -134,15 +137,15 @@ class Command
                     }
                 }
             // URL-encoded data
-            } else if (($client->getRequest()->getMethod() == 'GET') || ($client->getRequest()->isUrlEncoded()) ||
-                !($client->getRequest()->hasRequestType())) {
-                $command .= ' --data "' . $client->getRequest()->getData()->prepare()->getDataContent()  . '"';
+            } else if (($request->getMethod() == 'GET') || ($request->isUrlEncoded()) ||
+                !($request->hasRequestType())) {
+                $command .= ' --data "' . $request->getData()->prepare()->getDataContent()  . '"';
             }
         }
 
         // Add body content as data
-        if ($client->getRequest()->hasBody()) {
-            $body = $client->getRequest()->getBodyContent();
+        if ($request->hasBody()) {
+            $body = $request->getBodyContent();
             if (str_contains($body, "'")) {
                 $body = str_replace("'", "\\'", $body);
             }
@@ -158,12 +161,12 @@ class Command
                 $command .= (is_array($commandOption) && isset($commandOption[0])) ?
                     ' ' . $commandOption[0] : ' ' . $commandOption;
                 if (Options::isValueOption($curlOptionName) && !empty($curlOptionValue)) {
-                    $command .= ' ' . self::addQuotes($curlOptionValue);
+                    $command .= ' ' . self::addQuotes((string)$curlOptionValue);
                 }
             }
         }
 
-        $command .= ' ' . self::addQuotes($client->getRequest()->getUriAsString());
+        $command .= ' ' . self::addQuotes($request->getUriAsString());
 
         return $command;
     }

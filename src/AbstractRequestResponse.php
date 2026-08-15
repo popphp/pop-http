@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -127,7 +128,7 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
      */
     public function getHeaderAsString(string $name): mixed
     {
-        return (string)$this->headers[$name] ?? null;
+        return (isset($this->headers[$name])) ? (string)$this->headers[$name] : null;
     }
 
     /**
@@ -139,7 +140,7 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
      */
     public function getHeaderValue(string $name, int $i = 0): mixed
     {
-        return (isset($this->headers[$name])) ? $this->headers[$name]?->getValue($i) : null;
+        return (isset($this->headers[$name])) ? $this->headers[$name]->getValue($i) : null;
     }
 
     /**
@@ -151,7 +152,7 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
      */
     public function getHeaderValueAsString(string $name, int $i = 0): string|null
     {
-        return (isset($this->headers[$name])) ? $this->headers[$name]?->getValueAsString($i) : null;
+        return (isset($this->headers[$name])) ? $this->headers[$name]->getValueAsString($i) : null;
     }
 
     /**
@@ -469,17 +470,17 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
      * @param  ?string $body
      * @return Body
      */
-    public function decodeBodyContent(?string $body = null): body
+    public function decodeBodyContent(?string $body = null): Body
     {
         if ($body !== null) {
             $this->setBody($body);
         }
         if (($this->hasHeader('Transfer-Encoding')) && (count($this->getHeaderObject('Transfer-Encoding')->getValues()) == 1) &&
-            (strtolower($this->getHeaderObject('Transfer-Encoding')->getValue(0)) == 'chunked')) {
+            (strtolower((string)$this->getHeaderObject('Transfer-Encoding')->getValueAsString(0)) == 'chunked')) {
             $this->body->setContent(Parser::decodeChunkedData($this->body->getContent()));
         }
         $contentEncoding = ($this->hasHeader('Content-Encoding') && (count($this->getHeaderObject('Content-Encoding')->getValues()) == 1)) ?
-            $this->getHeaderObject('Content-Encoding')->getValue(0) : null;
+            $this->getHeaderObject('Content-Encoding')->getValueAsString(0) : null;
         $this->body->setContent(Parser::decodeData($this->body->getContent(), $contentEncoding));
 
         return $this->body;

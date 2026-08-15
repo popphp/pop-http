@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -13,7 +14,6 @@
  */
 namespace Pop\Http\Client\Handler;
 
-use Pop\Http\AbstractRequest;
 use Pop\Http\Auth;
 use Pop\Http\Parser;
 use Pop\Http\Client\Request;
@@ -227,9 +227,9 @@ class Curl extends AbstractCurl
      * Return the Curl last info
      *
      * @param  ?int $opt
-     * @return array|string
+     * @return array|string|int|float|bool
      */
-    public function getInfo(?int $opt = null): array|string
+    public function getInfo(?int $opt = null): array|string|int|float|bool
     {
         return ($opt !== null) ? curl_getinfo($this->resource, $opt) : curl_getinfo($this->resource);
     }
@@ -237,18 +237,16 @@ class Curl extends AbstractCurl
     /**
      * Method to prepare the handler
      *
-     * @param  Request|AbstractRequest $request
-     * @param  ?Auth                   $auth
-     * @param  bool                    $forceCustom
-     * @param  bool                    $clear
-     * @throws Exception|\Pop\Http\Exception
+     * @param  Request $request
+     * @param  ?Auth    $auth
+     * @param  bool     $forceCustom
+     * @param  bool     $clear
+     * @throws \Pop\Http\Exception
      * @return Curl
      */
-    public function prepare(Request|AbstractRequest $request, ?Auth $auth = null, bool $forceCustom = false, bool $clear = true): Curl
+    public function prepare(Request $request, ?Auth $auth = null, bool $forceCustom = false, bool $clear = true): Curl
     {
-        if ($request instanceof Request) {
-            $this->request = $request;
-        }
+        $this->request = $request;
 
         $this->setMethod($request->getMethod(), $forceCustom);
 
@@ -348,14 +346,14 @@ class Curl extends AbstractCurl
 
         // If the CURLOPT_RETURNTRANSFER option is set, get the response body and parse the headers.
         if (isset($this->options[CURLOPT_RETURNTRANSFER]) && ($this->options[CURLOPT_RETURNTRANSFER])) {
-            $headerSize = $this->getInfo(CURLINFO_HEADER_SIZE);
+            $headerSize = (int)$this->getInfo(CURLINFO_HEADER_SIZE);
             if (isset($this->options[CURLOPT_HEADER]) && ($this->options[CURLOPT_HEADER])) {
                 $parsedHeaders = Parser::parseHeaders(substr($this->response, 0, $headerSize));
                 if (!empty($parsedHeaders['version'])) {
                     $response->setVersion($parsedHeaders['version']);
                 }
                 if (!empty($parsedHeaders['code'])) {
-                    $response->setCode($parsedHeaders['code']);
+                    $response->setCode((int)$parsedHeaders['code']);
                 }
                 if (!empty($parsedHeaders['message'])) {
                     $response->setMessage($parsedHeaders['message']);

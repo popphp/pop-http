@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -224,9 +225,9 @@ interface PromiseInterface
      * Wait method
      *
      * @param  bool $unwrap
-     * @return Response|array|null
+     * @return Response|string|array|null
      */
-    public function wait(bool $unwrap = true): Response|array|null;
+    public function wait(bool $unwrap = true): Response|string|array|null;
 
     /**
      * Resolve method

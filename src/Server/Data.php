@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -25,6 +26,14 @@ use Pop\Http\HttpFilterableTrait;
  * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  * @version    6.0.0
+ * @property-read array             $get
+ * @property-read array             $post
+ * @property-read array             $files
+ * @property-read array             $put
+ * @property-read array             $patch
+ * @property-read array             $delete
+ * @property-read string|array|null $parsed
+ * @property-read string|null       $raw
  */
 class Data
 {
@@ -127,9 +136,9 @@ class Data
         }
 
         if ($populateFromGlobals) {
-            $this->get   = (isset($_GET))   ? $_GET   : [];
-            $this->post  = (isset($_POST))  ? $_POST  : [];
-            $this->files = (isset($_FILES)) ? $_FILES : [];
+            $this->get   = array_key_exists('_GET', $GLOBALS)   ? $_GET   : [];
+            $this->post  = array_key_exists('_POST', $GLOBALS)  ? $_POST  : [];
+            $this->files = array_key_exists('_FILES', $GLOBALS) ? $_FILES : [];
 
             if (isset($_SERVER['REQUEST_METHOD'])) {
                 $this->processData($contentType, $encoding, $streamToFile);

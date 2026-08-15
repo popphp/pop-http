@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -192,18 +193,19 @@ class Auth
             } else {
                 $auth->setDigest(Auth\Digest::createFromHeader($header, $options['password']));
             }
-        } else if (str_starts_with($value, 'Basic')) {
+        } else if (str_starts_with((string)$value, 'Basic')) {
             $auth->setScheme('Basic');
-            $creds = base64_decode(trim(substr($value, 5)));
+            $creds = base64_decode(trim(substr((string)$value, 5)), true);
             if (($creds !== false) && (str_contains($creds, ':'))) {
                 [$username, $password] = explode(':', $creds);
                 $auth->setUsername($username)
                     ->setPassword($password);
             }
-        } else if (str_starts_with($value, 'Bearer')) {
+        } else if (str_starts_with((string)$value, 'Bearer')) {
             $auth->setScheme('Bearer');
-            $auth->setToken(trim(substr($value, 6)));
+            $auth->setToken(trim(substr((string)$value, 6)));
         } else {
+            $value = (string)$value;
             if (isset($options['scheme']) && (str_starts_with($value, $options['scheme']))) {
                 $value = substr($value, strlen($options['scheme']));
                 $auth->setScheme($options['scheme']);

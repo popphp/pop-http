@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -42,12 +43,12 @@ class Response extends AbstractResponse
         $body = $this->body->render();
 
         if ($this->hasHeader('Content-Encoding') && (count($this->getHeaderObject('Content-Encoding')->getValues()) == 1)) {
-            $body = Parser::encodeData($body, strtoupper($this->getHeaderObject('Content-Encoding')->getValue(0)));
+            $body = Parser::encodeData($body, strtoupper((string)$this->getHeaderObject('Content-Encoding')->getValueAsString(0)));
             if ($length) {
-                $this->addHeader('Content-Length', (($mb) ? mb_strlen($body) : strlen($body)));
+                $this->addHeader('Content-Length', (string)(($mb) ? mb_strlen($body) : strlen($body)));
             }
         } else if ($length) {
-            $this->addHeader('Content-Length', (($mb) ? mb_strlen($body) : strlen($body)));
+            $this->addHeader('Content-Length', (string)(($mb) ? mb_strlen($body) : strlen($body)));
         }
 
         return $body;

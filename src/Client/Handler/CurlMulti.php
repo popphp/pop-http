@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -180,7 +181,7 @@ class CurlMulti extends AbstractCurl
             throw new Exception('Error: You must pass at least a name or client parameter.');
         }
 
-        $curlResource = $curlClient?->getHandler()?->resource();
+        $curlResource = $curlClient->getHandler()?->resource();
 
         if (!empty($curlResource)) {
             curl_multi_remove_handle($this->resource, $curlResource);
@@ -197,18 +198,21 @@ class CurlMulti extends AbstractCurl
      */
     public function getClientContent(string|Client $curlClient): Client|string|null
     {
-        if (is_string($curlClient) && isset($this->clients[$curlClient])) {
-            if ($this->clients[$curlClient] instanceof Client) {
-                $curlClient  = $this->clients[$curlClient];
-                $curlResource = $curlClient?->getHandler()?->resource();
+        if (is_string($curlClient)) {
+            if (!isset($this->clients[$curlClient]) || !($this->clients[$curlClient] instanceof Client)) {
+                return null;
             }
-        } else {
-            $curlResource = $curlClient?->getHandler()?->resource();
+            $curlClient = $this->clients[$curlClient];
         }
 
-        $response = (!empty($curlResource)) ? curl_multi_getcontent($curlResource) : null;
+        $curlResource = $curlClient->getHandler()?->resource();
+        $response     = (!empty($curlResource)) ? curl_multi_getcontent($curlResource) : null;
+
         if (!empty($response)) {
-            $curlClient->getHandler()->setResponse($response);
+            $handler = $curlClient->getHandler();
+            if ($handler instanceof Curl) {
+                $handler->setResponse($response);
+            }
             return $curlClient;
         } else {
             return $response;
@@ -226,7 +230,8 @@ class CurlMulti extends AbstractCurl
         $response = $this->getClientContent($curlClient);
 
         if ($curlClient instanceof Client) {
-            return $curlClient->getHandler()->parseResponse();
+            $handler = $curlClient->getHandler();
+            return ($handler instanceof Curl) ? $handler->parseResponse() : null;
         } else {
             return $response;
         }

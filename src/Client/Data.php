@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -121,7 +122,7 @@ class Data
      *
      * @param array|string $data
      * @param mixed        $filters
-     * @param ?string      $type
+     * @param ?Request     $request
      */
     public function __construct(array|string $data = [], mixed $filters = null, ?Request $request = null)
     {
@@ -152,7 +153,7 @@ class Data
     {
         if (is_string($data)) {
             $this->data = [self::POP_CLIENT_REQUEST_RAW_DATA => $data];
-        } else if (is_array($data) && (count($data) == 1) && isset($data[0]) && is_string($data[0])) {
+        } else if ((count($data) == 1) && isset($data[0]) && is_string($data[0])) {
             $this->data = [self::POP_CLIENT_REQUEST_RAW_DATA => $data[0]];
         } else {
             $this->data = $data;
@@ -357,7 +358,7 @@ class Data
             if ($this->request->hasHeader('Content-Length')) {
                 $this->request->removeHeader('Content-Length');
             }
-            $this->request->addHeader('Content-Length', strlen($this->dataContent));
+            $this->request->addHeader('Content-Length', (string)strlen($this->dataContent));
         }
 
         $this->prepared = true;

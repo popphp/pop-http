@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -61,7 +62,7 @@ class Promise extends Promise\AbstractPromise
      * @throws Exception|Promise\Exception|ReflectionException|Client\Exception|\Pop\Utils\Exception|\Pop\Http\Exception
      * @return Response|string|array|null
      */
-    public function wait(bool $unwrap = true): Response|array|null
+    public function wait(bool $unwrap = true): Response|string|array|null
     {
         $multi = ($this->promiser instanceof CurlMulti);
         $auto  = (!($multi) && ($this->promiser->hasOption('auto')) &&

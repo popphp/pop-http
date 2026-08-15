@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -256,7 +257,7 @@ class Parser
 
         // If the body content is encoded, decode the body content
         if (array_key_exists('Content-Encoding', $parsedHeaders['headers'])) {
-            $encoding = strtoupper($parsedHeaders['headers']['Content-Encoding']);
+            $encoding = strtoupper((string)$parsedHeaders['headers']['Content-Encoding']->getValueAsString());
             $chunked  = ($parsedHeaders['headers']['Transfer-Encoding'] == 'chunked');
             $body     = self::decodeData($bodyString, $encoding, $chunked);
         } else {
@@ -264,7 +265,7 @@ class Parser
         }
 
         return new Server\Response([
-            'code'    => $parsedHeaders['code'],
+            'code'    => (int)$parsedHeaders['code'],
             'headers' => $parsedHeaders['headers'],
             'body'    => $body,
             'message' => $parsedHeaders['message'],

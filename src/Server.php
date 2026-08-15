@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -22,8 +23,8 @@ namespace Pop\Http;
  * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  * @version    6.0.0
- * @property   $request Server\Request
- * @property   $response Server\Response
+ * @property   Server\Request  $request
+ * @property   Server\Response $response
  */
 class Server extends AbstractHttp
 {
@@ -83,7 +84,7 @@ class Server extends AbstractHttp
      */
     public function getHeadersAsString(mixed $status = null, string $eol = "\r\n"): string
     {
-        return $this->response->getHeadersAsString($status, $eol);
+        return $this->response()->getHeadersAsString($status, $eol);
     }
 
     /**
@@ -94,7 +95,7 @@ class Server extends AbstractHttp
      */
     public function sendHeaders(): void
     {
-        $this->response->sendHeaders();
+        $this->response()->sendHeaders();
     }
 
     /**
@@ -104,7 +105,7 @@ class Server extends AbstractHttp
      */
     public function send(?int $code = null, ?array $headers = null, bool $length = false): void
     {
-        $this->response->send($code, $headers, $length);
+        $this->response()->send($code, $headers, $length);
     }
 
 
@@ -115,7 +116,7 @@ class Server extends AbstractHttp
      */
     public function sendAndExit(?int $code = null, ?array $headers = null, bool $length = false): void
     {
-        $this->response->sendAndExit($code, $headers, $length);
+        $this->response()->sendAndExit($code, $headers, $length);
     }
 
     /**
@@ -125,7 +126,7 @@ class Server extends AbstractHttp
      */
     public function render(): string
     {
-        return ($this->response !== null) ? $this->response->render() : '';
+        return ($this->hasResponse()) ? $this->response()->render() : '';
     }
 
     /**

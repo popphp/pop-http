@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -193,14 +194,14 @@ abstract class AbstractHandler implements HandlerInterface
             if ($request->isMultipart()) {
                 $body = \Pop\Http\Body\Multipart::toArray($request->getData()->getData());
             } else if ($request->hasDataContent()) {
-                if (($queryString === null) && $request->isGet() && (!$request->hasRequestType() || $request->isUrlEncoded())) {
+                if (($queryString === null) && ($request->getMethod() === 'GET') && (!$request->hasRequestType() || $request->isUrlEncoded())) {
                     $queryString = '?' . $request->getDataContent();
                 } else {
                     $body = $request->useRawData() ? $request->getData()->getData() : $request->getDataContent();
                 }
             }
         } else if ($request->hasBodyContent()) {
-            $request->addHeader('Content-Length', $request->getBodyContentLength());
+            $request->addHeader('Content-Length', (string)$request->getBodyContentLength());
             $body = $request->getBodyContent();
         }
 
