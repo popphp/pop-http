@@ -49,6 +49,15 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
     protected array $headers = [];
 
     /**
+     * Case-folded header name index (lowercase name => actual stored key), kept in sync by
+     * addHeader()/removeHeader()/setHeaders()/removeHeaders() so resolveHeaderName() - used by
+     * every PSR-7 case-insensitive lookup (getHeader()/withHeader()/withAddedHeader()/
+     * withoutHeader()) - is an O(1) lookup instead of a linear strcasecmp() scan of every header.
+     * @var array
+     */
+    protected array $headerIndex = [];
+
+    /**
      * Body
      * @var ?Body
      */
@@ -62,7 +71,8 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
      */
     public function setHeaders(array $headers): AbstractRequestResponse
     {
-        $this->headers = [];
+        $this->headers     = [];
+        $this->headerIndex = [];
         $this->addHeaders($headers);
 
         return $this;
@@ -79,14 +89,19 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
     {
         if ($header instanceof Header) {
             $this->headers[$header->getName()] = $header;
+            $name = $header->getName();
         } else {
             if (is_numeric($header) && str_contains($value, ':')) {
                 $header = Header::parse($value);
                 $this->headers[$header->getName()] = $header;
+                $name = $header->getName();
             } else {
                 $this->headers[$header] = new Header($header, $value);
+                $name = $header;
             }
         }
+
+        $this->headerIndex[strtolower((string)$name)] = (string)$name;
 
         return $this;
     }
@@ -182,13 +197,7 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
             return $name;
         }
 
-        foreach (array_keys($this->headers) as $existingName) {
-            if (strcasecmp($existingName, $name) === 0) {
-                return $existingName;
-            }
-        }
-
-        return $name;
+        return $this->headerIndex[strtolower($name)] ?? $name;
     }
 
     /**
@@ -312,6 +321,11 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
             unset($this->headers[$name]);
         }
 
+        $lower = strtolower($name);
+        if (isset($this->headerIndex[$lower]) && ($this->headerIndex[$lower] === $name)) {
+            unset($this->headerIndex[$lower]);
+        }
+
         return $this;
     }
 
@@ -322,7 +336,8 @@ abstract class AbstractRequestResponse implements RequestResponseInterface, Mess
      */
     public function removeHeaders(): AbstractRequestResponse
     {
-        $this->headers = [];
+        $this->headers     = [];
+        $this->headerIndex = [];
         return $this;
     }
 

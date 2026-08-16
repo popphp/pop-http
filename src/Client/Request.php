@@ -669,7 +669,6 @@ class Request extends AbstractRequest
         if ($addHeader) {
             $this->addHeader('Content-Type', $this->requestType);
         }
-        $this->addHeader('Content-Type', $this->requestType);
 
         return $this;
     }

@@ -69,12 +69,7 @@ class Promise extends Promise\AbstractPromise
             ($this->promiser->getOption('auto')));
 
         if (($this->isFulfilled()) && ($this->promiser->isComplete())) {
-            if ($multi) {
-                return $this->promiser->getAllResponses();
-            } else {
-                return (($auto) && ($this->promiser->hasResponse())) ?
-                    $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
-            }
+            return $this->resolveResponse($multi, $auto);
         }
 
         $this->setState(self::PENDING);
@@ -103,18 +98,32 @@ class Promise extends Promise\AbstractPromise
                 }
             } else {
                 $this->setState(self::FULFILLED);
-                if ($multi) {
-                    return $this->promiser->getAllResponses();
-                } else {
-                    return (($auto) && ($this->promiser->hasResponse())) ?
-                        $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
-                }
+                return $this->resolveResponse($multi, $auto);
             }
         } else if ($unwrap) {
             throw new Exception('Error: Unable to complete request.');
         }
 
         return null;
+    }
+
+    /**
+     * Resolve the promiser's current response(s) - the same 3-way resolution
+     * (all responses for a multi promiser, auto-parsed vs raw Response otherwise)
+     * used by every response-fetching call site in wait()/resolve()
+     *
+     * @param  bool $multi
+     * @param  bool $auto
+     * @return Response|string|array|null
+     */
+    protected function resolveResponse(bool $multi, bool $auto): Response|string|array|null
+    {
+        if ($multi) {
+            return $this->promiser->getAllResponses();
+        }
+
+        return (($auto) && ($this->promiser->hasResponse())) ?
+            $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
     }
 
     /**
@@ -156,12 +165,7 @@ class Promise extends Promise\AbstractPromise
                         break;
                     // Else, execute callback
                     } else {
-                        if ($multi) {
-                            $response = $this->promiser->getAllResponses();
-                        } else {
-                            $response = (($auto) && ($this->promiser->hasResponse())) ?
-                                $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
-                        }
+                        $response = $this->resolveResponse($multi, $auto);
                         $result = $success->call([
                             'response' => $response
                         ]);
@@ -178,12 +182,7 @@ class Promise extends Promise\AbstractPromise
                     throw new Exception('Error: The failure callback has not been set.');
                 }
                 $this->setState(self::REJECTED);
-                if ($multi) {
-                    $response = $this->promiser->getAllResponses();
-                } else {
-                    $response = (($auto) && ($this->promiser->hasResponse())) ?
-                        $this->promiser->getResponse()->getParsedResponse() : $this->promiser->getResponse();
-                }
+                $response = $this->resolveResponse($multi, $auto);
                 $this->failure->call([
                     'response' => $response
                 ]);

@@ -354,16 +354,21 @@ class Parser
     public static function decodeChunkedData(string $data): string
     {
         $decoded = '';
+        $offset  = 0;
+        $length  = strlen($data);
 
-        while($data != '') {
-            $lfPos = strpos($data, "\012");
+        // Tracks an offset into the original $data instead of reassigning $data = substr($data, ...)
+        // every iteration - the latter copies the entire remaining tail of the buffer on each chunk,
+        // making decode time O(N*k) for k chunks instead of linear in the total data length.
+        while ($offset < $length) {
+            $lfPos = strpos($data, "\012", $offset);
 
             if ($lfPos === false) {
-                $decoded .= $data;
+                $decoded .= substr($data, $offset);
                 break;
             }
 
-            $chunkHex = trim(substr($data, 0, $lfPos));
+            $chunkHex = trim(substr($data, $offset, $lfPos - $offset));
             $scPos    = strpos($chunkHex, ';');
 
             if ($scPos !== false) {
@@ -371,8 +376,8 @@ class Parser
             }
 
             if ($chunkHex == '') {
-                $decoded .= substr($data, 0, $lfPos);
-                $data     = substr($data, $lfPos + 1);
+                $decoded .= substr($data, $offset, $lfPos - $offset);
+                $offset   = $lfPos + 1;
                 continue;
             }
 
@@ -380,9 +385,9 @@ class Parser
 
             if ($chunkLength) {
                 $decoded .= substr($data, $lfPos + 1, $chunkLength);
-                $data     = substr($data, $lfPos + 2 + $chunkLength);
+                $offset   = $lfPos + 2 + $chunkLength;
             } else {
-                $data = '';
+                break;
             }
         }
 

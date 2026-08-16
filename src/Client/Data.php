@@ -178,7 +178,11 @@ class Data
             $this->data = array_merge($this->data, $data);
         }
 
-        $this->prepare();
+        // Marked unprepared rather than eagerly re-serialized: prepare() re-encodes the
+        // *entire* accumulated data array (http_build_query()/json_encode()) from scratch,
+        // which is wasted work when called key-by-key (e.g. Client::syncRequestFromOptions())
+        // and gets redone anyway - every handler already checks isPrepared() before send.
+        $this->reset();
 
         return $this;
     }
@@ -225,7 +229,8 @@ class Data
             unset($this->data[$key]);
         }
 
-        $this->prepare();
+        // See addData() - defer re-serialization until the handler actually needs it.
+        $this->reset();
 
         return $this;
     }

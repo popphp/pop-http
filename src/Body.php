@@ -426,7 +426,21 @@ class Body implements StreamInterface
     public function __clone(): void
     {
         if ($this->stream !== null) {
-            $position  = ftell($this->stream);
+            $position = ftell($this->stream);
+
+            // File-backed content is duplicated by reopening the same file handle
+            // rather than copying its bytes, preserving setContentFromFile()'s intent
+            // of never buffering large files into memory (or a php://temp fallback).
+            if ($this->isFile) {
+                $meta      = stream_get_meta_data($this->stream);
+                $duplicate = (!empty($meta['uri'])) ? @fopen($meta['uri'], 'rb') : false;
+                if ($duplicate !== false) {
+                    fseek($duplicate, $position);
+                    $this->stream = $duplicate;
+                    return;
+                }
+            }
+
             $duplicate = fopen('php://temp', 'r+');
             rewind($this->stream);
             stream_copy_to_stream($this->stream, $duplicate);

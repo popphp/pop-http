@@ -482,7 +482,6 @@ class Stream extends AbstractHandler
         if (!empty($parsedHeaders['headers'])) {
             $response->addHeaders($parsedHeaders['headers']);
         }
-        $response->addHeaders($parsedHeaders['headers']);
         if ($body !== null) {
             $response->setBody($body);
         }

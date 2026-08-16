@@ -933,11 +933,17 @@ class Client extends AbstractHttp implements ClientInterface
         }
 
         if ($name === null) {
-            $i = 1;
+            // hasFile($name) rescans and rebuilds the entire request data array on every candidate
+            // name - an O(n) getFiles() call per attempt. Data::hasData() is a direct isset() check
+            // against the same underlying array, so this is O(1) per attempt instead. It also avoids
+            // a name colliding with any existing data key, not just file-shaped ones (hasFile() only
+            // matches file-shaped entries).
+            $data = $this->request()->getData();
+            $i    = 1;
             do {
                 $name = 'file' . $i;
                 $i++;
-            } while ($this->hasFile($name));
+            } while ($data?->hasData($name));
         }
 
         $this->addData($name, ['filename' => $file, 'contentType' => Client\Data::getMimeTypeFromFilename($file)]);

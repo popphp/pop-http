@@ -642,37 +642,41 @@ class Command
         }
 
         // Handle all other options
+        //
+        // extractCommandOptionValues() only ever produces complete, exact CLI flags as keys
+        // (a full '--long-flag', or exactly the first 2 characters of a short flag) - never an
+        // abbreviated/partial one - so the option always matches a $commandOptions key exactly.
+        // That makes Options::getCommandOption() (an O(1) hash lookup, already keyed by exact
+        // flag) equivalent to - and far cheaper than - scanning every entry of the ~150+-entry
+        // inverse getPhpOptions() map with substring matching. The substring matching also had
+        // a latent false-positive risk (e.g. '--cookie' is a substring of '--cookie-jar').
         foreach ($optionValues as $option => $value) {
             // A repeated single-value flag (e.g. -A/--user-agent) collects every occurrence
             // into an array (see extractCommandOptionValues()), but curl's real semantics for
             // these generic options is "last occurrence wins" - normalize once here so both
             // trimQuotes() calls below always receive a string|null, never an array.
             $value = self::lastNonNullOptionValue($value);
-            if (!Options::isOmitOption($option)) {
-                foreach (Options::getPhpOptions() as $phpOption => $curlOption) {
-                    if (is_array($curlOption)) {
-                        foreach ($curlOption as $cOpt) {
-                            if ((str_starts_with($option, '--') && str_contains($cOpt, $option)) || str_starts_with($cOpt, $option)) {
-                                if (Options::isValueOption($option)) {
-                                    $optionValue = Options::getValueOption($option) ?? self::trimQuotes($value ?? '');
-                                } else {
-                                    $optionValue = true;
-                                }
-                                $curl->setOption(constant($phpOption), $optionValue);
-                                break;
-                            }
-                        }
-                    } else if ((str_starts_with($option, '--') && str_contains($curlOption, $option)) || str_starts_with($curlOption, $option)) {
-                        if (Options::isValueOption($option)) {
-                            $optionValue = Options::getValueOption($option) ?? self::trimQuotes($value ?? '');
-                        } else {
-                            $optionValue = true;
-                        }
-                        $curl->setOption(constant($phpOption), $optionValue);
-                        break;
-                    }
-                }
+
+            if (Options::isOmitOption($option)) {
+                continue;
             }
+
+            $phpConstants = Options::getCommandOption($option);
+            if ($phpConstants === null) {
+                continue;
+            }
+
+            // A $commandOptions entry mapping one flag to multiple constants (e.g.
+            // --connect-timeout => [CURLOPT_CONNECTTIMEOUT, CURLOPT_TIMEOUT, CURLOPT_TIMEOUT_MS])
+            // is ordered by preference - only the first-listed constant is the semantically
+            // correct one to actually set here (see the inline comments in $commandOptions).
+            $phpConstant = is_array($phpConstants) ? reset($phpConstants) : $phpConstants;
+
+            $optionValue = (Options::isValueOption($option))
+                ? (Options::getValueOption($option) ?? self::trimQuotes($value ?? ''))
+                : true;
+
+            $curl->setOption(constant($phpConstant), $optionValue);
         }
 
         return [$auth, $files];

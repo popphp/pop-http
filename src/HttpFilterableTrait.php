@@ -32,6 +32,13 @@ trait HttpFilterableTrait
     use FilterableTrait;
 
     /**
+     * Cached parse of ini's disable_functions list - a static php.ini setting that cannot
+     * change during a request, so re-parsing it on every filter() call is pure waste
+     * @var ?array
+     */
+    protected static ?array $disabledFunctions = null;
+
+    /**
      * Filter values
      *
      * @param  mixed $values
@@ -39,7 +46,10 @@ trait HttpFilterableTrait
      */
     public function filter(mixed $values): mixed
     {
-        $disabledFunctions = array_filter(array_map('trim', explode(',', ini_get('disable_functions'))));
+        if (self::$disabledFunctions === null) {
+            self::$disabledFunctions = array_filter(array_map('trim', explode(',', (string)ini_get('disable_functions'))));
+        }
+        $disabledFunctions = self::$disabledFunctions;
 
         foreach ($this->filters as $filter) {
             if (is_array($values)) {
