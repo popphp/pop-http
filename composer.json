@@ -24,9 +24,9 @@
     ],
     "require": {
         "php": ">=8.4.0",
-        "popphp/pop-filter": "^5.0.0-beta.1",
-        "popphp/pop-mime": "^3.0.0-beta.2",
-        "popphp/pop-utils": "^3.0.0-beta.4",
+        "popphp/pop-filter": "^5.0.0",
+        "popphp/pop-mime": "^3.0.0",
+        "popphp/pop-utils": "^3.0.0",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.1",
         "psr/http-message": "^2.0",
