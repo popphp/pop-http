@@ -404,7 +404,8 @@ class Curl extends AbstractCurl
     public function disconnect(): void
     {
         if ($this->hasResource()) {
-            curl_close($this->resource);
+            // curl_close() has had no effect since PHP 8.0 (curl handles are unref-counted like
+            // any other object) and is deprecated as of 8.5 - dropping the reference is sufficient.
             $this->resource = null;
             $this->response = null;
             $this->options  = [];
