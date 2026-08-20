@@ -935,15 +935,22 @@ class RequestTest extends TestCase
         $this->assertTrue($request->acceptsHtml(AcceptSpecificity::Exact));
     }
 
-    public function testAcceptsHtmlDefaultSpecificityUnchangedForBothCases()
+    public function testAcceptsHtmlDefaultSpecificityIsLoose()
     {
         $_SERVER['HTTP_ACCEPT'] = '*/*';
         $request = new Request();
-        $this->assertTrue($request->acceptsHtml());
+        $this->assertFalse($request->acceptsHtml());
 
         $_SERVER['HTTP_ACCEPT'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
         $request2 = new Request();
         $this->assertTrue($request2->acceptsHtml());
+    }
+
+    public function testAcceptsHtmlWithAnySpecificityAcceptsBareWildcard()
+    {
+        $_SERVER['HTTP_ACCEPT'] = '*/*';
+        $request = new Request();
+        $this->assertTrue($request->acceptsHtml(AcceptSpecificity::Any));
     }
 
     public function testAcceptsJsonWithExactSpecificity()
