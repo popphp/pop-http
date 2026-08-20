@@ -29,6 +29,7 @@ pop-http
 * [CLI Conversion](#cli-conversions)
 * [Server](#server)
   - [Request Headers & Data](#request-headers--data)
+  - [Accept Header Negotiation](#accept-header-negotiation)
   - [Filters](#filters)
   - [Redirects & Forwards](#redirects--forwards)
   - [Rendering Responses](#rendering-responses)
@@ -1314,6 +1315,53 @@ $myRequest  = new Request();
 $myResponse = new Response();
 $server     = new Server($myRequest, $myResponse);
 ```
+
+[Top](#pop-http)
+
+### Accept Header Negotiation
+
+The request object can parse and negotiate the incoming `Accept` header to help determine what content type
+to respond with:
+
+```php
+if ($server->request->acceptsHtml()) {
+    // render an HTML view
+} else if ($server->request->acceptsJson()) {
+    // render a JSON response
+}
+```
+
+`acceptsHtml()`, `acceptsJson()` and `acceptsXml()` are convenience wrappers around the more general `accepts()`
+and `getPreferredType()` methods:
+
+```php
+$request->accepts('application/json');                             // bool
+$request->accepts(['application/xml', 'text/xml']);                // bool, true if either matches
+$request->getPreferredType(['text/html', 'application/json']);     // string|null - the best match given what you can respond with
+```
+
+Negotiation is RFC 7231 compliant: it understands wildcards (`*/*`, `text/*`), quality values (`q=`), and
+`type/subtype` specificity (an exact match outranks `type/*`, which outranks `*/*`, regardless of the order
+they appear in the header). A missing `Accept` header is treated the same as `*/*` — per the spec, no header
+means the client will accept anything.
+
+**A note on `*/*`:** a bare `*/*` is RFC-correct but doesn't express a real preference — it's what non-browser
+clients send by default (`curl` with no `-H`, a bare `fetch()`), whereas real browser navigation always sends
+an explicit `text/html` first. If your application needs to tell those two cases apart, pass an
+`AcceptSpecificity`:
+
+```php
+use Pop\Http\Server\AcceptSpecificity;
+
+$request->acceptsHtml(AcceptSpecificity::Exact); // false for a bare "Accept: */*", true only if text/html was explicitly listed
+```
+
+- `AcceptSpecificity::Any` *(the default)* — a bare `*/*` satisfies the check
+- `AcceptSpecificity::Loose` — `type/*` or an exact match satisfies; a bare `*/*` does not
+- `AcceptSpecificity::Exact` — only a literal `type/subtype` match satisfies
+
+`$specificity` is available on every method above: `accepts()`, `getPreferredType()`, `acceptsHtml()`,
+`acceptsJson()`, and `acceptsXml()`.
 
 [Top](#pop-http)
 
