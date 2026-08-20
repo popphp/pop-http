@@ -19,6 +19,7 @@ use Pop\Http\Uri;
 use Pop\Http\AbstractRequest;
 use Pop\Http\Body;
 use Pop\Http\Server\AcceptHeader;
+use Pop\Http\Server\AcceptSpecificity;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -242,54 +243,59 @@ class Request extends AbstractRequest implements ServerRequestInterface
     /**
      * Whether the request's Accept header accepts the given media type(s)
      *
-     * @param  string|array $types
+     * @param  string|array      $types
+     * @param  AcceptSpecificity $specificity
      * @return bool
      */
-    public function accepts(string|array $types): bool
+    public function accepts(string|array $types, AcceptSpecificity $specificity = AcceptSpecificity::Any): bool
     {
-        return $this->getAccept()->accepts($types);
+        return $this->getAccept()->accepts($types, $specificity);
     }
 
     /**
      * Given the media types this server can respond with, return the client's best match
      * (or null if none of them are acceptable)
      *
-     * @param  array $available
+     * @param  array             $available
+     * @param  AcceptSpecificity $specificity
      * @return string|null
      */
-    public function getPreferredType(array $available): ?string
+    public function getPreferredType(array $available, AcceptSpecificity $specificity = AcceptSpecificity::Any): ?string
     {
-        return $this->getAccept()->getPreferredType($available);
+        return $this->getAccept()->getPreferredType($available, $specificity);
     }
 
     /**
      * Whether the request accepts an HTML response
      *
+     * @param  AcceptSpecificity $specificity
      * @return bool
      */
-    public function acceptsHtml(): bool
+    public function acceptsHtml(AcceptSpecificity $specificity = AcceptSpecificity::Any): bool
     {
-        return $this->accepts('text/html');
+        return $this->accepts('text/html', $specificity);
     }
 
     /**
      * Whether the request accepts a JSON response
      *
+     * @param  AcceptSpecificity $specificity
      * @return bool
      */
-    public function acceptsJson(): bool
+    public function acceptsJson(AcceptSpecificity $specificity = AcceptSpecificity::Any): bool
     {
-        return $this->accepts('application/json');
+        return $this->accepts('application/json', $specificity);
     }
 
     /**
      * Whether the request accepts an XML response (either canonical XML media type)
      *
+     * @param  AcceptSpecificity $specificity
      * @return bool
      */
-    public function acceptsXml(): bool
+    public function acceptsXml(AcceptSpecificity $specificity = AcceptSpecificity::Any): bool
     {
-        return $this->accepts(['application/xml', 'text/xml']);
+        return $this->accepts(['application/xml', 'text/xml'], $specificity);
     }
 
     /**

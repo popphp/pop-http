@@ -5,6 +5,7 @@ namespace Pop\Http\Test\Server;
 use Pop\Filter\Filter;
 use Pop\Http\Auth;
 use Pop\Http\Client\Data;
+use Pop\Http\Server\AcceptSpecificity;
 use Pop\Http\Server\Request;
 use PHPUnit\Framework\TestCase;
 use Pop\Http\Uri;
@@ -918,6 +919,70 @@ class RequestTest extends TestCase
         $_SERVER['HTTP_ACCEPT'] = 'text/xml';
         $request = new Request();
         $this->assertTrue($request->acceptsXml());
+    }
+
+    public function testAcceptsHtmlWithExactSpecificityRejectsCurlStyleWildcard()
+    {
+        $_SERVER['HTTP_ACCEPT'] = '*/*';
+        $request = new Request();
+        $this->assertFalse($request->acceptsHtml(AcceptSpecificity::Exact));
+    }
+
+    public function testAcceptsHtmlWithExactSpecificityAcceptsRealBrowserHeader()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7';
+        $request = new Request();
+        $this->assertTrue($request->acceptsHtml(AcceptSpecificity::Exact));
+    }
+
+    public function testAcceptsHtmlDefaultSpecificityUnchangedForBothCases()
+    {
+        $_SERVER['HTTP_ACCEPT'] = '*/*';
+        $request = new Request();
+        $this->assertTrue($request->acceptsHtml());
+
+        $_SERVER['HTTP_ACCEPT'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
+        $request2 = new Request();
+        $this->assertTrue($request2->acceptsHtml());
+    }
+
+    public function testAcceptsJsonWithExactSpecificity()
+    {
+        $_SERVER['HTTP_ACCEPT'] = '*/*';
+        $request = new Request();
+        $this->assertFalse($request->acceptsJson(AcceptSpecificity::Exact));
+
+        $_SERVER['HTTP_ACCEPT'] = 'application/json';
+        $request2 = new Request();
+        $this->assertTrue($request2->acceptsJson(AcceptSpecificity::Exact));
+    }
+
+    public function testAcceptsXmlWithExactSpecificityRejectsBareWildcard()
+    {
+        $_SERVER['HTTP_ACCEPT'] = '*/*';
+        $request = new Request();
+        $this->assertFalse($request->acceptsXml(AcceptSpecificity::Exact));
+
+        $_SERVER['HTTP_ACCEPT'] = 'text/xml';
+        $request2 = new Request();
+        $this->assertTrue($request2->acceptsXml(AcceptSpecificity::Exact));
+    }
+
+    public function testAcceptsWithExactSpecificity()
+    {
+        $_SERVER['HTTP_ACCEPT'] = '*/*';
+        $request = new Request();
+        $this->assertFalse($request->accepts('application/xml', AcceptSpecificity::Exact));
+    }
+
+    public function testGetPreferredTypeWithExactSpecificity()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'application/json, */*';
+        $request = new Request();
+        $this->assertEquals(
+            'application/json',
+            $request->getPreferredType(['text/html', 'application/json'], AcceptSpecificity::Exact)
+        );
     }
 
 }
