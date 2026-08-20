@@ -15,6 +15,15 @@ class AcceptHeaderTest extends TestCase
         $this->assertEquals(0.0, $accept->matches('application/json'));
     }
 
+    public function testMatchIsCaseInsensitive()
+    {
+        $accept = new AcceptHeader('TEXT/HTML');
+        $this->assertEquals(1.0, $accept->matches('text/html'));
+
+        $accept2 = new AcceptHeader('text/html');
+        $this->assertEquals(1.0, $accept2->matches('TEXT/HTML'));
+    }
+
     public function testSubtypeWildcardMatch()
     {
         $accept = new AcceptHeader('text/*');
@@ -43,6 +52,12 @@ class AcceptHeaderTest extends TestCase
         $this->assertEquals(1.0, $accept->matches('text/html'));
     }
 
+    public function testWhitespaceOnlyHeaderTreatedAsFullWildcard()
+    {
+        $accept = new AcceptHeader('   ');
+        $this->assertEquals(1.0, $accept->matches('text/html'));
+    }
+
     public function testQZeroExcludesSpecificTypeEvenWithWildcardPresent()
     {
         $accept = new AcceptHeader('text/html;q=0, */*');
@@ -56,6 +71,18 @@ class AcceptHeaderTest extends TestCase
         // */* listed first with a higher raw quality than the exact match - exact match must still win
         $accept = new AcceptHeader('*/*;q=0.9, text/html;q=0.5');
         $this->assertEquals(0.5, $accept->matches('text/html'));
+    }
+
+    public function testSubtypeWildcardOutranksFullWildcard()
+    {
+        $accept = new AcceptHeader('*/*;q=0.9, text/*;q=0.2');
+        $this->assertEquals(0.2, $accept->matches('text/html'));
+    }
+
+    public function testExactMatchOutranksSubtypeWildcard()
+    {
+        $accept = new AcceptHeader('text/*;q=0.8, text/html;q=0.3');
+        $this->assertEquals(0.3, $accept->matches('text/html'));
     }
 
     public function testDuplicateEntriesAtSameSpecificityResolveToMaxQuality()

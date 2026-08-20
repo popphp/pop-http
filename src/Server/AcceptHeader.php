@@ -48,7 +48,8 @@ class AcceptHeader
      */
     public function __construct(?string $header = null)
     {
-        $header        = (($header !== null) && ($header !== '')) ? $header : '*/*';
+        $header        = trim((string)$header);
+        $header        = ($header !== '') ? $header : '*/*';
         $this->entries = QualityValue::parseList($header);
     }
 
@@ -142,7 +143,7 @@ class AcceptHeader
      */
     protected static function splitMediaType(string $mediaType): array
     {
-        $mediaType = trim($mediaType);
+        $mediaType = strtolower(trim($mediaType));
         if (!str_contains($mediaType, '/')) {
             return [$mediaType, '*'];
         }
