@@ -18,6 +18,7 @@ use Pop\Http\Auth;
 use Pop\Http\Uri;
 use Pop\Http\AbstractRequest;
 use Pop\Http\Body;
+use Pop\Http\Server\AcceptHeader;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -226,6 +227,69 @@ class Request extends AbstractRequest implements ServerRequestInterface
     public function hasAuth(): bool
     {
         return ($this->auth !== null);
+    }
+
+    /**
+     * Get the parsed Accept header
+     *
+     * @return AcceptHeader
+     */
+    public function getAccept(): AcceptHeader
+    {
+        return new AcceptHeader($this->getHeaderLine('Accept'));
+    }
+
+    /**
+     * Whether the request's Accept header accepts the given media type(s)
+     *
+     * @param  string|array $types
+     * @return bool
+     */
+    public function accepts(string|array $types): bool
+    {
+        return $this->getAccept()->accepts($types);
+    }
+
+    /**
+     * Given the media types this server can respond with, return the client's best match
+     * (or null if none of them are acceptable)
+     *
+     * @param  array $available
+     * @return string|null
+     */
+    public function getPreferredType(array $available): ?string
+    {
+        return $this->getAccept()->getPreferredType($available);
+    }
+
+    /**
+     * Whether the request accepts an HTML response
+     *
+     * @return bool
+     */
+    public function acceptsHtml(): bool
+    {
+        return $this->accepts('text/html');
+    }
+
+    /**
+     * Whether the request accepts a JSON response
+     *
+     * @return bool
+     */
+    public function acceptsJson(): bool
+    {
+        return $this->accepts('application/json');
+    }
+
+    /**
+     * Whether the request accepts an XML response (either canonical XML media type)
+     *
+     * @return bool
+     */
+    public function acceptsXml(): bool
+    {
+        return $this->accepts(['application/xml', 'text/xml']);
     }
 
     /**

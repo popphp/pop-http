@@ -841,4 +841,83 @@ class RequestTest extends TestCase
         $this->assertSame(['avatar' => $stub], $clone->getUploadedFiles());
     }
 
+    public function testGetAcceptReturnsAcceptHeaderInstance()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'text/html';
+        $request = new Request();
+        $this->assertInstanceOf('Pop\Http\Server\AcceptHeader', $request->getAccept());
+    }
+
+    public function testAcceptsWithExactMatch()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'application/json';
+        $request = new Request();
+        $this->assertTrue($request->accepts('application/json'));
+        $this->assertFalse($request->accepts('text/html'));
+    }
+
+    public function testAcceptsWithMissingHeaderTreatedAsWildcard()
+    {
+        unset($_SERVER['HTTP_ACCEPT']);
+        $request = new Request();
+        $this->assertTrue($request->accepts('text/html'));
+        $this->assertTrue($request->accepts('application/json'));
+    }
+
+    public function testAcceptsExcludesQZero()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'text/html;q=0, */*';
+        $request = new Request();
+        $this->assertFalse($request->accepts('text/html'));
+        $this->assertTrue($request->accepts('application/json'));
+    }
+
+    public function testAcceptsWithArrayOfTypes()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'application/xml';
+        $request = new Request();
+        $this->assertTrue($request->accepts(['text/html', 'application/xml']));
+    }
+
+    public function testGetPreferredTypeSelectsBestMatch()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'text/html;q=0.5, application/json;q=0.9';
+        $request = new Request();
+        $this->assertEquals('application/json', $request->getPreferredType(['text/html', 'application/json']));
+    }
+
+    public function testGetPreferredTypeReturnsNullWhenNothingMatches()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'application/json';
+        $request = new Request();
+        $this->assertNull($request->getPreferredType(['text/html', 'text/xml']));
+    }
+
+    public function testAcceptsHtml()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'text/html,application/xhtml+xml';
+        $request = new Request();
+        $this->assertTrue($request->acceptsHtml());
+        $this->assertFalse($request->acceptsJson());
+    }
+
+    public function testAcceptsJson()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'application/json';
+        $request = new Request();
+        $this->assertTrue($request->acceptsJson());
+        $this->assertFalse($request->acceptsHtml());
+    }
+
+    public function testAcceptsXmlMatchesBothCanonicalXmlTypes()
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'application/xml';
+        $request = new Request();
+        $this->assertTrue($request->acceptsXml());
+
+        $_SERVER['HTTP_ACCEPT'] = 'text/xml';
+        $request = new Request();
+        $this->assertTrue($request->acceptsXml());
+    }
+
 }
