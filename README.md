@@ -1347,17 +1347,22 @@ means the client will accept anything.
 
 **A note on `*/*`:** a bare `*/*` is RFC-correct but doesn't express a real preference — it's what non-browser
 clients send by default (`curl` with no `-H`, a bare `fetch()`), whereas real browser navigation always sends
-an explicit `text/html` first. If your application needs to tell those two cases apart, pass an
-`AcceptSpecificity`:
+an explicit `text/html` first. Because of this, `acceptsHtml()`, `acceptsJson()` and `acceptsXml()` default to
+requiring at least a `type/*` match — a bare `*/*` alone does *not* satisfy them, so a plain `curl` request
+against a JSON API falls through to your JSON branch instead of being mistaken for a browser wanting HTML.
+Pass an `AcceptSpecificity` to change that behavior:
 
 ```php
 use Pop\Http\Server\AcceptSpecificity;
 
-$request->acceptsHtml(AcceptSpecificity::Exact); // false for a bare "Accept: */*", true only if text/html was explicitly listed
+$request->acceptsHtml(AcceptSpecificity::Any);   // true even for a bare "Accept: */*" - opt back into the old, permissive check
+$request->acceptsHtml(AcceptSpecificity::Exact); // true only if "text/html" was explicitly listed - "text/*" is not enough
 ```
 
-- `AcceptSpecificity::Any` *(the default)* — a bare `*/*` satisfies the check
-- `AcceptSpecificity::Loose` — `type/*` or an exact match satisfies; a bare `*/*` does not
+- `AcceptSpecificity::Any` — a bare `*/*` satisfies the check (this is the default for `accepts()` and
+  `getPreferredType()`, which are general-purpose negotiation and leave the call site in control)
+- `AcceptSpecificity::Loose` *(the default for `acceptsHtml()`, `acceptsJson()` and `acceptsXml()`)* —
+  `type/*` or an exact match satisfies; a bare `*/*` does not
 - `AcceptSpecificity::Exact` — only a literal `type/subtype` match satisfies
 
 `$specificity` is available on every method above: `accepts()`, `getPreferredType()`, `acceptsHtml()`,

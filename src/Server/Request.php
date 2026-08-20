@@ -268,10 +268,13 @@ class Request extends AbstractRequest implements ServerRequestInterface
     /**
      * Whether the request accepts an HTML response
      *
+     * Defaults to AcceptSpecificity::Loose - a bare '*\/*' (no Accept header, or a generic
+     * client default like curl's) is not treated as a real preference for HTML.
+     *
      * @param  AcceptSpecificity $specificity
      * @return bool
      */
-    public function acceptsHtml(AcceptSpecificity $specificity = AcceptSpecificity::Any): bool
+    public function acceptsHtml(AcceptSpecificity $specificity = AcceptSpecificity::Loose): bool
     {
         return $this->accepts('text/html', $specificity);
     }
@@ -279,10 +282,13 @@ class Request extends AbstractRequest implements ServerRequestInterface
     /**
      * Whether the request accepts a JSON response
      *
+     * Defaults to AcceptSpecificity::Loose - a bare '*\/*' (no Accept header, or a generic
+     * client default like curl's) is not treated as a real preference for JSON.
+     *
      * @param  AcceptSpecificity $specificity
      * @return bool
      */
-    public function acceptsJson(AcceptSpecificity $specificity = AcceptSpecificity::Any): bool
+    public function acceptsJson(AcceptSpecificity $specificity = AcceptSpecificity::Loose): bool
     {
         return $this->accepts('application/json', $specificity);
     }
@@ -290,10 +296,13 @@ class Request extends AbstractRequest implements ServerRequestInterface
     /**
      * Whether the request accepts an XML response (either canonical XML media type)
      *
+     * Defaults to AcceptSpecificity::Loose - a bare '*\/*' (no Accept header, or a generic
+     * client default like curl's) is not treated as a real preference for XML.
+     *
      * @param  AcceptSpecificity $specificity
      * @return bool
      */
-    public function acceptsXml(AcceptSpecificity $specificity = AcceptSpecificity::Any): bool
+    public function acceptsXml(AcceptSpecificity $specificity = AcceptSpecificity::Loose): bool
     {
         return $this->accepts(['application/xml', 'text/xml'], $specificity);
     }
