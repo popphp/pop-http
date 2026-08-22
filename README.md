@@ -419,7 +419,7 @@ use Pop\Http\Client\Request;
 
 $requestJson  = Request::createJson('http://localhost/', 'POST', $data);
 $requestXml   = Request::createXml('http://localhost/', 'POST', $data);
-$requestUrl   = Request::createUrlForm('http://localhost/', 'POST', $data);
+$requestUrl   = Request::createUrlEncoded('http://localhost/', 'POST', $data);
 $requestMulti = Request::createMultipart('http://localhost/', 'POST', $data);
 ```
 
