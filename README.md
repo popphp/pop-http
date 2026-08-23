@@ -2,7 +2,7 @@ pop-http
 ========
 
 [![Build Status](https://github.com/popphp/pop-http/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-http/actions)
-[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-http)](http://cc.popphp.org/pop-http/)
+[![Coverage Status](https://cc.popphp.org/coverage.php?comp=pop-http)](https://cc.popphp.org/pop-http/)
 
 [![Join the chat at https://discord.gg/TZjgT74U7E](https://media.popphp.org/img/discord.svg)](https://discord.gg/TZjgT74U7E)
 
