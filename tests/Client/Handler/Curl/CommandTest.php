@@ -30,6 +30,20 @@ class CommandTest extends TestCase
         $this->assertEquals('curl -i -X POST --data "foo=bar&baz=123" "http://localhost:8000/post.php"', $command);
     }
 
+    public function testClientToCommandWithDataAndNoRequestType()
+    {
+        // Regression test: Client::addData() (unlike setData()) never sets a Content-Type
+        // header, so the request's requestType stays null. clientToCommand() used to check
+        // isMultipart()/isJson()/isXml() first, each of which called strtolower(null) and
+        // fatally errored under strict_types before ever reaching the "no type" data branch.
+        $client = new Client('http://localhost:8000/post.php');
+        $client->setMethod('POST')
+            ->addData('foo', 'bar');
+
+        $command = Command::clientToCommand($client);
+        $this->assertStringContainsString('--data "foo=bar"', $command);
+    }
+
     public function testCommandToClientNoOptions()
     {
         $command = 'curl "http://localhost:8000/post.php"';

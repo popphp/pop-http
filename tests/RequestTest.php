@@ -85,6 +85,17 @@ class RequestTest extends TestCase
         $this->assertFalse($request->hasRequestType());
     }
 
+    public function testTypeChecksWithNoRequestTypeSet()
+    {
+        $request = new Request('http://localhost/', 'POST');
+        $request->addData('foo', 'bar');
+
+        $this->assertFalse($request->hasRequestType());
+        $this->assertFalse($request->isJson());
+        $this->assertFalse($request->isXml());
+        $this->assertFalse($request->isMultipart());
+    }
+
     public function testAddHeader()
     {
         $request = new Request('http://localhost/', 'POST');

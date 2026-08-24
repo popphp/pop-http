@@ -680,7 +680,7 @@ class Request extends AbstractRequest
      */
     public function isJson(): bool
     {
-        return str_contains(strtolower($this->requestType), 'json');
+        return ($this->requestType !== null) && str_contains(strtolower($this->requestType), 'json');
     }
 
     /**
@@ -714,7 +714,7 @@ class Request extends AbstractRequest
      */
     public function isXml(): bool
     {
-        return str_contains(strtolower($this->requestType), 'xml');
+        return ($this->requestType !== null) && str_contains(strtolower($this->requestType), 'xml');
     }
 
     /**
@@ -772,7 +772,7 @@ class Request extends AbstractRequest
      */
     public function isMultipart(): bool
     {
-        return str_contains(strtolower($this->requestType), self::MULTIPART);
+        return ($this->requestType !== null) && str_contains(strtolower($this->requestType), self::MULTIPART);
     }
 
     /**

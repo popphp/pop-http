@@ -226,6 +226,27 @@ HDR;
         $this->assertTrue(str_contains($digestString, '48ffc1e3e6ecc0350eab1e0d27c5198e'));
     }
 
+    public function testCreateDigestStringWithQopAuth()
+    {
+        // RFC 2617 Section 3.5 canonical example - a real server computes the response
+        // the same way, so the header must both (a) compute a matching response hash
+        // (which requires folding qop into the hash, per the RFC formula) and (b) send
+        // qop/nc/cnonce back to the server, since it can't verify a response without
+        // knowing what nc/cnonce/qop the client used to compute it.
+        $digest = Digest::create('testrealm@host.com', 'Mufasa', 'Circle Of Life', '/dir/index.html', 'dcd98b7102dd2f0e8b11d0f600bfb0c093')
+            ->setMethod('GET')
+            ->setQop(Digest::QOP_AUTH)
+            ->setNonceCount('00000001')
+            ->setClientNonce('0a4f113b');
+
+        $digestString = (string)$digest;
+
+        $this->assertStringContainsString('response="6629fae49393a05397450978507c4ef1"', $digestString);
+        $this->assertStringContainsString('qop="auth"', $digestString);
+        $this->assertStringContainsString('nc="00000001"', $digestString);
+        $this->assertStringContainsString('cnonce="0a4f113b"', $digestString);
+    }
+
     public function testCreateDigestStringMd5Sess()
     {
         $digest = new Digest('test@realm.com', 'username', 'password', '/uri', '2e7e5ca372e848abe4b7e9ba6fa56ccf');
@@ -240,7 +261,9 @@ HDR;
         $this->assertTrue(str_contains($digestString, 'test@realm.com'));
         $this->assertTrue(str_contains($digestString, '2e7e5ca372e848abe4b7e9ba6fa56ccf'));
         $this->assertTrue(str_contains($digestString, '/uri'));
-        $this->assertTrue(str_contains($digestString, '426c2071879d6d8b7970775f2b98146d'));
+        $this->assertTrue(str_contains($digestString, 'feb6f86f0cb5ef23c48985309a9dd194'));
+        $this->assertTrue(str_contains($digestString, 'qop="auth-int"'));
+        $this->assertTrue(str_contains($digestString, 'cnonce="43e3e36b5af0f26f5a322a5b833aa8af"'));
     }
 
 }

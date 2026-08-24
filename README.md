@@ -259,6 +259,17 @@ $response = Client::post(
 );
 ```
 
+Most servers issue a `qop="auth"` challenge, which requires a client nonce and a nonce count in addition to what
+`createFromWwwAuth()` parses out of the header - `Digest` doesn't generate these itself, so set them before sending:
+
+```php
+$digest = Auth\Digest::createFromWwwAuth($wwwAuthHeader, 'username', 'password', '/uri')
+    ->setClientNonce(bin2hex(random_bytes(8)))
+    ->setNonceCount('00000001');
+
+$response = Client::post('http://localhost/auth', Auth::createDigest($digest));
+```
+
 [Top](#pop-http)
 
 ### Options

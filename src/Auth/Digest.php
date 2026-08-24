@@ -772,7 +772,7 @@ class Digest
             md5($this->method . ':' . $this->uri);
 
         $response = ($this->qop !== null) ?
-            md5($a1 . ':' . $this->nonce . ':' .  $this->nonceCount . ':' .  $this->clientNonce . ':' . $a2) :
+            md5($a1 . ':' . $this->nonce . ':' .  $this->nonceCount . ':' .  $this->clientNonce . ':' . $this->qop . ':' . $a2) :
             md5($a1 . ':' . $this->nonce . ':' . $a2);
 
         $value->setDelimiter(',')
@@ -783,6 +783,22 @@ class Digest
             ->addParameter('nonce', $this->nonce)
             ->addParameter('uri', $this->uri)
             ->addParameter('response', $response);
+
+        // A server can't verify the response above without knowing the qop/nc/cnonce it was
+        // computed from, since they all feed into the hash - RFC 2617 requires echoing them
+        // back. opaque, if the server sent one, must also be echoed back unchanged.
+        if ($this->qop !== null) {
+            $value->addParameter('qop', $this->qop);
+            if ($this->nonceCount !== null) {
+                $value->addParameter('nc', $this->nonceCount);
+            }
+            if ($this->clientNonce !== null) {
+                $value->addParameter('cnonce', $this->clientNonce);
+            }
+        }
+        if ($this->opaque !== null) {
+            $value->addParameter('opaque', $this->opaque);
+        }
 
         return $value->render();
     }
