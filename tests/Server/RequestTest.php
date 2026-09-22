@@ -992,4 +992,118 @@ class RequestTest extends TestCase
         );
     }
 
+    /**
+     * Set up a request's server globals, run the callback, and always put them back
+     *
+     * Request reads $_SERVER directly, so anything a test sets there leaks into every later test.
+     *
+     * @param  array    $server
+     * @param  callable $callback
+     * @return void
+     */
+    protected function withServer(array $server, callable $callback): void
+    {
+        $keys     = ['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_MD5', 'HTTP_CONTENT_TYPE', 'X_POP_HTTP_RAW_DATA'];
+        $original = $_SERVER;
+
+        foreach ($keys as $key) {
+            unset($_SERVER[$key]);
+        }
+
+        $_SERVER = array_merge($_SERVER, [
+            'HTTP_HOST'     => 'localhost',
+            'SERVER_NAME'   => 'localhost',
+            'SERVER_PORT'   => 8000,
+            'DOCUMENT_ROOT' => getcwd(),
+            'REQUEST_URI'   => '/page',
+        ], $server);
+
+        try {
+            $callback();
+        } finally {
+            $_SERVER = $original;
+        }
+    }
+
+    /**
+     * PHP puts Content-Type, Content-Length and Content-MD5 into $_SERVER without the HTTP_ prefix
+     * every other header gets. A web SAPI's native getallheaders() still reports them, but under
+     * the CLI there is no getallheaders() and the constructor builds headers from $_SERVER itself,
+     * so it has to pick those three up explicitly or it never sees the request body's type.
+     */
+    public function testUnprefixedBodyHeadersAreReadFromServerWithoutGetAllHeaders()
+    {
+        if (function_exists('getallheaders')) {
+            $this->markTestSkipped('getallheaders() exists, so the $_SERVER fallback is not in use');
+        }
+
+        $this->withServer([
+            'REQUEST_METHOD' => 'POST',
+            'CONTENT_TYPE'   => 'application/json',
+            'CONTENT_LENGTH' => '15',
+            'CONTENT_MD5'    => 'Q2hlY2sgSW50ZWdyaXR5IQ==',
+        ], function () {
+            $request = new Request('/home');
+
+            $this->assertEquals('application/json', $request->getHeaderValue('Content-Type'));
+            $this->assertEquals('15', $request->getHeaderValue('Content-Length'));
+            $this->assertEquals('Q2hlY2sgSW50ZWdyaXR5IQ==', $request->getHeaderValue('Content-Md5'));
+        });
+    }
+
+    /**
+     * The end-to-end consequence: PUT/PATCH/DELETE bodies are only parsed when a Content-Type is
+     * known, so without it every such body parsed to null under the CLI.
+     */
+    public function testBodyIsParsedWithOnlyTheUnprefixedContentType()
+    {
+        foreach (['PUT', 'PATCH', 'DELETE'] as $method) {
+            $this->withServer([
+                'REQUEST_METHOD'      => $method,
+                'CONTENT_TYPE'        => 'application/x-www-form-urlencoded',
+                'X_POP_HTTP_RAW_DATA' => 'name=Patched+Name',
+            ], function () use ($method) {
+                $request = new Request('/home');
+                $this->assertEquals(['name' => 'Patched Name'], $request->getParsedData(), $method);
+            });
+        }
+
+        $this->withServer([
+            'REQUEST_METHOD'      => 'PUT',
+            'CONTENT_TYPE'        => 'application/json',
+            'X_POP_HTTP_RAW_DATA' => '{"foo" : "bar"}',
+        ], function () {
+            $this->assertEquals('bar', (new Request('/home'))->getParsedData()['foo']);
+        });
+    }
+
+    /**
+     * A prefixed key is what a header sent literally as "Http-Content-Type" would produce, but
+     * it is also how tests have faked Content-Type. If both are present the prefixed one was read
+     * first and is kept - the unprefixed copy only fills a gap.
+     */
+    public function testUnprefixedContentTypeDoesNotOverrideAPrefixedOne()
+    {
+        $this->withServer([
+            'REQUEST_METHOD'      => 'POST',
+            'HTTP_CONTENT_TYPE'   => 'application/json',
+            'CONTENT_TYPE'        => 'application/xml',
+            'X_POP_HTTP_RAW_DATA' => '{"foo" : "bar"}',
+        ], function () {
+            $request = new Request('/home');
+            $this->assertEquals('application/json', $request->getHeaderValue('Content-Type'));
+            $this->assertEquals('bar', $request->getParsedData()['foo']);
+        });
+    }
+
+    public function testNoContentHeadersAreInventedWhenServerHasNone()
+    {
+        $this->withServer(['REQUEST_METHOD' => 'GET'], function () {
+            $request = new Request('/home');
+            $this->assertFalse($request->hasHeader('Content-Type'));
+            $this->assertFalse($request->hasHeader('Content-Length'));
+            $this->assertFalse($request->hasHeader('Content-Md5'));
+        });
+    }
+
 }

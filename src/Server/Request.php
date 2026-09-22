@@ -148,6 +148,20 @@ class Request extends AbstractRequest implements ServerRequestInterface
                         $this->addHeader($key, $value);
                     }
                 }
+
+                // PHP stores these three without the HTTP_ prefix, so the loop above never sees them.
+                // getallheaders() reports them on a web SAPI; without it (the CLI) they must be copied
+                // across, or a PUT/PATCH/DELETE body has no Content-Type and is never parsed.
+                $unprefixed = [
+                    'CONTENT_TYPE'   => 'Content-Type',
+                    'CONTENT_LENGTH' => 'Content-Length',
+                    'CONTENT_MD5'    => 'Content-Md5',
+                ];
+                foreach ($unprefixed as $key => $name) {
+                    if (isset($_SERVER[$key]) && ($_SERVER[$key] !== '') && !$this->hasHeader($name)) {
+                        $this->addHeader($name, (string)$_SERVER[$key]);
+                    }
+                }
             }
 
             if ($this->hasHeader('Authorization')) {
