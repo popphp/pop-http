@@ -180,12 +180,31 @@ class Auth
             $value = $header->getValuesAsStrings('; ');
         }
 
+        // A header built from a name and a literal value (as Server\Request builds them) has no parsed scheme,
+        // so detect Digest from the string, as with Basic and Bearer below, and parse the value
+        if ((!($value instanceof Header\Value) || empty($value->getScheme())) && str_starts_with((string)$value, 'Digest ')) {
+            $header = new Header($header->getName(), Header\Value::parse((string)$value));
+            $value  = $header->getValue();
+        }
+
         if ((($value instanceof Header\Value) && !empty($value->getScheme()) && (trim($value->getScheme()) == 'Digest')) ||
             (isset($options['scheme']) && ($options['scheme'] == 'digest'))) {
+            $isWwwAuth = (strtolower((string)$header->getName()) == 'www-authenticate');
+            // A server reading a client's Authorization header has no password to pass, so keep the parsed
+            // header for the application to verify rather than building an Auth\Digest
+            if (!isset($options['password']) && !$isWwwAuth) {
+                $auth->setScheme('Digest');
+                $auth->authHeader = $header;
+                $username = $header->getValue()->getParameter('username');
+                if ($username !== null) {
+                    $auth->setUsername($username);
+                }
+                return $auth;
+            }
             if (!isset($options['password'])) {
                 throw new Exception('Error: The password option must be passed.');
             }
-            if (strtolower((string)$header->getName()) == 'www-authenticate') {
+            if ($isWwwAuth) {
                 if (!isset($options['username']) || !isset($options['uri'])) {
                     throw new Exception('Error: The username and URI options must be passed.');
                 }
@@ -440,7 +459,7 @@ class Auth
      */
     public function isDigest(): bool
     {
-        return $this->hasDigest();
+        return ($this->hasDigest() || (strtolower((string)$this->scheme) == 'digest'));
     }
 
     /**
@@ -498,9 +517,9 @@ class Auth
     {
         if (($this->isBasic()) && (($this->username === null) || ($this->password === null))) {
             throw new Exception('Error: The username and password values must be set for basic authorization');
-        } else if (($this->isDigest()) && (!$this->digest->isValid())) {
+        } else if (($this->hasDigest()) && (!$this->digest->isValid())) {
             throw new Exception(implode('\n', $this->digest->getErrors()));
-        } else if (!($this->isBasic()) && !($this->isDigest()) && ($this->token === null)) {
+        } else if (!($this->isBasic()) && !($this->hasDigest()) && ($this->token === null)) {
             throw new Exception('Error: The token is not set');
         }
 
@@ -510,7 +529,7 @@ class Auth
             $value->setScheme('Basic ');
             $value->setValue(base64_encode($this->username . ':' . $this->password));
             $value = 'Basic ' . base64_encode($this->username . ':' . $this->password);
-        } else if ($this->isDigest()) {
+        } else if ($this->hasDigest()) {
             $this->digest->createDigestString($value);
         } else if ($this->isBearer()) {
             $value->setScheme('Bearer ');

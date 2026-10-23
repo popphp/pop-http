@@ -230,4 +230,51 @@ BODY;
         $this->assertEquals($original, Parser::decodeData($compressed, 'GZIP'));
     }
 
+    public function testXmlCdataEntityStaysLiteral()
+    {
+        $data = Parser::parseDataByContentType('<root><a><![CDATA[a &amp; b]]></a></root>', 'application/xml');
+        $this->assertSame('a &amp; b', $data['a']);
+    }
+
+    public function testXmlCdataBareAmpersandParses()
+    {
+        $data = Parser::parseDataByContentType('<root><a><![CDATA[Tom & Jerry]]></a></root>', 'application/xml');
+        $this->assertSame('Tom & Jerry', $data['a']);
+    }
+
+    public function testXmlLowercaseCdataThrows()
+    {
+        $this->expectException(\Pop\Http\Exception::class);
+        Parser::parseDataByContentType('<root><a><![cdata[x]]></a></root>', 'application/xml');
+    }
+
+    public function testXmlCdataUnchangedCases()
+    {
+        $data = Parser::parseDataByContentType('<root><a><![CDATA[<b>hi</b>]]></a></root>', 'application/xml');
+        $this->assertSame('<b>hi</b>', $data['a']);
+
+        $data = Parser::parseDataByContentType('<root><a>pre<![CDATA[mid]]>post</a></root>', 'application/xml');
+        $this->assertSame('premidpost', $data['a']);
+
+        $data = Parser::parseDataByContentType('<root><a><![CDATA[]]></a></root>', 'application/xml');
+        $this->assertSame([], $data['a']);
+    }
+
+    public function testXmlManyDistinctCdataSectionsIsLinear()
+    {
+        $xml = '<root>';
+        for ($n = 0; $n < 20000; $n++) {
+            $xml .= '<i><![CDATA[<p>item ' . $n . '</p>]]></i>';
+        }
+        $xml .= '</root>';
+
+        $start   = microtime(true);
+        $data    = Parser::parseDataByContentType($xml, 'application/xml');
+        $elapsed = microtime(true) - $start;
+
+        $this->assertCount(20000, $data['i']);
+        $this->assertSame('<p>item 19999</p>', $data['i'][19999]);
+        $this->assertLessThan(1.0, $elapsed);
+    }
+
 }

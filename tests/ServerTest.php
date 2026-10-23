@@ -162,4 +162,17 @@ class ServerTest extends TestCase
         $this->assertTrue(str_contains($responseString, '"foo"'));
     }
 
+    public function testCreateWithBasePathForwardsParseData()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD']      = 'POST';
+        $_SERVER['REQUEST_URI']         = '/foo';
+        $_SERVER['HTTP_CONTENT_TYPE']   = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo":"bar"}';
+        $_GET  = [];
+        $_POST = [];
+
+        $this->assertNull(Server::createWithBasePath('/foo', null, null, false)->request()->getParsedData());
+    }
+
 }

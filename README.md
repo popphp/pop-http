@@ -1261,6 +1261,27 @@ $parsedData = $request->getParsedData();
 $rawData    = $request->getRawData();
 ```
 
+By default, the request body is parsed when the request object is constructed. To defer that, construct the
+request with `parseData: false` (a named argument):
+
+```php
+use Pop\Http\Server\Request;
+
+$request = new Request(parseData: false);
+```
+
+Everything except the parsed body is still filled in at construction (the query string, POST fields, files,
+headers, auth and the raw body). `getParsedData()` and `getPut()`, `getPatch()` and `getDelete()` stay empty
+until `parseData()` is called, which throws an exception if the body cannot be parsed:
+
+```php
+$request->parseData();
+$parsedData = $request->getParsedData();
+```
+
+The same `$parseData` argument is available on `Request::create()`, `Request::createWithBasePath()` and
+`Server::createWithBasePath()`.
+
 As an example, this `curl` command pointing at the following URL with a PHP script can be executed:
 
 ```bash

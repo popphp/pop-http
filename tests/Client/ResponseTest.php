@@ -40,4 +40,13 @@ class ResponseTest extends TestCase
         $this->assertEmpty($data->toArray());
     }
 
+    public function testParsedXmlResponseReadsCdataLiterally()
+    {
+        $response = new Http\Client\Response([
+            'headers' => ['Content-Type' => 'application/xml'],
+            'body'    => '<root><a><![CDATA[a &amp; b]]></a></root>'
+        ]);
+        $this->assertSame('a &amp; b', $response->getParsedResponse()['a']);
+    }
+
 }

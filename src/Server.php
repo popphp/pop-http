@@ -48,11 +48,14 @@ class Server extends AbstractHttp
      * @param  string $basePath
      * @param  mixed  $filters
      * @param  mixed  $streamToFile
+     * @param  bool   $parseData
      * @return Server
      */
-    public static function createWithBasePath(string $basePath, mixed $filters = null, mixed $streamToFile = null): Server
+    public static function createWithBasePath(
+        string $basePath, mixed $filters = null, mixed $streamToFile = null, bool $parseData = true
+    ): Server
     {
-        return new self(Server\Request::createWithBasePath($basePath, $filters, $streamToFile));
+        return new self(Server\Request::createWithBasePath($basePath, $filters, $streamToFile, $parseData));
     }
 
     /**

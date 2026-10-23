@@ -5,6 +5,7 @@ namespace Pop\Http\Test;
 use Pop\Http\Auth;
 use PHPUnit\Framework\TestCase;
 use Pop\Http\Auth\Digest;
+use Pop\Mime\Part\Header;
 
 class AuthTest extends TestCase
 {
@@ -82,11 +83,58 @@ class AuthTest extends TestCase
         $this->assertTrue($header->hasDigest());
     }
 
-    public function testParseDigestException1()
+    public function testParseDigestWithoutPassword()
     {
-        $this->expectException('Pop\Http\Exception');
         $digest = 'Authorization: Digest username="username", realm="test@realm.com", nonce="2e7e5ca372e848abe4b7e9ba6fa56ccf", uri="/uri", response="ad005ee586d13b4625477cd18869769a"';
         $header = Auth::parse($digest);
+        $this->assertEquals('Digest', $header->getScheme());
+        $this->assertTrue($header->isDigest());
+        $this->assertFalse($header->hasDigest());
+        $this->assertEquals('username', $header->getUsername());
+        $this->assertTrue($header->hasAuthHeader());
+        $this->assertEquals('test@realm.com', $header->getAuthHeader()->getValue()->getParameter('realm'));
+        $this->assertEquals('ad005ee586d13b4625477cd18869769a', $header->getAuthHeader()->getValue()->getParameter('response'));
+    }
+
+    public function testParseDigestLiteralHeaderWithoutPassword()
+    {
+        $header = Auth::parse(new Header('Authorization', 'Digest username="username", realm="test@realm.com", nonce="2e7e5ca372e848abe4b7e9ba6fa56ccf", uri="/uri", response="ad005ee586d13b4625477cd18869769a"'));
+        $this->assertEquals('Digest', $header->getScheme());
+        $this->assertTrue($header->isDigest());
+        $this->assertFalse($header->hasDigest());
+        $this->assertEquals('username', $header->getUsername());
+        $this->assertEquals('2e7e5ca372e848abe4b7e9ba6fa56ccf', $header->getAuthHeader()->getValue()->getParameter('nonce'));
+    }
+
+    public function testParseDigestLiteralHeaderWithPassword()
+    {
+        $header = Auth::parse(
+            new Header('Authorization', 'Digest username="username", realm="test@realm.com", nonce="2e7e5ca372e848abe4b7e9ba6fa56ccf", uri="/uri", response="ad005ee586d13b4625477cd18869769a"'),
+            ['password' => 'password']
+        );
+        $this->assertTrue($header->hasDigest());
+        $this->assertTrue($header->isDigest());
+        $this->assertEquals('test@realm.com', $header->getDigest()->getRealm());
+        $this->assertEquals('2e7e5ca372e848abe4b7e9ba6fa56ccf', $header->getDigest()->getNonce());
+        $this->assertEquals('/uri', $header->getDigest()->getUri());
+    }
+
+    public function testParseDigestLiteralWwwAuth()
+    {
+        $header = Auth::parse(
+            new Header('WWW-Authenticate', 'Digest realm="testrealm@host.com", qop="auth", nonce="2e7e5ca372e848abe4b7e9ba6fa56ccf", opaque="7e1f8f875c8f4cb05fdb768150e327e1"'),
+            ['username' => 'username', 'password' => 'password', 'uri' => '/uri']
+        );
+        $this->assertTrue($header->hasDigest());
+        $this->assertEquals('testrealm@host.com', $header->getDigest()->getRealm());
+    }
+
+    public function testParseDigestLiteralWwwAuthWithoutPasswordException()
+    {
+        $this->expectException('Pop\Http\Exception');
+        $header = Auth::parse(
+            new Header('WWW-Authenticate', 'Digest realm="testrealm@host.com", qop="auth", nonce="2e7e5ca372e848abe4b7e9ba6fa56ccf", opaque="7e1f8f875c8f4cb05fdb768150e327e1"')
+        );
     }
 
     public function testParseDigest2()

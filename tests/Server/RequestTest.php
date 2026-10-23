@@ -1106,4 +1106,318 @@ class RequestTest extends TestCase
         });
     }
 
+    public function testDataFiltersGetOnce()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = ['x' => '<b>&</b>'];
+        $_POST = [];
+
+        $data = new \Pop\Http\Server\Data(null, null, 'htmlentities');
+        $this->assertSame('&lt;b&gt;&amp;&lt;/b&gt;', $data->getQuery('x'));
+        $this->assertSame('&lt;b&gt;&amp;&lt;/b&gt;', $data->getParsedData('x'));
+    }
+
+    public function testDataFiltersMultipartPostOnce()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_GET  = [];
+        $_POST = ['x' => '<b>&</b>'];
+
+        $data = new \Pop\Http\Server\Data('multipart/form-data; boundary=abc', null, 'htmlentities');
+        $this->assertSame('&lt;b&gt;&amp;&lt;/b&gt;', $data->getPost('x'));
+        $this->assertSame('&lt;b&gt;&amp;&lt;/b&gt;', $data->getParsedData('x'));
+    }
+
+    public function testDataFiltersParsedJsonOnce()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE']);
+        $_SERVER['REQUEST_METHOD']      = 'PUT';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"x":"<b>&</b>"}';
+        $_GET  = [];
+        $_POST = [];
+
+        $data = new \Pop\Http\Server\Data('application/json', null, 'htmlentities');
+        $this->assertSame('&lt;b&gt;&amp;&lt;/b&gt;', $data->getPut('x'));
+    }
+
+    public function testDataDeferredParse()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE']);
+        $_SERVER['REQUEST_METHOD']      = 'POST';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo":"bar"}';
+        $_GET  = [];
+        $_POST = [];
+
+        $data = new \Pop\Http\Server\Data('application/json', null, null, null, true, false);
+        $this->assertSame('{"foo":"bar"}', $data->getRawData());
+        $this->assertNull($data->getParsedData());
+        $this->assertNull($data->getParsedData());
+        $this->assertSame($data, $data->parseData('application/json'));
+        $this->assertSame('bar', $data->getParsedData('foo'));
+        $data->parseData('application/json');
+        $this->assertSame(['foo' => 'bar'], $data->getParsedData());
+    }
+
+    public function testDataDeferredFiltersQueryAtConstruction()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = ['x' => '<b>&</b>'];
+        $_POST = [];
+
+        $data = new \Pop\Http\Server\Data(null, null, 'htmlentities', null, true, false);
+        $this->assertSame('&lt;b&gt;&amp;&lt;/b&gt;', $data->getQuery('x'));
+        $this->assertNull($data->getParsedData());
+        $data->parseData();
+        $this->assertSame('&lt;b&gt;&amp;&lt;/b&gt;', $data->getParsedData('x'));
+    }
+
+    public function testDeferredParseJsonPost()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo":"bar"}';
+        $_GET  = [];
+        $_POST = [];
+
+        $request = new Request(null, null, null, true, [], false);
+        $this->assertSame('{"foo":"bar"}', $request->getRawData());
+        $this->assertNull($request->getParsedData());
+        $this->assertNull($request->getParsedData());
+        $this->assertSame($request, $request->parseData());
+        $this->assertSame('bar', $request->getParsedData('foo'));
+        $request->parseData();
+        $this->assertSame(['foo' => 'bar'], $request->getParsedData());
+    }
+
+    public function testDeferredParseGetAndFormPost()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = ['foo' => 'bar'];
+        $_POST = [];
+
+        $request = new Request(null, null, null, true, [], false);
+        $this->assertSame('bar', $request->getQuery('foo'));
+        $this->assertNull($request->getParsedData());
+        $request->parseData();
+        $this->assertSame(['foo' => 'bar'], $request->getParsedData());
+
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
+        $_GET  = [];
+        $_POST = ['foo' => 'bar'];
+
+        $request = new Request(null, null, null, true, [], false);
+        $this->assertSame('bar', $request->getPost('foo'));
+        $this->assertNull($request->getParsedData());
+        $request->parseData();
+        $this->assertSame(['foo' => 'bar'], $request->getParsedData());
+    }
+
+    public function testDeferredParseXmlPutWithCharset()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/xml; charset=utf-8';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '<root><node>Hi</node></root>';
+        $_GET  = [];
+        $_POST = [];
+
+        $request = new Request(null, null, null, true, [], false);
+        $this->assertSame([], $request->getPut());
+        $this->assertNull($request->getParsedData());
+        $request->parseData();
+        $this->assertSame('Hi', $request->getPut('node'));
+    }
+
+    public function testDeferredParseMalformedBodiesThrowOnlyOnParse()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/xml';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '<not><valid</xml>';
+        $_GET  = [];
+        $_POST = [];
+
+        $request = new Request(null, null, null, true, [], false);
+        $this->expectException(\Pop\Http\Exception::class);
+        $request->parseData();
+    }
+
+    public function testDeferredParseMultipartWithoutBoundaryThrowsOnlyOnParse()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'multipart/form-data';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = 'x';
+        $_GET  = [];
+        $_POST = [];
+
+        $request = new Request(null, null, null, true, [], false);
+        $this->expectException(\Pop\Http\Exception::class);
+        $request->parseData();
+    }
+
+    public function testDeferredParseKeepsAuth()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = [];
+        $_POST = [];
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer 123456';
+        $request = new Request(null, null, null, true, [], false);
+        $this->assertTrue($request->hasAuth());
+        $this->assertSame('Authorization: Bearer 123456', $request->getAuth()->getAuthHeaderAsString());
+        unset($_SERVER['HTTP_AUTHORIZATION']);
+    }
+
+    public function testNonArrayBodyOnPutPatchDelete()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_GET  = [];
+        $_POST = [];
+        $cases = [
+            ['PUT', 'text/plain', 'hello', 'getPut'],
+            ['PATCH', 'application/json', '5', 'getPatch'],
+            ['PATCH', 'application/json', '"abc"', 'getPatch'],
+            ['DELETE', 'application/json', 'true', 'getDelete'],
+        ];
+        foreach ($cases as [$method, $contentType, $body, $getter]) {
+            $_SERVER['REQUEST_METHOD']     = $method;
+            $_SERVER['HTTP_CONTENT_TYPE']  = $contentType;
+            $_SERVER['X_POP_HTTP_RAW_DATA'] = $body;
+            foreach ([true, false] as $parseData) {
+                $request = new Request(null, null, null, true, [], $parseData);
+                if (!$parseData) {
+                    $request->parseData();
+                }
+                $this->assertSame([], $request->{$getter}(), $method . ' ' . $body);
+                $this->assertNull($request->getParsedData(), $method . ' ' . $body);
+                $this->assertFalse($request->hasParsedData(), $method . ' ' . $body);
+                $this->assertSame($body, $request->getRawData(), $method . ' ' . $body);
+            }
+        }
+        unset($_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+    }
+
+    public function testDataConstructorCallsProcessDataOverride()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = [];
+        $_POST = [];
+        $dataClass = new class extends \Pop\Http\Server\Data {
+            public bool $processed = false;
+            public function processData(?string $contentType = null, ?string $encoding = null, mixed $streamToFile = null)
+            {
+                $this->processed = true;
+                parent::processData($contentType, $encoding, $streamToFile);
+            }
+        };
+        $class = get_class($dataClass);
+
+        $data = new $class();
+        $this->assertTrue($data->processed);
+
+        $data = new $class(null, null, null, null, true, false);
+        $this->assertFalse($data->processed);
+    }
+
+    public function testDigestAuthorizationHeader()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = [];
+        $_POST = [];
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Digest username="username", realm="test@realm.com", nonce="2e7e5ca372e848abe4b7e9ba6fa56ccf", uri="/uri", response="ad005ee586d13b4625477cd18869769a"';
+        foreach ([true, false] as $parseData) {
+            $request = new Request(null, null, null, true, [], $parseData);
+            $this->assertTrue($request->hasAuth());
+            $this->assertEquals('Digest', $request->getAuth()->getScheme());
+            $this->assertTrue($request->getAuth()->isDigest());
+            $this->assertEquals('username', $request->getAuth()->getUsername());
+        }
+        unset($_SERVER['HTTP_AUTHORIZATION']);
+    }
+
+    public function testDeferredParseStreamToFile()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo":"bar"}';
+        $_GET  = [];
+        $_POST = [];
+
+        $request = new Request(null, null, __DIR__ . '/../tmp/deferred-data', true, [], false);
+        $this->assertFileExists(__DIR__ . '/../tmp/deferred-data');
+        $this->assertSame('{"foo":"bar"}', $request->getRawData());
+        $this->assertNull($request->getParsedData());
+        $request->parseData();
+        $this->assertSame('bar', $request->getPut('foo'));
+        $request->getData()->clearStreamToFile();
+    }
+
+    public function testParseDataUsesServerMethodAndSharesDataWithClones()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo":"bar"}';
+        $_GET  = [];
+        $_POST = [];
+
+        $request = new Request(null, null, null, true, [], false);
+        $clone   = $request->withMethod('PATCH');
+        $clone->parseData();
+        $this->assertSame('bar', $clone->getPut('foo'));
+        $this->assertSame([], $clone->getPatch());
+        $this->assertSame('bar', $request->getParsedData('foo'));
+    }
+
+    public function testParseDataWithoutRequestMethodDoesNothing()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = [];
+        $_POST = [];
+        unset($_SERVER['REQUEST_METHOD']);
+        $request = new Request(null, null, null, true, [], false);
+        $request->parseData();
+        $this->assertNull($request->getParsedData());
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+    }
+
+    public function testParseDataWithoutGlobalsGivesEmptyCopy()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET  = ['foo' => 'bar'];
+        $_POST = [];
+
+        $request = new Request(null, null, null, false, [], false);
+        $request->parseData();
+        $this->assertSame([], $request->getParsedData());
+    }
+
+    public function testFactoriesForwardParseData()
+    {
+        unset($_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['X_POP_HTTP_RAW_DATA']);
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['HTTP_CONTENT_TYPE'] = 'application/json';
+        $_SERVER['X_POP_HTTP_RAW_DATA'] = '{"foo":"bar"}';
+        $_GET  = [];
+        $_POST = [];
+
+        $_SERVER['REQUEST_URI'] = '/foo';
+        $this->assertNull(Request::create(null, null, null, false)->getParsedData());
+        $this->assertNull(Request::createWithBasePath('/foo', null, null, false)->getParsedData());
+        $this->assertSame('bar', Request::create()->getParsedData('foo'));
+    }
+
 }

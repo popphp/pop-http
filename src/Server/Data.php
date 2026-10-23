@@ -120,11 +120,12 @@ class Data
      * @param  mixed $filters
      * @param  mixed $streamToFile
      * @param  bool $populateFromGlobals
+     * @param  bool $parseData
      * @throws Exception
      */
     public function __construct(
         ?string $contentType = null, ?string $encoding = null, mixed $filters = null,
-        mixed $streamToFile = null, bool $populateFromGlobals = true
+        mixed $streamToFile = null, bool $populateFromGlobals = true, bool $parseData = true
     )
     {
         if ($filters !== null) {
@@ -141,7 +142,11 @@ class Data
             $this->files = array_key_exists('_FILES', $GLOBALS) ? $_FILES : [];
 
             if (isset($_SERVER['REQUEST_METHOD'])) {
-                $this->processData($contentType, $encoding, $streamToFile);
+                if ($parseData) {
+                    $this->processData($contentType, $encoding, $streamToFile);
+                } else {
+                    $this->readData($contentType, $streamToFile);
+                }
             }
         }
     }
@@ -321,7 +326,7 @@ class Data
      */
     public function hasParsedData(): bool
     {
-        return !empty($this->parsedData);
+        return (is_array($this->parsedData) && !empty($this->parsedData));
     }
 
     /**
@@ -374,6 +379,8 @@ class Data
     /**
      * Process any data that came with the request
      *
+     * Reads the raw data, then parses it.
+     *
      * @param  ?string $contentType
      * @param  ?string $encoding
      * @param  mixed  $streamToFile
@@ -382,20 +389,36 @@ class Data
      */
     public function processData(?string $contentType = null, ?string $encoding = null, mixed $streamToFile = null)
     {
-        $method   = strtoupper($_SERVER['REQUEST_METHOD']);
+        $this->readData($contentType, $streamToFile);
+        $this->parseData($contentType, $encoding);
+    }
+
+    /**
+     * Read the data that came with the request
+     *
+     * Captures the raw data (or streams it to file) and filters the GET and POST arrays.
+     * It does not parse the raw data.
+     *
+     * @param  ?string $contentType
+     * @param  mixed  $streamToFile
+     * @throws Exception
+     * @return void
+     */
+    protected function readData(?string $contentType = null, mixed $streamToFile = null): void
+    {
+        $method      = strtoupper($_SERVER['REQUEST_METHOD']);
         $isMultipart = ($contentType !== null) && (stripos($contentType, 'multipart/form-data') !== false);
 
         // Multipart POST requests: PHP has already correctly parsed $_POST/$_FILES natively.
         // php://input is documented to be empty for this content type, so there is
         // nothing useful to re-parse - trust PHP's own parse directly. Multipart bodies on
         // other methods (PUT/PATCH/DELETE) are NOT natively parsed by PHP into any
-        // superglobal, so those still need the manual raw-body parse below.
+        // superglobal, so those still need the manual raw-body parse in parseData().
         if ($isMultipart && $method === 'POST') {
             if ($streamToFile !== null) {
                 $this->prepareStreamToFile($streamToFile);
             }
-            $this->parsedData = $this->post;
-            $this->applyFilters();
+            $this->filterQueryAndPost();
             return;
         }
 
@@ -410,6 +433,38 @@ class Data
                 $_SERVER['X_POP_HTTP_RAW_DATA'] : file_get_contents('php://input');
         }
 
+        // A GET request carries its data in the query string, so that IS its raw data.
+        // php://input (read above) is empty for GET, so fall back to QUERY_STRING - but only
+        // if nothing was already captured above (streamToFile, or the X_POP_HTTP_RAW_DATA
+        // test override), which must not be clobbered. This is a straight raw-value copy,
+        // not a re-parse: $this->get is still PHP's own native parse of the query string.
+        if (($method === 'GET') && empty($this->rawData)) {
+            $this->rawData = $_SERVER['QUERY_STRING'] ?? '';
+        }
+
+        $this->filterQueryAndPost();
+    }
+
+    /**
+     * Parse the data that came with the request
+     *
+     * Parses the raw data captured by the read step. It re-parses on every call, and does nothing
+     * if there is no request method. Parser may throw Pop\Http\Exception.
+     *
+     * @param  ?string $contentType
+     * @param  ?string $encoding
+     * @throws \Pop\Http\Exception
+     * @return Data
+     */
+    public function parseData(?string $contentType = null, ?string $encoding = null): Data
+    {
+        if (!isset($_SERVER['REQUEST_METHOD'])) {
+            return $this;
+        }
+
+        $method      = strtoupper($_SERVER['REQUEST_METHOD']);
+        $isMultipart = ($contentType !== null) && (stripos($contentType, 'multipart/form-data') !== false);
+
         // GET and POST with a body PHP natively parses (url-encoded, or no content type
         // at all): trust PHP's own native $_GET/$_POST parse directly, no redundant
         // re-parse of QUERY_STRING/raw input needed for these.
@@ -418,57 +473,58 @@ class Data
 
         if ($method === 'GET') {
             $this->parsedData = $this->get;
-            // A GET request carries its data in the query string, so that IS its raw data.
-            // php://input (read above) is empty for GET, so fall back to QUERY_STRING - but only
-            // if nothing was already captured above (streamToFile, or the X_POP_HTTP_RAW_DATA
-            // test override), which must not be clobbered. This is a straight raw-value copy,
-            // not a re-parse: $this->get is still PHP's own native parse of the query string.
-            if (empty($this->rawData)) {
-                $this->rawData = $_SERVER['QUERY_STRING'] ?? '';
-            }
+        } else if ($isMultipart && $method === 'POST') {
+            $this->parsedData = $this->post;
         } else if ($isNativelyParsedPost) {
             $this->parsedData = $this->post;
         } else if (($contentType !== null) && ($this->rawData !== null)) {
             // PUT/PATCH/DELETE, POST bodies PHP doesn't natively parse (JSON/XML/multipart),
             // and any other method: a manual parse against the raw body is required.
             $this->parsedData = Parser::parseDataByContentType($this->rawData, $contentType, $encoding);
+            $this->filterParsedData();
         }
-
-        $this->applyFilters();
 
         switch ($method) {
             case 'PUT':
-                $this->put = (!empty($this->parsedData)) ? $this->parsedData : [];
+                $this->put = (is_array($this->parsedData)) ? $this->parsedData : [];
                 break;
             case 'PATCH':
-                $this->patch = (!empty($this->parsedData)) ? $this->parsedData : [];
+                $this->patch = (is_array($this->parsedData)) ? $this->parsedData : [];
                 break;
             case 'DELETE':
-                $this->delete = (!empty($this->parsedData)) ? $this->parsedData : [];
+                $this->delete = (is_array($this->parsedData)) ? $this->parsedData : [];
                 break;
         }
+
+        return $this;
     }
 
     /**
-     * Apply any configured filters to the parsed, POST and GET data arrays
-     *
-     * Shared by both processData() exit paths (the multipart-POST early return and the
-     * general path) so filtering behavior can't drift between them.
+     * Apply any configured filters to the POST and GET data arrays
      *
      * @return void
      */
-    private function applyFilters(): void
+    private function filterQueryAndPost(): void
     {
         if ($this->hasFilters()) {
-            if (!empty($this->parsedData)) {
-                $this->parsedData = $this->filter($this->parsedData);
-            }
             if (!empty($this->post)) {
                 $this->post = $this->filter($this->post);
             }
             if (!empty($this->get)) {
                 $this->get = $this->filter($this->get);
             }
+        }
+    }
+
+    /**
+     * Apply any configured filters to the parsed data
+     *
+     * @return void
+     */
+    private function filterParsedData(): void
+    {
+        if ($this->hasFilters() && !empty($this->parsedData)) {
+            $this->parsedData = $this->filter($this->parsedData);
         }
     }
 

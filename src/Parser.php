@@ -189,21 +189,9 @@ class Parser
      */
     protected static function parseXml(string $rawData): array
     {
-        $matches = [];
-        preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $rawData, $matches);
-
-        foreach ($matches[0] as $match) {
-            $strip = str_replace(
-                ['<![CDATA[', ']]>', '<', '>'],
-                ['', '', '&lt;', '&gt;'],
-                $match
-            );
-            $rawData = str_replace($match, $strip, $rawData);
-        }
-
         $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();
-        $xml = simplexml_load_string($rawData);
+        $xml = simplexml_load_string($rawData, 'SimpleXMLElement', LIBXML_NOCDATA);
         $errors = libxml_get_errors();
         libxml_use_internal_errors($previous);
 

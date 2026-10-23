@@ -117,11 +117,12 @@ class Request extends AbstractRequest implements ServerRequestInterface
      * @param  mixed           $streamToFile
      * @param  bool            $populateFromGlobals
      * @param  array           $serverParams
+     * @param  bool            $parseData
      * @throws Exception|\Pop\Http\Exception
      */
     public function __construct(
         Uri|string|null $uri = null, mixed $filters = null, mixed $streamToFile = null,
-        bool $populateFromGlobals = true, array $serverParams = []
+        bool $populateFromGlobals = true, array $serverParams = [], bool $parseData = true
     )
     {
         parent::__construct($uri);
@@ -177,7 +178,7 @@ class Request extends AbstractRequest implements ServerRequestInterface
         $this->data = new Data(
             ($contentType !== null) ? (string)$contentType : null,
             ($contentEncoding !== null) ? (string)$contentEncoding : null,
-            $filters, $streamToFile, $populateFromGlobals
+            $filters, $streamToFile, $populateFromGlobals, $parseData
         );
 
         if ($this->data->hasRawData()) {
@@ -191,12 +192,15 @@ class Request extends AbstractRequest implements ServerRequestInterface
      * @param  ?Uri  $uri
      * @param  mixed $filters
      * @param  mixed $streamToFile
+     * @param  bool  $parseData
      * @throws Exception|\Pop\Http\Exception
      * @return Request
      */
-    public static function create(?Uri $uri = null, mixed $filters = null, mixed $streamToFile = null): Request
+    public static function create(
+        ?Uri $uri = null, mixed $filters = null, mixed $streamToFile = null, bool $parseData = true
+    ): Request
     {
-        return new self($uri, $filters, $streamToFile);
+        return new self($uri, $filters, $streamToFile, true, [], $parseData);
     }
 
     /**
@@ -205,11 +209,14 @@ class Request extends AbstractRequest implements ServerRequestInterface
      * @param  string $basePath
      * @param  mixed  $filters
      * @param  mixed  $streamToFile
+     * @param  bool   $parseData
      * @return Request
      */
-    public static function createWithBasePath(string $basePath, mixed $filters = null, mixed $streamToFile = null): Request
+    public static function createWithBasePath(
+        string $basePath, mixed $filters = null, mixed $streamToFile = null, bool $parseData = true
+    ): Request
     {
-        return new self(new Uri(null, $basePath), $filters, $streamToFile);
+        return new self(new Uri(null, $basePath), $filters, $streamToFile, true, [], $parseData);
     }
 
     /**
@@ -766,6 +773,28 @@ class Request extends AbstractRequest implements ServerRequestInterface
     public function getParsedData(?string $key = null): string|array|null
     {
         return $this->data->getParsedData($key);
+    }
+
+    /**
+     * Parse the request body into the parsed data (for a request constructed with $parseData = false)
+     *
+     * The parse is repeated on every call. The `with*()` clones share one data object with the
+     * original, so parsing on a clone also fills the original's parsed data.
+     *
+     * @throws \Pop\Http\Exception If the body cannot be parsed
+     * @return Request
+     */
+    public function parseData(): Request
+    {
+        $contentType     = $this->getHeaderValue('Content-Type');
+        $contentEncoding = $this->getHeaderValue('Content-Encoding');
+
+        $this->data->parseData(
+            ($contentType !== null) ? (string)$contentType : null,
+            ($contentEncoding !== null) ? (string)$contentEncoding : null
+        );
+
+        return $this;
     }
 
     /**
