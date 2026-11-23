@@ -74,6 +74,13 @@ class Client extends AbstractHttp implements ClientInterface
     protected array $middleware = [];
 
     /**
+     * Process-wide default middleware, in registration order (first-registered = outermost),
+     * run before instance middleware
+     * @var array
+     */
+    protected static array $defaultMiddleware = [];
+
+    /**
      * Instantiate the client object
      *
      * Optional parameters are
@@ -473,6 +480,51 @@ class Client extends AbstractHttp implements ClientInterface
     public function hasMiddleware(): bool
     {
         return !empty($this->middleware);
+    }
+
+    /**
+     * Add a process-wide default middleware, applied to every client when a request
+     * is sent, before that client's own middleware. A plain callable is wrapped in
+     * CallableMiddleware automatically. Registration order is wrap order: the
+     * first-registered default middleware is outermost.
+     *
+     * @param  MiddlewareInterface|callable $middleware
+     * @return void
+     */
+    public static function addDefaultMiddleware(MiddlewareInterface|callable $middleware): void
+    {
+        static::$defaultMiddleware[] = ($middleware instanceof MiddlewareInterface)
+            ? $middleware : new CallableMiddleware($middleware);
+    }
+
+    /**
+     * Get the process-wide default middleware, in registration order
+     *
+     * @return array
+     */
+    public static function getDefaultMiddleware(): array
+    {
+        return static::$defaultMiddleware;
+    }
+
+    /**
+     * Has any process-wide default middleware registered
+     *
+     * @return bool
+     */
+    public static function hasDefaultMiddleware(): bool
+    {
+        return !empty(static::$defaultMiddleware);
+    }
+
+    /**
+     * Clear the process-wide default middleware (e.g. between tests or worker jobs)
+     *
+     * @return void
+     */
+    public static function clearDefaultMiddleware(): void
+    {
+        static::$defaultMiddleware = [];
     }
 
     /**
@@ -1268,11 +1320,12 @@ class Client extends AbstractHttp implements ClientInterface
 
     /**
      * Perform the actual handler dispatch for the given request - the terminal
-     * handler at the center of the middleware pipeline. If $request is a
-     * Client\Request, it's re-pointed as $this->request first, so any
-     * middleware-applied modifications (e.g. an injected header) are reflected
-     * in what's actually sent. A foreign (non-Client\Request) PSR-7 request is
-     * converted first, reusing the same conversion sendRequest() uses.
+     * handler at the center of the middleware pipeline. The given $request is
+     * what's sent, so any middleware-applied modifications (e.g. an injected
+     * header) are reflected in what's actually sent, but $this->request is not
+     * re-pointed at it - middleware changes apply to the current send only. A
+     * foreign (non-Client\Request) PSR-7 request is converted first, reusing the
+     * same conversion sendRequest() uses.
      *
      * Note: this is public (so a terminal callable passed into Pipeline::process()
      * can reach it), but it assumes prepare() has already run - it does not create
@@ -1286,10 +1339,6 @@ class Client extends AbstractHttp implements ClientInterface
     {
         if (!($request instanceof Request)) {
             $request = $this->convertToClientRequest($request);
-        }
-
-        if ($request !== $this->request) {
-            parent::setRequest($request);
         }
 
         $response = (isset($this->options['force_custom_method']) && ($this->handler instanceof Curl)) ?
@@ -1308,7 +1357,10 @@ class Client extends AbstractHttp implements ClientInterface
     /**
      * Run the request through the middleware pipeline (if any), terminating in
      * dispatchRequest(). Shared by dispatch() and sendRequest() so middleware
-     * behaves identically regardless of entry point.
+     * behaves identically regardless of entry point. Process-wide default middleware
+     * is read at send time and runs first (outermost), before instance middleware.
+     * The pipeline is given a copy of the request, so changes middleware makes
+     * apply to the current send only and are not kept on the client.
      *
      * MiddlewareInterface::process() is typed to the broader PSR-7 ResponseInterface
      * (see that interface's docblock), but this method's return type is narrowed to
@@ -1323,12 +1375,12 @@ class Client extends AbstractHttp implements ClientInterface
      */
     protected function processMiddleware(RequestInterface $request): Response
     {
-        if (!$this->hasMiddleware()) {
+        if (!static::hasDefaultMiddleware() && !$this->hasMiddleware()) {
             return $this->dispatchRequest($request);
         }
 
-        $pipeline = new Pipeline($this->middleware);
-        $response = $pipeline->process($request, fn(RequestInterface $req) => $this->dispatchRequest($req));
+        $pipeline = new Pipeline([...static::$defaultMiddleware, ...$this->middleware]);
+        $response = $pipeline->process(clone $request, fn(RequestInterface $req) => $this->dispatchRequest($req));
 
         if (!($response instanceof Response)) {
             throw new Client\Exception(

@@ -15,6 +15,16 @@ use Pop\Mime\Part\Header;
 class ClientTest extends TestCase
 {
 
+    protected function setUp(): void
+    {
+        Client::clearDefaultMiddleware();
+    }
+
+    protected function tearDown(): void
+    {
+        Client::clearDefaultMiddleware();
+    }
+
     public function testConstructor()
     {
         $client = new Client(
@@ -1553,6 +1563,195 @@ class ClientTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Simulated middleware failure.');
         $client->send();
+    }
+
+    public function testAddDefaultMiddlewareWrapsCallableAndAccumulates()
+    {
+        $middleware = new CallableMiddleware(fn($request, $handler) => $handler->handle($request));
+        Client::addDefaultMiddleware($middleware);
+        Client::addDefaultMiddleware(fn($request, $handler) => $handler->handle($request));
+
+        $this->assertTrue(Client::hasDefaultMiddleware());
+        $this->assertCount(2, Client::getDefaultMiddleware());
+        $this->assertSame($middleware, Client::getDefaultMiddleware()[0]);
+        $this->assertInstanceOf(CallableMiddleware::class, Client::getDefaultMiddleware()[1]);
+    }
+
+    public function testClearDefaultMiddleware()
+    {
+        Client::addDefaultMiddleware(fn($request, $handler) => $handler->handle($request));
+        Client::clearDefaultMiddleware();
+
+        $this->assertFalse(Client::hasDefaultMiddleware());
+        $this->assertSame([], Client::getDefaultMiddleware());
+    }
+
+    public function testDefaultMiddlewareDoesNotAffectInstanceMiddlewareAccessors()
+    {
+        Client::addDefaultMiddleware(fn($request, $handler) => $handler->handle($request));
+        $client = new Client('http://localhost/');
+
+        $this->assertFalse($client->hasMiddleware());
+        $this->assertSame([], $client->getMiddleware());
+    }
+
+    public function testDefaultMiddlewareAppliesToClientCreatedAfterRegistration()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        Client::addDefaultMiddleware(fn($request, $handler) => $handler->handle($request->withHeader('X-Default', 'yes')));
+        $client = new Client('http://localhost/', $mock);
+        $client->send();
+
+        $this->assertEquals('yes', $mock->getLastRequest()->getHeaderValueAsString('X-Default'));
+    }
+
+    public function testDefaultMiddlewareAppliesToClientCreatedBeforeRegistration()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        $client = new Client('http://localhost/', $mock);
+        Client::addDefaultMiddleware(fn($request, $handler) => $handler->handle($request->withHeader('X-Default', 'yes')));
+        $client->send();
+
+        $this->assertEquals('yes', $mock->getLastRequest()->getHeaderValueAsString('X-Default'));
+    }
+
+    public function testDefaultMiddlewareRunsBeforeInstanceMiddleware()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        $order = [];
+        Client::addDefaultMiddleware(function($request, $handler) use (&$order) {
+            $order[] = 'd1';
+            return $handler->handle($request);
+        });
+        Client::addDefaultMiddleware(function($request, $handler) use (&$order) {
+            $order[] = 'd2';
+            return $handler->handle($request);
+        });
+
+        $client = new Client('http://localhost/', $mock);
+        $client->addMiddleware(function($request, $handler) use (&$order) {
+            $order[] = 'i1';
+            return $handler->handle($request);
+        });
+        $client->send();
+
+        $this->assertEquals(['d1', 'd2', 'i1'], $order);
+    }
+
+    public function testDefaultMiddlewareAppliesToSendRequest()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        Client::addDefaultMiddleware(fn($request, $handler) => $handler->handle($request->withHeader('X-Default', 'yes')));
+        $client = new Client($mock);
+        $client->sendRequest(new Client\Request('http://localhost/'));
+
+        $this->assertEquals('yes', $mock->getLastRequest()->getHeaderValueAsString('X-Default'));
+    }
+
+    public function testDefaultMiddlewareAppliesToSendAsync()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        Client::addDefaultMiddleware(fn($request, $handler) => $handler->handle($request->withHeader('X-Default', 'yes')));
+        $client = new Client('http://localhost/', $mock, ['async' => true]);
+        $client->sendAsync()->wait();
+
+        $this->assertEquals('yes', $mock->getLastRequest()->getHeaderValueAsString('X-Default'));
+    }
+
+    public function testNoMiddlewareAfterClearDefaultMiddleware()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        $ran = false;
+        Client::addDefaultMiddleware(function($request, $handler) use (&$ran) {
+            $ran = true;
+            return $handler->handle($request);
+        });
+        Client::clearDefaultMiddleware();
+
+        $client   = new Client('http://localhost/', $mock);
+        $response = $client->send();
+
+        $this->assertFalse($ran);
+        $this->assertEquals(200, $response->getCode());
+        $this->assertCount(1, $mock->getRequests());
+    }
+
+    public function testImmutableMiddlewareChangeDoesNotPersistAcrossSends()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        $calls  = 0;
+        $client = new Client('http://localhost/', $mock);
+        $client->addMiddleware(function($request, $handler) use (&$calls) {
+            $calls++;
+            return $handler->handle(($calls === 1) ? $request->withHeader('X-Once', 'yes') : $request);
+        });
+
+        $client->send();
+        $client->send();
+
+        $this->assertEquals('yes', $mock->getRequests()[0]->getHeaderValueAsString('X-Once'));
+        $this->assertFalse($mock->getRequests()[1]->hasHeader('X-Once'));
+        $this->assertFalse($client->getRequest()->hasHeader('X-Once'));
+    }
+
+    public function testMutableMiddlewareChangeDoesNotPersistAcrossSends()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        $calls  = 0;
+        $client = new Client('http://localhost/', $mock);
+        $client->addMiddleware(function($request, $handler) use (&$calls) {
+            $calls++;
+            if ($calls === 1) {
+                $request->addHeader('X-Once', 'yes');
+            }
+            return $handler->handle($request);
+        });
+
+        $client->send();
+        $client->send();
+
+        $this->assertEquals('yes', $mock->getRequests()[0]->getHeaderValueAsString('X-Once'));
+        $this->assertFalse($mock->getRequests()[1]->hasHeader('X-Once'));
+        $this->assertFalse($client->getRequest()->hasHeader('X-Once'));
+    }
+
+    public function testDefaultMiddlewareChangeDoesNotPersistAcrossSends()
+    {
+        $mock = new Client\Handler\Mock();
+        $mock->queue(new Client\Response(['code' => 200]));
+        $mock->queue(new Client\Response(['code' => 200]));
+
+        $calls = 0;
+        Client::addDefaultMiddleware(function($request, $handler) use (&$calls) {
+            $calls++;
+            return $handler->handle(($calls === 1) ? $request->withHeader('X-Once', 'yes') : $request);
+        });
+        $client = new Client('http://localhost/', $mock);
+
+        $client->send();
+        $client->send();
+
+        $this->assertEquals('yes', $mock->getRequests()[0]->getHeaderValueAsString('X-Once'));
+        $this->assertFalse($mock->getRequests()[1]->hasHeader('X-Once'));
+        $this->assertFalse($client->getRequest()->hasHeader('X-Once'));
     }
 
     public function testRetryMiddlewareRetriesTransientNetworkFailureThenSucceeds()

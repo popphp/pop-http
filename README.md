@@ -852,8 +852,30 @@ $client->addMiddleware(function ($request, $handler) {
 });
 ```
 
-**Note:** middleware does not apply to a `Client` driven via `Client::createMulti()`/`CurlMulti` - the
-multi-handler runs its own request loop independently of the middleware pipeline.
+Middleware works on a copy of the request for the send in progress - changes it makes (headers, body, etc.) are
+sent but not kept on the `Client`, so a later send starts from the client's own request again.
+
+Middleware can also be registered once, process-wide, with `Client::addDefaultMiddleware()` - typically at
+application bootstrap. Default middleware applies to every `Client` in the process, including clients created
+before it was registered, since it's read each time a request is sent:
+
+```php
+use Pop\Http\Client;
+
+Client::addDefaultMiddleware(function ($request, $handler) {
+    return $handler->handle($request->withHeader('X-Trace-Id', getTraceId()));
+});
+```
+
+Default middleware runs first (outermost), in registration order, before a client's own middleware. Because it
+is process-wide static state, call `Client::clearDefaultMiddleware()` between tests and between jobs in
+long-running workers. `Client::getDefaultMiddleware()` and `Client::hasDefaultMiddleware()` inspect the registered
+defaults. A client's own `LoggingMiddleware` sees any header a default middleware adds, so add sensitive ones
+with `addRedactedHeader()` (see the Logging Middleware section below).
+
+**Note:** middleware, including default middleware, does not apply to a `Client` driven via
+`Client::createMulti()`/`CurlMulti` - the multi-handler runs its own request loop independently of the middleware
+pipeline.
 
 [Top](#pop-http)
 
